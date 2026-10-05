@@ -4,9 +4,9 @@
 
 | | |
 |---|---|
-| **Huidige fase** | Fase 3 afgerond – volledig geaudit, geen fouten |
-| **Laatste update** | 2026-10-04 |
-| **Volgende stap** | Zelf spelen op telefoon testen, dan publiceren via HTTPS |
+| **Huidige fase** | Live op GitHub Pages – HTTPS actief |
+| **Laatste update** | 2026-10-05 |
+| **Volgende stap** | Zelf spelen op de live URL, daarna publiceer-taken afwerken |
 
 ---
 
@@ -20,6 +20,14 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-05 · GitHub + GitHub Pages live gezet (Claude Code)
+- Git-repo aangemaakt (`git init`, branch `main`), alle 25 bestanden gecommit.
+- GitHub-repo aangemaakt: https://github.com/jmldewaal-sedillo/sudoku-kids
+- GitHub Pages ingeschakeld op `main /` → https://jmldewaal-sedillo.github.io/sudoku-kids/
+- ROADMAP.md bijgewerkt (status en dit logboekitem).
+
+**Bestanden geraakt:** ROADMAP.md.
 
 ### 2026-10-04 · Roadmap en CLAUDE.md aangemaakt (Claude Code)
 - `ROADMAP.md` aangemaakt: logboek (fase 1–3), vaste regels, takenlijst en bekende beperkingen.
@@ -94,8 +102,8 @@
 - [ ] Maskable icoon controleren op echt Android-toestel (ronde of vierkante uitsnede)
 
 ### Publiceren
-- [ ] Hosting met HTTPS opzetten (GitHub Pages, Netlify of Cloudflare Pages)
-- [ ] Domeinnaam of subpad kiezen voor de hosting
+- [x] Hosting met HTTPS opzetten → GitHub Pages live op https://jmldewaal-sedillo.github.io/sudoku-kids/
+- [x] Domeinnaam of subpad kiezen voor de hosting → subpad `/sudoku-kids/` op GitHub Pages
 - [ ] Relatieve paden in manifest.json controleren na keuze van subpad
 - [ ] `assetlinks.json` plaatsen op `/.well-known/assetlinks.json`
 - [ ] Privacyverklaring schrijven en online zetten (verplicht voor Families-beleid)
