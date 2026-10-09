@@ -30,11 +30,11 @@
       </div>
       <div class="splash-content">
         <div class="splash-logo">
-          <div class="logo-emoji">🧩</div>
+          <div class="logo-emoji" aria-hidden="true">🧩</div>
           <h1 class="logo-title">Sudoku Kids</h1>
           <p class="logo-subtitle">&amp; Crazy Grids</p>
         </div>
-        <div class="mascot-big bounce-anim">🐱</div>
+        <div class="mascot-big bounce-anim" aria-hidden="true">🐱</div>
         <button class="btn-play-big" id="btn-start" data-i18n="play">▶ Spelen!</button>
         <p class="splash-tagline" data-i18n="tagline">Het leukste puzzelavontuur!</p>
       </div>
@@ -44,56 +44,56 @@
   <!-- ===== WORLDS ===== -->
   <div id="screen-worlds" class="screen">
     <div class="screen-header">
-      <button class="btn-icon" id="btn-worlds-settings" aria-label="Settings">⚙️</button>
+      <button class="btn-icon" id="btn-worlds-settings" data-i18n-aria="settings" aria-label="Instellingen">⚙️</button>
       <h2 class="screen-title" data-i18n="chooseWorld">Kies je wereld!</h2>
-      <div class="header-score"><span>⭐</span><span id="total-stars-display">0</span></div>
+      <div class="header-score"><span aria-hidden="true">⭐</span><span id="total-stars-display">0</span></div>
     </div>
 
     <div class="worlds-container">
-      <div class="world-card world-1" data-world="0" id="world-card-0">
-        <div class="world-emoji">🐻</div>
-        <div class="world-info">
-          <h3 data-i18n="world0">Het Dierenbos</h3>
-          <p class="world-desc" data-i18n="world0desc">4×4 & 6×6 puzzels</p>
-          <div class="progress-bar"><div class="progress-fill" id="world-0-progress"></div></div>
+      <button type="button" class="world-card world-1" data-world="0" id="world-card-0">
+        <span class="world-emoji" aria-hidden="true">🐻</span>
+        <span class="world-info">
+          <span class="world-name" data-i18n="world0">Het Dierenbos</span>
+          <span class="world-desc" data-i18n="world0desc">4×4 & 6×6 puzzels</span>
+          <span class="progress-bar"><span class="progress-fill" id="world-0-progress"></span></span>
           <span class="progress-text" id="world-0-text">0/35</span>
-        </div>
-        <div class="world-stars" id="world-0-stars">☆☆☆</div>
-        <div class="world-lock" id="world-0-lock" style="display:none">🔒</div>
-      </div>
+        </span>
+        <span class="world-stars" id="world-0-stars">☆☆☆</span>
+        <span class="world-lock" aria-hidden="true" id="world-0-lock" style="display:none">🔒</span>
+      </button>
 
-      <div class="world-card world-2" data-world="1" id="world-card-1">
-        <div class="world-emoji">🍭</div>
-        <div class="world-info">
-          <h3 data-i18n="world1">De Snoepjesfabriek</h3>
-          <p class="world-desc" data-i18n="world1desc">6×6 & 9×9 puzzels</p>
-          <div class="progress-bar"><div class="progress-fill" id="world-1-progress"></div></div>
+      <button type="button" class="world-card world-2" data-world="1" id="world-card-1">
+        <span class="world-emoji" aria-hidden="true">🍭</span>
+        <span class="world-info">
+          <span class="world-name" data-i18n="world1">De Snoepjesfabriek</span>
+          <span class="world-desc" data-i18n="world1desc">6×6 & 9×9 puzzels</span>
+          <span class="progress-bar"><span class="progress-fill" id="world-1-progress"></span></span>
           <span class="progress-text" id="world-1-text">0/35</span>
-        </div>
-        <div class="world-stars" id="world-1-stars">☆☆☆</div>
-        <div class="world-lock" id="world-1-lock">🔒</div>
-      </div>
+        </span>
+        <span class="world-stars" id="world-1-stars">☆☆☆</span>
+        <span class="world-lock" aria-hidden="true" id="world-1-lock">🔒</span>
+      </button>
 
-      <div class="world-card world-3" data-world="2" id="world-card-2">
-        <div class="world-emoji">🚀</div>
-        <div class="world-info">
-          <h3 data-i18n="world2">De Ruimte-raket</h3>
-          <p class="world-desc" data-i18n="world2desc">9×9 puzzels voor kanjers</p>
-          <div class="progress-bar"><div class="progress-fill" id="world-2-progress"></div></div>
+      <button type="button" class="world-card world-3" data-world="2" id="world-card-2">
+        <span class="world-emoji" aria-hidden="true">🚀</span>
+        <span class="world-info">
+          <span class="world-name" data-i18n="world2">De Ruimte-raket</span>
+          <span class="world-desc" data-i18n="world2desc">9×9 puzzels voor kanjers</span>
+          <span class="progress-bar"><span class="progress-fill" id="world-2-progress"></span></span>
           <span class="progress-text" id="world-2-text">0/35</span>
-        </div>
-        <div class="world-stars" id="world-2-stars">☆☆☆</div>
-        <div class="world-lock" id="world-2-lock">🔒</div>
-      </div>
+        </span>
+        <span class="world-stars" id="world-2-stars">☆☆☆</span>
+        <span class="world-lock" aria-hidden="true" id="world-2-lock">🔒</span>
+      </button>
     </div>
   </div>
 
   <!-- ===== LEVELS ===== -->
   <div id="screen-levels" class="screen">
     <div class="screen-header">
-      <button class="btn-icon" id="btn-levels-back" aria-label="Back">⬅️</button>
+      <button class="btn-icon" id="btn-levels-back" data-i18n-aria="back" aria-label="Terug">⬅️</button>
       <h2 class="screen-title" id="levels-world-title">Het Dierenbos</h2>
-      <div class="header-score"><span>⭐</span><span id="world-total-stars">0</span></div>
+      <div class="header-score"><span aria-hidden="true">⭐</span><span id="world-total-stars">0</span></div>
     </div>
     <div class="levels-grid" id="levels-grid"></div>
   </div>
@@ -101,43 +101,41 @@
   <!-- ===== GAME ===== -->
   <div id="screen-game" class="screen">
     <div class="screen-header game-header">
-      <button class="btn-icon" id="btn-game-back" aria-label="Back">⬅️</button>
+      <button class="btn-icon" id="btn-game-back" data-i18n-aria="back" aria-label="Terug">⬅️</button>
       <div class="game-info">
         <span class="game-level-label" id="game-level-label">Level 1</span>
         <span class="game-type-badge" id="game-type-badge">Standaard</span>
       </div>
-      <div class="game-timer-box"><span>⏱</span><span id="game-timer">0:00</span></div>
+      <div class="game-timer-box"><span aria-hidden="true">⏱</span><span id="game-timer">0:00</span></div>
     </div>
 
     <div class="game-stats-bar">
-      <div class="stat-item"><span>❌</span><span id="mistake-count">0/3</span></div>
-      <button class="btn-hint" id="btn-hint">💡 <span data-i18n="hint">Hint</span> <span class="hint-badge" id="hint-count">3</span></button>
-      <button class="btn-small" id="btn-notes" data-i18n="notes">📝 Notitie</button>
+      <div class="stat-item" id="lives-display" role="img" aria-label=""></div>
+      <div class="tool-buttons">
+        <button class="btn-tool btn-hint" id="btn-hint" data-i18n-aria="hint" aria-label="Hint"><span aria-hidden="true">💡</span><span class="hint-badge" id="hint-count">3</span></button>
+        <button class="btn-tool btn-notes" id="btn-notes" data-i18n-aria="notes" aria-label="Notitie" aria-pressed="false"><span aria-hidden="true">✏️</span></button>
+        <button class="btn-tool btn-display" id="btn-display" aria-label="Dieren">🐶</button>
+      </div>
     </div>
 
     <div class="game-mascot" id="game-mascot" aria-live="polite">
-      <div class="mascot-emoji bounce-anim">🐱</div>
+      <div class="mascot-emoji bounce-anim" aria-hidden="true">🐱</div>
       <div class="mascot-bubble"></div>
     </div>
 
     <div class="grid-container">
-      <div class="sudoku-grid" id="sudoku-grid"></div>
+      <div class="sudoku-grid" id="sudoku-grid" role="group" aria-label="Sudoku"></div>
     </div>
 
     <div class="numpad" id="numpad"></div>
-
-    <div class="display-toggle">
-      <button class="toggle-btn active" id="toggle-numbers" data-i18n="numbers">🔢 Cijfers</button>
-      <button class="toggle-btn" id="toggle-animals" data-i18n="animals">🐾 Dieren</button>
-    </div>
   </div>
 
   <!-- ===== SETTINGS ===== -->
   <div id="screen-settings" class="screen">
     <div class="screen-header">
-      <button class="btn-icon" id="btn-settings-back" aria-label="Back">⬅️</button>
+      <button class="btn-icon" id="btn-settings-back" data-i18n-aria="back" aria-label="Terug">⬅️</button>
       <h2 class="screen-title" data-i18n="settings">Instellingen</h2>
-      <div style="width:44px"></div>
+      <div class="header-spacer"></div>
     </div>
 
     <div class="settings-list">
@@ -156,7 +154,7 @@
         <h3 class="settings-section-title" data-i18n="secLang">🌍 Taal</h3>
         <div class="settings-row">
           <span data-i18n="language">Taal</span>
-          <select class="settings-select" id="setting-language">
+          <select class="settings-select" id="setting-language" data-i18n-aria="language" aria-label="Taal">
             <option value="nl">🇳🇱 Nederlands</option>
             <option value="en">🇬🇧 English</option>
             <option value="de">🇩🇪 Deutsch</option>
@@ -180,27 +178,29 @@
         <h3 class="settings-section-title" data-i18n="secProgress">⚠️ Voortgang</h3>
         <button class="btn-danger" id="btn-reset-progress" data-i18n="resetBtn">🗑️ Reset alle voortgang</button>
       </div>
+
+      <a class="settings-link" href="privacy.html" data-i18n="privacy">Privacy (voor ouders)</a>
     </div>
   </div>
 
   <!-- ===== MASCOT (worlds + levels) ===== -->
   <div class="mascot-corner hidden" id="mascot" aria-live="polite">
     <div class="mascot-bubble"></div>
-    <div class="mascot-emoji bounce-anim">🐱</div>
+    <div class="mascot-emoji bounce-anim" aria-hidden="true">🐱</div>
   </div>
 
   <!-- ===== WIN ===== -->
-  <div id="modal-win" class="modal hidden">
+  <div id="modal-win" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="win-title">
     <div class="modal-overlay"></div>
     <div class="modal-content win-modal">
-      <div class="win-confetti" id="confetti-container"></div>
+      <div class="win-confetti" id="confetti-container" aria-hidden="true"></div>
       <div class="win-mascot bounce-anim">😻</div>
       <h2 class="win-title" id="win-title">Super gedaan! 🎉</h2>
-      <div class="win-stars" id="win-stars">⭐⭐⭐</div>
+      <div class="win-stars" id="win-stars" role="img" aria-label="">⭐⭐⭐</div>
       <div class="win-stats">
-        <div class="win-stat"><span class="win-stat-icon">⏱</span><span class="win-stat-label" data-i18n="time">Tijd</span><span class="win-stat-value" id="win-time">0:00</span></div>
-        <div class="win-stat"><span class="win-stat-icon">❌</span><span class="win-stat-label" data-i18n="mistakes">Fouten</span><span class="win-stat-value" id="win-mistakes">0</span></div>
-        <div class="win-stat"><span class="win-stat-icon">💡</span><span class="win-stat-label" data-i18n="hints">Hints</span><span class="win-stat-value" id="win-hints">0</span></div>
+        <div class="win-stat"><span class="win-stat-icon" aria-hidden="true">⏱</span><span class="win-stat-label" data-i18n="time">Tijd</span><span class="win-stat-value" id="win-time">0:00</span></div>
+        <div class="win-stat"><span class="win-stat-icon" aria-hidden="true">❌</span><span class="win-stat-label" data-i18n="mistakes">Fouten</span><span class="win-stat-value" id="win-mistakes">0</span></div>
+        <div class="win-stat"><span class="win-stat-icon" aria-hidden="true">💡</span><span class="win-stat-label" data-i18n="hints">Hints</span><span class="win-stat-value" id="win-hints">0</span></div>
       </div>
       <div class="win-buttons">
         <button class="btn-win-next" id="btn-win-next" data-i18n="next">Volgende ➡️</button>
@@ -211,11 +211,11 @@
   </div>
 
   <!-- ===== GAME OVER ===== -->
-  <div id="modal-gameover" class="modal hidden">
+  <div id="modal-gameover" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
     <div class="modal-overlay"></div>
     <div class="modal-content gameover-modal">
       <div class="gameover-mascot">😿</div>
-      <h2 class="gameover-title" data-i18n="gameoverTitle">Helaas! 😢</h2>
+      <h2 class="gameover-title" id="gameover-title" data-i18n="gameoverTitle">Helaas! 😢</h2>
       <p class="gameover-text" data-i18n="gameoverText">Je hebt 3 fouten gemaakt.</p>
       <div class="win-buttons">
         <button class="btn-win-replay" id="btn-go-replay" data-i18n="replay">🔄 Opnieuw</button>
@@ -225,10 +225,10 @@
   </div>
 
   <!-- ===== CONFIRM RESET ===== -->
-  <div id="modal-confirm" class="modal hidden">
+  <div id="modal-confirm" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div class="modal-overlay"></div>
     <div class="modal-content confirm-modal">
-      <h2 data-i18n="confirmTitle">⚠️ Voortgang resetten?</h2>
+      <h2 id="confirm-title" data-i18n="confirmTitle">⚠️ Voortgang resetten?</h2>
       <p data-i18n="confirmText">Al je sterren en scores worden gewist.</p>
       <div class="win-buttons">
         <button class="btn-danger btn-round" id="btn-confirm-yes" data-i18n="confirmYes">Ja, reset!</button>

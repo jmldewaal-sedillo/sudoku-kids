@@ -29,6 +29,8 @@ const STRINGS = {
     mNoHints: 'Je hints zijn op, maar jij kunt het!',
     mLocked: 'Speel eerst de helft van de vorige wereld! ⭐',
     mReset: 'Voortgang gereset! Nieuwe start! 🚀',
+    mTap: 'Tik eerst op een leeg vakje!',
+    back: 'Terug', row: 'rij', col: 'kolom', empty: 'leeg', privacy: 'Privacy (voor ouders)',
   },
   en: {
     play: '▶ Play!', tagline: 'The most fun puzzle adventure!',
@@ -55,6 +57,8 @@ const STRINGS = {
     mNoHints: 'No hints left, but you can do it!',
     mLocked: 'Play half of the previous world first! ⭐',
     mReset: 'Progress reset! Fresh start! 🚀',
+    mTap: 'Tap an empty square first!',
+    back: 'Back', row: 'row', col: 'column', empty: 'empty', privacy: 'Privacy (for parents)',
   },
   de: {
     play: '▶ Spielen!', tagline: 'Das lustigste Rätselabenteuer!',
@@ -81,6 +85,8 @@ const STRINGS = {
     mNoHints: 'Keine Tipps mehr, aber du schaffst das!',
     mLocked: 'Spiele zuerst die Hälfte der vorigen Welt! ⭐',
     mReset: 'Fortschritt gelöscht! Neustart! 🚀',
+    mTap: 'Tippe zuerst auf ein leeres Feld!',
+    back: 'Zurück', row: 'Zeile', col: 'Spalte', empty: 'leer', privacy: 'Datenschutz (für Eltern)',
   },
   fr: {
     play: '▶ Jouer !', tagline: "L'aventure de puzzles la plus amusante !",
@@ -107,5 +113,7 @@ const STRINGS = {
     mNoHints: 'Plus d\'indices, mais tu peux le faire !',
     mLocked: 'Joue d\'abord la moitié du monde précédent ! ⭐',
     mReset: 'Progression effacée ! Nouveau départ ! 🚀',
+    mTap: 'Touche d\'abord une case vide !',
+    back: 'Retour', row: 'ligne', col: 'colonne', empty: 'vide', privacy: 'Confidentialité (pour les parents)',
   },
 };
