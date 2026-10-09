@@ -15,7 +15,12 @@ Een sudoku-spel voor kinderen als PWA: 3 werelden, 105 levels, 3 soorten sudoku
 | `manifest.json`, `sw.js` | PWA: installeren en offline spelen |
 | `icons/` | App-iconen (`any` en `maskable`) |
 | `screenshots/` | Twee screenshots van 1080×1920 voor het installatievenster |
+| `privacy.html` | Privacyverklaring (NL + EN), ook offline beschikbaar |
 | `tests/validate-levels.js` | Controleert alle levels automatisch |
+| `tests/difficulty.js` | Meet de moeilijkheid per level |
+| `tests/e2e.py` | Speelt het spel automatisch en controleert de belangrijkste flows |
+| `tests/screenshots.py` | Screenshots van elk scherm op 7 schermformaten + lay-outcontrole |
+| `tests/manifest-screenshots.py` | Maakt de twee screenshots voor `manifest.json` opnieuw |
 
 ## Hoe de levels werken
 
@@ -35,9 +40,33 @@ node tests/validate-levels.js
 ```
 
 Dit controleert of elke oplossing geldig is (ook de diagonalen bij X-Sudoku), of
-elke puzzel precies één oplossing heeft, of de puzzels stabiel en uniek zijn en of
-er per wereld 35 levels zijn. Bij een fout stopt het script met exitcode 1, zodat
-je het ook in een build-stap kunt gebruiken.
+elke puzzel precies één oplossing heeft, of de puzzels stabiel en uniek zijn, of
+er per wereld 35 levels zijn, of elk level **zonder gokken** op te lossen is en of
+elke puzzel nog gelijk is aan `tests/levels.snapshot.json`. Bij een fout stopt het
+script met exitcode 1.
+
+Verander je een puzzel met opzet, werk dan de snapshot bij met
+`node tests/validate-levels.js --update-snapshot`. Bedenk dat spelers hun sterren
+dan bij een iets andere puzzel hebben gehaald.
+
+## Alles testen in één keer
+
+Eenmalig installeren: `pip install playwright && playwright install chromium`.
+
+```bash
+node tests/validate-levels.js && node tests/difficulty.js && \
+for f in *.js tests/*.js; do node --check "$f" || exit 1; done && \
+python3 tests/e2e.py && python3 tests/screenshots.py
+```
+
+| Commando | Wat het bewijst |
+|---|---|
+| `node tests/validate-levels.js` | 105 levels geldig, één oplossing, zonder gokken, gelijk aan de snapshot |
+| `node tests/difficulty.js` (`--all` voor elk level) | moeilijkheidscurve per blok levels |
+| `python3 tests/e2e.py` | spelregels, opslaan, terug-knop, talen, toetsenbord, snelheid (CPU ×4), offline, geen externe verzoeken |
+| `python3 tests/screenshots.py [map]` | niets buiten beeld, alle knoppen ≥ 48×48 px, 0 console-errors; PNG's in `tests/out/` |
+
+De scripts starten zelf een lokale server; er hoeft niets te draaien.
 
 ## Lokaal testen
 
@@ -58,11 +87,19 @@ python3 -m http.server 8000
    Dat levert een `.aab`-bestand en een signing key op. Bewaar die key goed.
 3. **`assetlinks.json` plaatsen** op `https://jouw-domein/.well-known/assetlinks.json`.
    PWABuilder/Bubblewrap maakt dit bestand voor je. Zonder dit bestand toont de app een adresbalk.
+   **Let op bij GitHub Pages:** het bestand moet in de *root van het domein* staan, dus op
+   `https://jmldewaal-sedillo.github.io/.well-known/assetlinks.json` en niet onder
+   `/sudoku-kids/`. Dat kan alleen via een aparte repository `jmldewaal-sedillo.github.io`
+   (met een leeg bestand `.nojekyll` erin, anders slaat GitHub mappen met een punt over)
+   of met een eigen (sub)domein voor deze app.
 4. **Play Console**: je hebt een ontwikkelaarsaccount nodig. Omdat de app op kinderen
    gericht is, gelden het *Families*-beleid en de vragenlijst over de doelgroep. De app
    verzamelt geen gegevens en heeft geen advertenties, maar een privacyverklaring
-   (een eenvoudige pagina op je domein) is wel verplicht.
+   is wel verplicht. Die staat in `privacy.html`; de link voor de Play Console is
+   `https://jouw-domein/privacy.html`. Lees hem na en vul eventueel je contactgegevens aan.
 5. **Bij elke update** verhoog je `CACHE_VERSION` in `sw.js`, zodat spelers de nieuwe versie krijgen.
+   Staat de app open op het start- of wereldscherm, dan laadt hij de nieuwe versie vanzelf;
+   midden in een puzzel gebeurt dat pas bij de volgende start.
 
 De screenshots voor de Play Store-pagina upload je apart in de Play Console;
 die in `screenshots/` zijn voor het installatievenster in de browser.
