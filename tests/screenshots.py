@@ -7,7 +7,7 @@ Maakt per formaat een map met PNG's en schrijft `layout.txt` met:
   - knoppen kleiner dan 48x48 px
   - knoppen die (deels) buiten beeld vallen
   - console-errors
-Exitcode 1 als er iets buiten beeld valt of er console-errors zijn.
+Exitcode 1 als een van die drie voorkomt.
 """
 import contextlib
 import functools
@@ -40,7 +40,7 @@ MIN_TAP = 48
 MEASURE_JS = """
 (minTap) => {
   const vw = innerWidth, vh = innerHeight, small = [], outside = [];
-  const sel = 'button, select, .world-card, .sudoku-cell, label.settings-row';
+  const sel = 'button, select, a, .world-card, .sudoku-cell, label.settings-row';
   const scopes = [...document.querySelectorAll('.screen.active, .modal:not(.hidden)')];
   const modalOpen = scopes.some(s => s.classList.contains('modal'));
   for (const scope of scopes) {
@@ -96,7 +96,7 @@ def run():
             out = OUT / name
             out.mkdir(parents=True, exist_ok=True)
             ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=2,
-                                      has_touch=True, service_workers='block')
+                                      has_touch=True, service_workers='block', locale='nl-NL')
             page = ctx.new_page()
             errors = []
             page.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
@@ -115,7 +115,8 @@ def run():
                 if m['cell']:
                     line += f' cel={m["cell"]}px'
                 if m['small']:
-                    line += f'\n      <{MIN_TAP}px: ' + ', '.join(m['small'])
+                    failed = True
+                    line += f'\n      KLEINER DAN {MIN_TAP}px: ' + ', '.join(m['small'])
                 if m['outside'] or m['hscroll']:
                     failed = True
                     line += '\n      BUITEN BEELD: ' + ', '.join(m['outside'] or ['horizontale scroll'])
@@ -136,7 +137,7 @@ def run():
                     page.evaluate('i => startLevel(i)', first_global_index(page, world, size, kind))
                     shot(label)
                 # 9x9 X met dieren, een geselecteerd vakje en notities
-                page.evaluate('setDisplayMode("animals")')  # knop is verborgen in landscape
+                page.click('#btn-display')
                 empty = page.evaluate('gameState.given.indexOf(0)')
                 page.click(f'#sudoku-grid > :nth-child({empty + 1})')
                 page.click('#btn-notes')
@@ -144,9 +145,9 @@ def run():
                     page.click(f'.num-btn[data-num="{n}"]')
                 shot('09-spel-9x9-dieren')
                 page.click('#btn-notes')
-                page.evaluate('setDisplayMode("numbers")')
+                page.click('#btn-display')
                 # Winnen: level 1 oplossen via de knoppen
-                page.evaluate('startLevel(0)')
+                page.evaluate('startLevel(0, true)')
                 page.wait_for_timeout(300)
                 for idx, val in page.evaluate(
                         'gameState.given.map((g, i) => g ? null : [i, gameState.solution[i]]).filter(Boolean)'):
@@ -155,21 +156,24 @@ def run():
                 page.wait_for_selector('#modal-win:not(.hidden)')
                 shot('10-gewonnen')
                 page.click('#btn-win-home')
-                # Fouten maken tot het "probeer opnieuw"-venster (of zolang het spel dat toelaat)
-                page.evaluate('startLevel(0)')
+                # 4x4: fouten kosten sterren maar geen game over
+                page.evaluate('startLevel(0, true)')
                 page.wait_for_timeout(300)
-                idx, val = page.evaluate(
-                    '(() => { const i = gameState.given.indexOf(0); return [i, gameState.solution[i] % 4 + 1]; })()')
-                for _ in range(3):
+                for label, level in (('11-4x4-na-3-fouten', 0), ('12-game-over', first_global_index(page, 0, 6, 'standard'))):
+                    page.evaluate('i => startLevel(i, true)', level)
+                    page.wait_for_timeout(300)
+                    idx, sol, size = page.evaluate(
+                        '(() => { const i = gameState.given.indexOf(0); return [i, gameState.solution[i], gameState.size]; })()')
                     page.click(f'#sudoku-grid > :nth-child({idx + 1})')
-                    page.click(f'.num-btn[data-num="{val}"]')
-                    page.wait_for_timeout(250)
-                page.wait_for_timeout(800)
-                shot('11-na-3-fouten')
+                    for val in [v for v in range(1, size + 1) if v != sol][:3]:
+                        page.click(f'.num-btn[data-num="{val}"]')
+                        page.wait_for_timeout(250)
+                    page.wait_for_timeout(800)
+                    shot(label)
                 page.evaluate('hideModals(); goToSettings()')
-                shot('12-instellingen')
+                shot('13-instellingen')
                 page.click('#btn-reset-progress')
-                shot('13-reset-bevestigen')
+                shot('14-reset-bevestigen')
             except Exception as exc:  # een knop is niet te bereiken: dat is zelf een bevinding
                 failed = True
                 report.append(f'{name:26} VASTGELOPEN: ' + str(exc).split('Call log')[0].strip()[:160]
@@ -182,7 +186,7 @@ def run():
     text = '\n'.join(report)
     (OUT / 'layout.txt').write_text(text + '\n')
     print(text)
-    print('\n' + ('❌ Lay-outproblemen of console-errors gevonden.' if failed else '✅ Niets buiten beeld, 0 console-errors.'))
+    print('\n' + ('❌ Lay-outproblemen of console-errors gevonden.' if failed else '✅ Niets buiten beeld, alle knoppen minstens 48x48 px, 0 console-errors.'))
     return 1 if failed else 0
 
 
