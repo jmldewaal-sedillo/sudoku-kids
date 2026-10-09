@@ -6,7 +6,9 @@
 |---|---|
 | **Huidige fase** | Volledige review afgerond en getest – klaar om in te pakken voor de Play Store |
 | **Laatste update** | 2026-10-09 |
-| **Volgende stap** | Zelf nalopen op een echte telefoon (zie Testen), daarna `assetlinks.json` regelen en inpakken met PWABuilder |
+| **Volgende stap** | Testversie nalopen op een echte telefoon (zie Testen), daarna mergen naar `main`, `assetlinks.json` regelen en inpakken met PWABuilder |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, nu gelijk aan `review-2026-10-09` |
+| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, nog de versie van 2026-10-05 |
 
 ---
 
@@ -18,11 +20,23 @@
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`.
 6. **Geen frameworks, build-stappen, externe CDN's, tracking, advertenties of accounts.** `tests/e2e.py` controleert dat er geen verzoek naar een ander domein gaat.
-7. **Voor elke release alles groen:** `node tests/validate-levels.js`, `python3 tests/e2e.py` en `python3 tests/screenshots.py` (zie README).
+7. **testen = push naar branch `test`, live = merge naar `main`.** Niets gaat naar `main` voordat het op de testlink is nagelopen. De testversie gebruikt `test_`-sleutels en een eigen cache; dat onderscheid (`IS_TEST` in `script.js` en `sw.js`) nooit weghalen.
+8. **Voor elke release alles groen:** `node tests/validate-levels.js`, `python3 tests/e2e.py` en `python3 tests/screenshots.py` (zie README).
 
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-09 · Testversie online naast de live versie (Claude Code)
+- Onderzocht hoe Flush Factor test: daar bestaat geen aparte testversie (alleen `main`, Pages vanaf `main`, workflow `ci.yml` draait alleen tests). Daarom nieuw opgezet, gekozen voor een aparte test-repository.
+- Repository `jmldewaal-sedillo/sudoku-kids-test` met GitHub Pages; workflow `.github/workflows/test-deploy.yml` zet elke push naar branch `test` daar neer, met het commit-id in het label en in de cache-naam.
+- App herkent de testmap zelf (`IS_TEST`): `test_`-prefix op de localStorage-sleutels, eigen cache `sudoku-kids-test-…`, rood label "TEST <commit>", manifestnaam "TEST – …".
+- Service worker ruimt alleen nog zijn eigen oude caches op (ruimde eerst álle caches op het domein op, dus ook die van de testversie en van Flush Factor).
+- Live versie niet aangeraakt: `main` en de Pages-instellingen zijn ongewijzigd.
+
+**Bewijs:** `python3 tests/e2e.py` → 97/97, waarvan 13 in onderdeel 11 (o.a. "live-opslag is byte voor byte ongewijzigd na spelen, instellen en wissen in de test"); `node tests/validate-levels.js` → beide ✅; `python3 tests/screenshots.py` → ✅.
+
+**Bestanden geraakt:** script.js, sw.js, style.css, tests/e2e.py, tests/screenshots.py, .github/workflows/test-deploy.yml (nieuw), README.md, ROADMAP.md.
 
 ### 2026-10-09 · Volledige review en verbeterronde (Claude Code, branch `review-2026-10-09`)
 **Opgelost (hoog):**
@@ -136,6 +150,7 @@
 ## Takenlijst
 
 ### Testen (op een echte telefoon/tablet)
+Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood label TEST bovenin).
 - [ ] Zelf spelen op de telefoon (splash → wereld 1 → een paar levels uitspelen); let op of een kind de wijsvinger en de plaatjesknoppen snapt
 - [ ] Een paar levels uit elke wereld voltooien (inclusief 6×6 en 9×9) – automatisch zijn alle 105 uitgespeeld, maar niet door een mens
 - [ ] Update-gedrag: de geïnstalleerde app (v2) openen na deze release en controleren dat v3 verschijnt en de sterren er nog zijn
@@ -189,4 +204,5 @@
 
 ## Bekende beperkingen
 
+- **Test en live delen één domein** (`jmldewaal-sedillo.github.io`), net als Flush Factor. De opslag is gescheiden met de `test_`-prefix. De live versie van vóór deze review (cache v2) en Flush Factor ruimen bij een eigen update nog wel alle caches op het domein op; de testversie haalt zijn bestanden dan gewoon opnieuw op, maar is op dat moment even niet offline beschikbaar.
 - **Geen installatie of offline spelen via http://.** De service worker wordt alleen geactiveerd via `https://` of `http://localhost`. Via een lokaal IP-adres (bijv. `http://192.168.x.x:8000`) kun je de app wel testen, maar niet installeren en niet offline spelen. Dat werkt pas na HTTPS-hosting.

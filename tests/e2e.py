@@ -398,6 +398,59 @@ def run():
         check('sw.js: alle bestanden in ASSETS bestaan', all((root / (a or 'index.html')).exists() for a in sw_assets), sw_assets)
         check('geen console-errors', not g.errors, g.errors)
         g.close()
+
+        # ------------------------------------------------------------
+        section('11. Testversie en live versie zitten elkaar niet in de weg')
+        live_url, test_url = url + 'sudoku-kids/', url + 'sudoku-kids-test/'
+        g = Game(browser, live_url)
+        g.page.wait_for_function('navigator.serviceWorker.controller !== null', timeout=15000)
+        check('live: geen TEST-label, titel ongewijzigd',
+              g.js('document.querySelector(".test-badge")') is None and g.page.title() == 'Sudoku Kids & Crazy Grids')
+        g.start()
+        g.js('startLevel(0, true)')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        g.page.click('#btn-win-next')
+        idx, val = g.open_cells()[0]
+        g.tap_cell(idx)
+        g.tap_num(val)
+        g.js('setDisplayMode("animals")')
+        live_before = g.js('JSON.stringify(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)]))')
+        check('live: gebruikt de bestaande sleutels zonder prefix',
+              g.js('Object.keys(localStorage).sort().join()') == 'sudokuKids_current,sudokuKids_progress,sudokuKids_settings')
+        check('live: cache heet sudoku-kids-v3', g.js('caches.keys()') == ['sudoku-kids-v3'], g.js('caches.keys()'))
+
+        g.page.goto(test_url)
+        g.page.wait_for_function('navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL.includes("-test/")', timeout=15000)
+        check('test: label TEST zichtbaar op elk scherm',
+              g.js('(() => { const b = document.querySelector(".test-badge"); const r = b.getBoundingClientRect(); return b.textContent.startsWith("TEST") && r.width > 0 && r.top >= 0; })()'))
+        check('test: titel begint met TEST', g.page.title().startswith('TEST'))
+        check('test: eigen service-worker-scope',
+              g.js('navigator.serviceWorker.getRegistrations().then(rs => rs.map(r => new URL(r.scope).pathname).sort().join())')
+              == '/sudoku-kids-test/,/sudoku-kids/')
+        check('test: begint zonder de sterren van live', g.js('getTotalStars()') == 0 and g.js('settings.displayMode') == 'numbers')
+        g.start()
+        g.js('startLevel(0, true)')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        check('test: slaat op onder test_-sleutels',
+              g.js('JSON.parse(localStorage.getItem("test_sudokuKids_progress")).w0_l0.stars') == 3)
+        g.page.click('#btn-win-home')
+        g.page.click('#btn-levels-back')
+        g.page.click('#btn-worlds-settings')
+        g.page.select_option('#setting-language', 'fr')
+        g.page.click('#btn-reset-progress')
+        g.page.click('#btn-confirm-yes')
+        check('test: voortgang wissen wist alleen de test', g.js('localStorage.getItem("test_sudokuKids_progress")') == '{}')
+        check('live-opslag is byte voor byte ongewijzigd na spelen, instellen en wissen in de test',
+              g.js('JSON.stringify(Object.keys(localStorage).filter(k => !k.startsWith("test_")).sort().map(k => [k, localStorage.getItem(k)]))') == live_before)
+        check('twee caches naast elkaar: live en test', g.js('caches.keys().then(k => k.sort())') == ['sudoku-kids-test-v3', 'sudoku-kids-v3'], g.js('caches.keys()'))
+        g.page.goto(live_url)
+        check('terug op live: sterren, taal en onafgemaakt spel staan er nog',
+              g.js('getTotalStars()') == 3 and g.js('settings.language') == 'nl' and g.js('settings.displayMode') == 'animals'
+              and g.js('JSON.parse(localStorage.getItem("sudokuKids_current")).i') == 1)
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
         browser.close()
 
     failed = results.count(False)

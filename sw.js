@@ -5,6 +5,14 @@
 // Bump CACHE_VERSION on every release so players get the update.
 // ============================================================
 const CACHE_VERSION = 'sudoku-kids-v3';
+
+// Test copy (folder "test" or "…-test"): its own cache name, so the test and
+// the live version never share or delete each other's files. TEST_BUILD is
+// filled in by the test deploy (commit id), so every test push is a new version.
+const TEST_BUILD = '';
+const IS_TEST = /(^|\/)(test|[^/]+-test)(\/|$)/.test(self.location.pathname);
+const CACHE_FAMILY = IS_TEST ? 'sudoku-kids-test-' : 'sudoku-kids-v';
+const CACHE_NAME = IS_TEST ? CACHE_VERSION.replace('sudoku-kids-', CACHE_FAMILY) + (TEST_BUILD ? '-' + TEST_BUILD : '') : CACHE_VERSION;
 const ASSETS = [
   './',
   './index.html',
@@ -23,16 +31,18 @@ const ASSETS = [
 // HTTP cache, or a new version could be built from old files).
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_VERSION)
+    caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
 
+// Activate: remove our own older caches. Other caches on this domain (the
+// test copy, other apps) are left alone.
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE_VERSION).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith(CACHE_FAMILY) && k !== CACHE_NAME).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -47,7 +57,7 @@ self.addEventListener('fetch', event => {
       return fetch(request).then(response => {
         if (response && response.status === 200 && response.type === 'basic') {
           const copy = response.clone();
-          caches.open(CACHE_VERSION).then(cache => cache.put(request, copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         }
         return response;
       }).catch(() => {

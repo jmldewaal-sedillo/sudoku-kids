@@ -67,8 +67,18 @@ MEASURE_JS = """
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    """Serveert het project op /, /sudoku-kids/ (live) en /sudoku-kids-test/ (test),
+    net als de twee GitHub Pages-sites op hetzelfde domein."""
+
     def log_message(self, *args):
         pass
+
+    def translate_path(self, path):
+        for prefix in ('/sudoku-kids-test/', '/sudoku-kids/'):
+            if path.startswith(prefix):
+                path = path[len(prefix) - 1:]
+                break
+        return super().translate_path(path)
 
 
 @contextlib.contextmanager

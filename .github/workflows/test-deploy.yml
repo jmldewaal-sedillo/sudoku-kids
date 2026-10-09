@@ -1,0 +1,61 @@
+name: Testversie
+
+# testen = push naar branch `test`  →  https://jmldewaal-sedillo.github.io/sudoku-kids-test/
+# live   = merge naar `main`        →  https://jmldewaal-sedillo.github.io/sudoku-kids/
+#
+# Deze workflow zet de inhoud van branch `test` in de aparte repository
+# jmldewaal-sedillo/sudoku-kids-test (GitHub Pages vanaf main). De live site
+# en de Pages-instellingen van deze repository worden niet aangeraakt.
+
+on:
+  push:
+    branches: [test]
+
+concurrency:
+  group: testversie
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Levels controleren
+        run: node tests/validate-levels.js
+
+      - name: Testkopie klaarzetten
+        run: |
+          BUILD="${GITHUB_SHA::7}"
+          mkdir site
+          cp -r index.html privacy.html style.css script.js puzzles.js i18n.js sw.js manifest.json icons screenshots site/
+          # Commit-id in het TEST-label en in de cache-naam: elke push is een nieuwe versie.
+          sed -i "s/^const TEST_BUILD = '';/const TEST_BUILD = '${BUILD}';/" site/script.js site/sw.js
+          grep -q "TEST_BUILD = '${BUILD}'" site/script.js
+          grep -q "TEST_BUILD = '${BUILD}'" site/sw.js
+          # Eigen naam, zodat een geïnstalleerde testversie herkenbaar is op het startscherm.
+          jq '.name = "TEST – " + .name | .short_name = "TEST Sudoku"' manifest.json > site/manifest.json
+          printf '{"commit":"%s","branch":"%s","built":"%s"}\n' "$GITHUB_SHA" "$GITHUB_REF_NAME" "$(date -u +%FT%TZ)" > site/version.json
+          touch site/.nojekyll
+
+      - name: Naar de test-repository pushen
+        env:
+          TEST_DEPLOY_KEY: ${{ secrets.TEST_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$TEST_DEPLOY_KEY" > ~/.ssh/test_deploy
+          chmod 600 ~/.ssh/test_deploy
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          cd site
+          git init -q -b main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Testversie van ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/test_deploy -o IdentitiesOnly=yes" \
+            git push -q --force git@github.com:jmldewaal-sedillo/sudoku-kids-test.git main
+          echo "Testversie: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (${GITHUB_SHA::7})" >> "$GITHUB_STEP_SUMMARY"

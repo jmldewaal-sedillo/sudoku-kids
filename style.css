@@ -842,6 +842,16 @@ label.settings-row { cursor: pointer; }
   .sudoku-cell.nudge { background: var(--yellow); }
 }
 
+/* ---------- TEST LABEL (only shown on the test copy) ---------- */
+.test-badge {
+  position: fixed; z-index: 1000;
+  top: env(safe-area-inset-top); left: 50%; transform: translateX(-50%);
+  background: #C62828; color: var(--white);
+  font-size: 11px; font-weight: 900; letter-spacing: 1px; line-height: 15px;
+  padding: 0 10px; border-radius: 0 0 8px 8px;
+  white-space: nowrap; pointer-events: none;
+}
+
 /* ---------- UTILITY ---------- */
 .hidden  { display:none !important; }
 

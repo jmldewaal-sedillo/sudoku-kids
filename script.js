@@ -13,10 +13,17 @@ const MAX_HINTS = 3;
 const WORLD_COUNT = 3;
 const ROOT_SCREENS = ['splash', 'worlds'];   // "back" leaves the app from here
 
+// Test copy: the app runs from a folder called "test" or ending in "-test"
+// (e.g. …/sudoku-kids-test/). It then uses its own storage and shows a TEST
+// label, so testing can never touch the stars of the live version.
+const IS_TEST = /(^|\/)(test|[^/]+-test)(\/|$)/.test(location.pathname);
+const KEY_PREFIX = IS_TEST ? 'test_' : '';
+const TEST_BUILD = '';   // filled in by the test deploy (commit id), shown in the TEST label
+
 // localStorage keys – never rename these, players would lose their stars.
-const KEY_PROGRESS = 'sudokuKids_progress';
-const KEY_SETTINGS = 'sudokuKids_settings';
-const KEY_CURRENT  = 'sudokuKids_current';    // the game that is being played right now
+const KEY_PROGRESS = KEY_PREFIX + 'sudokuKids_progress';
+const KEY_SETTINGS = KEY_PREFIX + 'sudokuKids_settings';
+const KEY_CURRENT  = KEY_PREFIX + 'sudokuKids_current';    // the game that is being played right now
 
 // ============================================================
 // STATE
@@ -852,9 +859,21 @@ function registerSW() {
 }
 
 // ============================================================
+// TEST LABEL (only on the test copy, see IS_TEST)
+// ============================================================
+function showTestLabel() {
+  const badge = document.createElement('div');
+  badge.className = 'test-badge';
+  badge.textContent = TEST_BUILD ? 'TEST ' + TEST_BUILD : 'TEST';
+  document.body.appendChild(badge);
+  document.title = 'TEST · ' + document.title;
+}
+
+// ============================================================
 // INIT
 // ============================================================
 function init() {
+  if (IS_TEST) showTestLabel();
   loadAll();
   applyTranslations();
   initEventListeners();

@@ -3,6 +3,31 @@
 Een sudoku-spel voor kinderen als PWA: 3 werelden, 105 levels, 3 soorten sudoku
 (standaard, X-Sudoku, fruit), in het Nederlands, Engels, Duits en Frans.
 
+## Testen en live zetten
+
+**testen = push naar branch `test`, live = merge naar `main`.**
+
+| | Testversie | Live versie |
+|---|---|---|
+| Link | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ | https://jmldewaal-sedillo.github.io/sudoku-kids/ |
+| Bijwerken | `git push origin <jouw-branch>:test` | branch mergen naar `main` en pushen |
+| Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt rechtstreeks vanaf `main` |
+| Herkennen | rood label **TEST + commit-id** bovenin, titel "TEST · …" | geen label |
+| Opslag | sleutels met `test_` ervoor (`test_sudokuKids_progress`, …) | `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current` |
+| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v3-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v3` |
+
+Een testpush is na ongeveer een minuut online. Het commit-id in het label vertelt welke
+versie je ziet; staat er nog het oude, sluit de app dan en open hem opnieuw.
+
+De app ziet zelf dat hij een testkopie is: hij draait dan vanuit een map die `test` heet of
+op `-test` eindigt. In de code is er verder geen verschil, dus wat je test is wat live gaat.
+Sterren, instellingen en caches van test en live staan los van elkaar; `python3 tests/e2e.py`
+(onderdeel 11) bewijst dat spelen en wissen in de test de live-opslag niet verandert.
+
+Er staat niets van de testversie in de live map en de Pages-instellingen van deze repository
+zijn niet veranderd. De workflow gebruikt de secret `TEST_DEPLOY_KEY` (een deploy key die
+alleen in `sudoku-kids-test` mag schrijven).
+
 ## Bestanden
 
 | Bestand | Wat het doet |
@@ -16,6 +41,7 @@ Een sudoku-spel voor kinderen als PWA: 3 werelden, 105 levels, 3 soorten sudoku
 | `icons/` | App-iconen (`any` en `maskable`) |
 | `screenshots/` | Twee screenshots van 1080×1920 voor het installatievenster |
 | `privacy.html` | Privacyverklaring (NL + EN), ook offline beschikbaar |
+| `.github/workflows/test-deploy.yml` | Zet branch `test` op de testlink |
 | `tests/validate-levels.js` | Controleert alle levels automatisch |
 | `tests/difficulty.js` | Meet de moeilijkheid per level |
 | `tests/e2e.py` | Speelt het spel automatisch en controleert de belangrijkste flows |
@@ -63,7 +89,7 @@ python3 tests/e2e.py && python3 tests/screenshots.py
 |---|---|
 | `node tests/validate-levels.js` | 105 levels geldig, één oplossing, zonder gokken, gelijk aan de snapshot |
 | `node tests/difficulty.js` (`--all` voor elk level) | moeilijkheidscurve per blok levels |
-| `python3 tests/e2e.py` | spelregels, opslaan, terug-knop, talen, toetsenbord, snelheid (CPU ×4), offline, geen externe verzoeken |
+| `python3 tests/e2e.py` | spelregels, opslaan, terug-knop, talen, toetsenbord, snelheid (CPU ×4), offline, geen externe verzoeken, test en live naast elkaar |
 | `python3 tests/screenshots.py [map]` | niets buiten beeld, alle knoppen ≥ 48×48 px, 0 console-errors; PNG's in `tests/out/` |
 
 De scripts starten zelf een lokale server; er hoeft niets te draaien.
