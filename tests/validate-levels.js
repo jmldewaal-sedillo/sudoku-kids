@@ -8,9 +8,14 @@
      3. exactly ONE solution (so the game never rejects a correct move)
      4. the same puzzle on every run (seeded, so saved stars stay valid)
      5. generation time (the game generates a level when it is opened)
+     6. solvable with simple logic only (no guessing needed)
+     7. identical to tests/levels.snapshot.json, so a change to puzzles.js
+        can never silently give players a different puzzle for a level.
+        After a DELIBERATE change: node tests/validate-levels.js --update-snapshot
    Exits with code 1 if anything is wrong.
    ============================================================ */
 'use strict';
+const fs = require('fs');
 const path = require('path');
 const E = require(path.join(__dirname, '..', 'puzzles.js'));
 
@@ -33,6 +38,8 @@ for (const lv of E.LEVEL_PLAN) {
   const n = E.countSolutions(p.given, lv.size, diag, 2);
   if (n !== 1) errors.push(`${label}: ${n === 0 ? 'onoplosbaar' : 'meer dan één oplossing'}`);
 
+  if (!E.solvableBySingles(p.given, lv.size, diag)) errors.push(`${label}: niet op te lossen zonder gokken`);
+
   const again = E.generatePuzzle(lv.size, diag, lv.target, lv.seed);
   if (again.given.join() !== p.given.join()) errors.push(`${label}: puzzel is niet stabiel tussen runs`);
 
@@ -46,6 +53,22 @@ E.LEVEL_PLAN.forEach(lv => {
   if (seen.has(key)) errors.push(`Level ${lv.globalIndex} is gelijk aan level ${seen.get(key)}`);
   seen.set(key, lv.globalIndex);
 });
+
+// Snapshot: every level must still be exactly the puzzle that was published.
+const SNAPSHOT = path.join(__dirname, 'levels.snapshot.json');
+const current = E.LEVEL_PLAN.map(lv => E.getPuzzle(lv.globalIndex).given.join(''));
+if (process.argv.includes('--update-snapshot')) {
+  fs.writeFileSync(SNAPSHOT, JSON.stringify(current, null, 0).replace(/,/g, ',\n') + '\n');
+  console.log('Snapshot bijgewerkt: tests/levels.snapshot.json');
+} else if (!fs.existsSync(SNAPSHOT)) {
+  errors.push('tests/levels.snapshot.json ontbreekt (maak hem met --update-snapshot)');
+} else {
+  const saved = JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8'));
+  if (saved.length !== current.length) errors.push(`Snapshot heeft ${saved.length} levels, het spel ${current.length}`);
+  current.forEach((g, i) => {
+    if (saved[i] !== undefined && saved[i] !== g) errors.push(`Level ${i} (globalIndex) wijkt af van de snapshot: de puzzel is veranderd`);
+  });
+}
 
 perWorld.forEach((rows, w) => {
   const sizes = [...new Set(rows.map(r => r.lv.size))].map(s => `${s}x${s}`).join(', ');
@@ -62,3 +85,4 @@ if (errors.length) {
   process.exit(1);
 }
 console.log('\n✅ Alle levels geldig, uniek oplosbaar en stabiel.');
+console.log('✅ Zonder gokken op te lossen en gelijk aan de snapshot.');

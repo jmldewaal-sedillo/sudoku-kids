@@ -12,7 +12,7 @@
                 (hidden single)
      start    = aantal vakjes dat bij de start meteen zo te vinden is
    Een level met makkelijk < 100% vraagt gokken of gevorderde technieken.
-   Exitcode 1 als een level in wereld 0 of 1 niet 100% "makkelijk" is.
+   Exitcode 1 als een level niet 100% "makkelijk" is.
    ============================================================ */
 'use strict';
 const path = require('path');
@@ -20,27 +20,9 @@ const E = require(path.join(__dirname, '..', 'puzzles.js'));
 
 function analyse(lv) {
   const diag = lv.type === 'xsudoku';
-  const { units, peers } = E.getUnits(lv.size, diag);
   const g = E.getPuzzle(lv.globalIndex).given.slice();
   const open = g.filter(v => !v).length;
-  const cands = i => {
-    const used = new Set(peers[i].map(p => g[p]));
-    const out = [];
-    for (let v = 1; v <= lv.size; v++) if (!used.has(v)) out.push(v);
-    return out;
-  };
-  const findSingles = () => {
-    const found = new Map();
-    g.forEach((v, i) => { if (!v) { const c = cands(i); if (c.length === 1) found.set(i, c[0]); } });
-    units.forEach(u => {
-      for (let v = 1; v <= lv.size; v++) {
-        if (u.some(i => g[i] === v)) continue;
-        const spots = u.filter(i => !g[i] && cands(i).includes(v));
-        if (spots.length === 1) found.set(spots[0], v);
-      }
-    });
-    return found;
-  };
+  const findSingles = () => E.findSingles(g, lv.size, diag);
   let solved = 0, rounds = 0, start = 0;
   for (;;) {
     const found = findSingles();
@@ -78,7 +60,7 @@ blocks.forEach(b => {
   const f = b.rows[0], l = b.rows[b.rows.length - 1];
   const easy = b.rows.filter(r => r.easyPct === 100).length;
   const min = Math.min(...b.rows.map(r => r.easyPct));
-  if (f.lv.world < 2) bad += b.rows.length - easy;
+  bad += b.rows.length - easy;
   console.log(
     `${WORLD_NAMES[f.lv.world].padEnd(16)} ${(f.lv.indexInWorld + 1 + '-' + (l.lv.indexInWorld + 1)).padEnd(7)} ` +
     `${(f.lv.size + 'x' + f.lv.size + ' ' + f.lv.type).padEnd(14)} ${(f.givens + ' → ' + l.givens).padEnd(10)} ` +
@@ -86,7 +68,7 @@ blocks.forEach(b => {
 });
 
 if (bad) {
-  console.error(`\n❌ ${bad} level(s) in wereld 0/1 zijn niet met eenvoudige logica op te lossen.`);
+  console.error(`\n❌ ${bad} level(s) zijn niet met eenvoudige logica op te lossen.`);
   process.exit(1);
 }
-console.log('\n✅ Alle levels in wereld 0 en 1 zijn met eenvoudige logica op te lossen.');
+console.log('\n✅ Alle levels zijn met eenvoudige logica op te lossen (geen gokken nodig).');

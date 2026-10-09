@@ -126,9 +126,53 @@
     });
   }
 
+  // ---------- Logic solver (the two steps a child can do) ----------
+  // Returns Map(cell index -> value) of every empty cell that can be filled
+  // right now with simple logic:
+  //   - only one value still fits in the cell, or
+  //   - a value has only one possible place left in a row/column/box/diagonal.
+  function findSingles(grid, size, diagonal) {
+    const { units, peers } = getUnits(size, diagonal);
+    const full = (1 << (size + 1)) - 2;
+    const cand = grid.map((v, i) => {
+      if (v) return 0;
+      let used = 0;
+      const p = peers[i];
+      for (let k = 0; k < p.length; k++) used |= 1 << grid[p[k]];
+      return full & ~used;
+    });
+    const found = new Map();
+    cand.forEach((m, i) => { if (m && (m & (m - 1)) === 0) found.set(i, 31 - Math.clz32(m)); });
+    for (const u of units) {
+      for (let v = 1; v <= size; v++) {
+        let spot = -1, count = 0;
+        for (const i of u) {
+          if (grid[i] === v) { count = 99; break; }
+          if (cand[i] & (1 << v)) { spot = i; count++; }
+        }
+        if (count === 1) found.set(spot, v);
+      }
+    }
+    return found;
+  }
+
+  function solvableBySingles(given, size, diagonal) {
+    const g = given.slice();
+    let open = g.filter(v => !v).length;
+    while (open) {
+      const found = findSingles(g, size, diagonal);
+      if (!found.size) return false;
+      found.forEach((v, i) => { g[i] = v; });
+      open -= found.size;
+    }
+    return true;
+  }
+
   // ---------- Generator ----------
   // Builds a random full solution, then removes cells one by one,
   // only keeping a removal if the puzzle still has exactly ONE solution.
+  // If the result needs guessing or advanced techniques, removed cells are
+  // put back (last removed first) until simple logic is enough again.
   function generatePuzzle(size, diagonal, targetGivens, seed) {
     const rng = makeRng(seed);
     const solution = new Array(size * size).fill(0);
@@ -138,12 +182,27 @@
     const given = solution.slice();
     let givens = given.length;
     const order = shuffleWith([...Array(given.length).keys()], rng);
+    const removed = [];
     for (const idx of order) {
       if (givens <= targetGivens) break;
       const keep = given[idx];
       given[idx] = 0;
       if (countSolutions(given, size, diagonal, 2) !== 1) given[idx] = keep;
-      else givens--;
+      else { givens--; removed.push(idx); }
+    }
+    if (!solvableBySingles(given, size, diagonal)) {
+      const back = [];
+      while (removed.length && !solvableBySingles(given, size, diagonal)) {
+        const idx = removed.pop();
+        given[idx] = solution[idx];
+        back.push(idx);
+      }
+      // Not every cell that was put back is needed: take out the ones that are not.
+      for (const idx of back) {
+        given[idx] = 0;
+        if (!solvableBySingles(given, size, diagonal)) given[idx] = solution[idx];
+      }
+      givens = given.filter(v => v !== 0).length;
     }
     return { given, solution, givens };
   }
@@ -202,7 +261,7 @@
 
   const api = {
     LEVEL_PLAN, getPuzzle, generatePuzzle, countSolutions,
-    isValidSolution, getUnits, boxDims, makeRng,
+    isValidSolution, getUnits, boxDims, makeRng, findSingles, solvableBySingles,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SudokuEngine = api;
