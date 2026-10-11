@@ -4,11 +4,11 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v3 staat live; v6 staat op de testlink (v5 + 100 badges, meldingen, geschiedenis, levels gesorteerd op moeilijkheid, privacyverklaring in 5 talen) |
+| **Huidige fase** | v6 staat live (5 werelden / 450 levels, kawaii-iconen, muziek, 10 talen, profielen, 100 badges, meldingen, geschiedenis) |
 | **Laatste update** | 2026-10-11 |
-| **Volgende stap** | v6 nalopen op de testlink (zie Testen), daarna mergen naar `main`; dan de groep "Voor publiceren" |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, nu gelijk aan `feature-2026-10-11` (cache v6) |
-| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v3` (live sinds 2026-10-11) |
+| **Volgende stap** | De groep "Voor publiceren": beleid en privacyverklaring laten nakijken, vertalingen laten nakijken, `assetlinks.json`, inpakken met PWABuilder |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, gelijk aan live (cache v6) |
+| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v6` (live sinds 2026-10-11; v3 stond live van 's ochtends tot 's middags) |
 
 ---
 
@@ -22,7 +22,7 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live: `sudoku-kids-v3`, test: `sudoku-kids-v6`), anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live en test nu: `sudoku-kids-v6`), anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, build-stappen, externe CDN's, tracking, advertenties of accounts.** `tests/e2e.py` controleert dat er geen verzoek naar een ander domein gaat.
@@ -32,6 +32,14 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-11 · v6 live gezet (Claude Code)
+- Gebruiker heeft v6 op de testlink nagelopen en akkoord gegeven.
+- `feature-2026-10-11` gemerged naar `main` (fast-forward) en gepusht. Live gaat daarmee in één keer van v3 naar v6 (v4 en v5 hebben alleen op de testlink gestaan).
+- Vooraf: `node tests/validate-levels.js` → drie keer ✅; `python3 tests/e2e.py` → 294/294 en `python3 tests/screenshots.py` → ✅ op dezelfde commit (`ed2f374`).
+- Update v3 → v6 op de echte live site gecontroleerd met een blijvend browserprofiel waarin eerst v3 gespeeld is: zie het rapport van deze sessie (sterren, taal, onafgemaakt spel en de drie oude sleutels behouden).
+
+**Bestanden geraakt:** ROADMAP.md.
 
 ### 2026-10-11 · v6 op de testlink: bovenbalk, meldingen, 100 badges, geschiedenis (Claude Code, branch `feature-2026-10-11`)
 Vooraf gevraagd (H): de weergave van de levels sorteren op moeilijkheid, zonder de opslag te raken → gekozen en gebouwd.
