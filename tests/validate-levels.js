@@ -27,7 +27,7 @@ const path = require('path');
 const E = require(path.join(__dirname, '..', 'puzzles.js'));
 
 const WORLD_NAMES = ['Dierenbos', 'Snoepjesfabriek', 'Ruimte-raket', 'Boerderij', 'Jungle'];
-const LEVELS_PER_SIZE = 50;        // every world: 50 levels per grid size it contains
+const LEVELS_PER_SIZE = 50;        // every world: at least 50 levels per grid size it contains
 const errors = [];
 let slowest = 0;
 const perWorld = Array.from({ length: E.WORLD_COUNT }, () => []);
@@ -168,7 +168,7 @@ perWorld.forEach((rows, w) => {
   const sizes = [...new Set(rows.map(r => r.lv.size))];
   const parts = sizes.map(sz => {
     const n = rows.filter(r => r.lv.size === sz).length;
-    if (n !== LEVELS_PER_SIZE) errors.push(`${WORLD_NAMES[w]}: ${n} levels van ${sz}x${sz}, verwacht ${LEVELS_PER_SIZE}`);
+    if (n < LEVELS_PER_SIZE) errors.push(`${WORLD_NAMES[w]}: ${n} levels van ${sz}x${sz}, minimaal ${LEVELS_PER_SIZE}`);
     return `${n}× ${sz}x${sz}`;
   });
   console.log(`${WORLD_NAMES[w].padEnd(16)} ${String(rows.length).padStart(3)} levels | ${parts.join(' · ')}`);

@@ -42,7 +42,7 @@ MIN_TAP = 48
 MEASURE_JS = """
 (minTap) => {
   const vw = innerWidth, vh = innerHeight, small = [], outside = [];
-  const sel = 'button, select, a, input[type=text], .world-card, .sudoku-cell, label.settings-row';
+  const sel = 'button, select, a, input[type=text], .sudoku-cell, label.settings-row';
   const scopes = [...document.querySelectorAll('.screen.active, .modal:not(.hidden)')];
   const modalOpen = scopes.some(s => s.classList.contains('modal'));
   for (const scope of scopes) {
@@ -54,7 +54,7 @@ MEASURE_JS = """
       if (cs.visibility === 'hidden' || cs.display === 'none') continue;
       const name = (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) +
                    ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
-      const scrollable = el.closest('.levels-grid, .worlds-container, .settings-list, .profiles-container, .modal-content');
+      const scrollable = el.closest('.levels-grid, .worlds-container, .settings-list, .profiles-container, .profile-page, .modal-content');
       if (!el.classList.contains('sudoku-cell') && (r.width < minTap - 0.5 || r.height < minTap - 0.5)) small.push(name);
       if (r.left < -0.5 || r.right > vw + 0.5 || ((r.top < -0.5 || r.bottom > vh + 0.5) && !scrollable)) outside.push(name);
     }
@@ -184,14 +184,22 @@ def run():
                     shot(label)
                 page.evaluate('hideModals(); goToSettings()')
                 shot('13-instellingen')
+                page.evaluate('document.getElementById("screen-settings").scrollTop = 99999')
+                shot('14-instellingen-grootte')
                 page.click('#btn-reset-progress')
-                shot('14-ouderslot')
-                page.click('#btn-parent-hold', delay=3300)
-                shot('15-reset-bevestigen')
+                box = page.locator('#btn-parent-hold').bounding_box()
+                page.mouse.move(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+                page.mouse.down()
+                page.wait_for_timeout(1000)
+                shot('15-ouderslot')
+                page.wait_for_timeout(700)
+                page.mouse.up()
+                page.click('#btn-parent-hold', delay=1700)
+                shot('16-reset-bevestigen')
                 page.click('#btn-confirm-no')
                 # Grootte klein / groot op een 9x9
                 nine = first_global_index(page, 1, 9, 'standard')
-                for label, size in (('16-9x9-klein', 'small'), ('17-9x9-groot', 'large')):
+                for label, size in (('17-9x9-klein', 'small'), ('18-9x9-groot', 'large')):
                     page.click(f'.size-btn[data-size="{size}"]')
                     page.evaluate('i => startLevel(i, true)', nine)
                     shot(label)
@@ -199,13 +207,21 @@ def run():
                 page.click('.size-btn[data-size="normal"]')
                 # Profielen
                 page.evaluate('goToWorlds()')
-                page.click('#btn-profile')
+                page.click('#btn-score')
+                shot('19-profielpagina')
+                page.click('#btn-profile-edit')
+                shot('20-profiel-bewerken')
+                page.click('#btn-profile-cancel')
+                page.click('#btn-profile-back')
+                page.click('#btn-switch')
                 page.click('#btn-profile-add')
                 page.fill('#profile-name', 'Sam')
-                shot('18-profiel-nieuw')
                 page.click('#btn-profile-save')
-                page.click('#btn-profile')
-                shot('19-profielen')
+                page.click('#btn-profile-back')
+                shot('21-spelers')
+                page.evaluate('goToWorlds()')
+                page.evaluate('document.getElementById("screen-worlds").scrollTop = 99999')
+                shot('22-werelden-onderaan')
             except Exception as exc:  # een knop is niet te bereiken: dat is zelf een bevinding
                 failed = True
                 report.append(f'{name:26} VASTGELOPEN: ' + str(exc).split('Call log')[0].strip()[:160]

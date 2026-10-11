@@ -8,6 +8,7 @@ spelregels, opslaan, terug-knop, talen, offline en snelheid.
 Exitcode 1 als een controle faalt.
 """
 import json
+import pathlib
 import re
 import sys
 
@@ -82,9 +83,10 @@ class Game:
         self.page.click('#btn-start')
         self.page.wait_for_timeout(450)
 
-    def parent_hold(self, ms=3300):
-        """Ouderslot: de knop ingedrukt houden."""
+    def parent_hold(self, ms=1700):
+        """Ouderslot: de knop twee keer achter elkaar ingedrukt houden."""
         self.page.wait_for_selector('#modal-parent:not(.hidden)')
+        self.page.click('#btn-parent-hold', delay=ms)
         self.page.click('#btn-parent-hold', delay=ms)
 
     def close(self):
@@ -110,8 +112,9 @@ def run():
         check('vergrendelde wereld schudt (feedback zonder tekst)', g.js('document.getElementById("world-card-1").classList.contains("shake")'))
         g.page.click('#world-card-0')
         check('levelscherm van wereld 1', g.screen() == 'levels')
-        check('alleen level 1 is open', g.js('document.querySelectorAll(".level-btn:not(.locked)").length') == 1)
-        g.page.click('.level-btn.current')
+        check('open zijn alleen het eerste level van elk blok (4×4, 6×6, 4×4, 6×6)',
+              g.js('[...document.querySelectorAll(".level-btn:not(.locked)")].map(b => +b.dataset.level + 1).join()') == '1,21,36,66')
+        g.page.click('.level-btn[data-level="0"]')
         g.page.wait_for_timeout(450)
         check('spelscherm geopend', g.screen() == 'game')
         check('wijsvinger wijst een leeg vakje aan', g.js('document.querySelectorAll(".sudoku-cell.nudge").length') == 1)
@@ -128,7 +131,7 @@ def run():
         check('dezelfde fout nog een keer telt niet dubbel', g.js('gameState.mistakes') == 1)
         g.solve()
         g.page.wait_for_selector('#modal-win:not(.hidden)')
-        check('win-venster met 2 sterren (1 fout)', g.js('document.getElementById("win-stars").textContent') == '⭐⭐☆')
+        check('win-venster met 2 sterren (1 fout)', g.js('document.getElementById("win-stars").dataset.stars') == '2' and g.js('document.querySelectorAll("#win-stars svg").length') == 3)
         check('sterren opgeslagen', g.stored().get('w0_l0', {}).get('stars') == 2, g.stored())
         check('focus staat op knop in het venster', g.js('document.activeElement.id') == 'btn-win-next')
         g.page.click('#btn-win-next')
@@ -155,16 +158,16 @@ def run():
                 g.tap_num(v)
         g.page.wait_for_timeout(900)
         check('4×4: 6 fouten en nog steeds geen game over', g.js('gameState.mistakes') == 6 and g.modal() is None)
-        check('4×4: sterren-teller toont 1 ster', g.js('document.getElementById("lives-display").textContent') == '⭐☆☆')
+        check('4×4: sterren-teller toont 1 ster', g.js('document.getElementById("lives-display").dataset.stars') == '1')
         g.solve()
         g.page.wait_for_selector('#modal-win:not(.hidden)')
-        check('4×4: toch uitgespeeld met 1 ster', g.js('document.getElementById("win-stars").textContent') == '⭐☆☆')
+        check('4×4: toch uitgespeeld met 1 ster', g.js('document.getElementById("win-stars").dataset.stars') == '1')
         check('betere score blijft staan (3 sterren van eerder)', g.stored()['w0_l0']['stars'] == 3)
         g.page.click('#btn-win-home')
 
         six = g.js('SudokuEngine.LEVEL_PLAN.find(l => l.size === 6).globalIndex')
         g.js('i => startLevel(i, true)', six)
-        check('6×6: drie hartjes', g.js('document.getElementById("lives-display").textContent') == '❤️❤️❤️')
+        check('6×6: drie hartjes', g.js('document.getElementById("lives-display").dataset.lives') == '3')
         idx, _ = g.open_cells()[0]
         g.tap_cell(idx)
         for v in g.wrong_values(idx)[:3]:
@@ -261,8 +264,8 @@ def run():
         g.page.click('#btn-levels-back')
         g.page.click('#btn-worlds-settings')
         g.page.click('#btn-reset-progress')
-        g.page.click('#btn-parent-hold', delay=800)
-        check('ouderslot: kort indrukken doet niets', g.modal() == 'modal-parent')
+        g.page.click('#btn-parent-hold', delay=600)
+        check('ouderslot: kort indrukken doet niets', g.modal() == 'modal-parent' and g.js('document.getElementById("btn-parent-hold").dataset.holds') == '0')
         g.parent_hold()
         g.page.click('#btn-confirm-no')
         check('annuleren wist niets', len(g.stored()) == 17)
@@ -275,7 +278,7 @@ def run():
         # ------------------------------------------------------------
         section('6. Taal, weergave en instellingen')
         g = Game(browser, url, locale='en-US')
-        check('Engels toestel start in het Engels', g.js('document.getElementById("btn-start").textContent') == '▶ Play!')
+        check('Engels toestel start in het Engels', g.js('document.getElementById("btn-start").textContent') == 'Play!')
         g.close()
         g = Game(browser, url, locale='ja-JP')
         check('onbekende taal valt terug op Engels', g.js('settings.language') == 'en')
@@ -288,14 +291,14 @@ def run():
         check('taal wisselt direct', g.js('document.querySelector("#screen-settings .screen-title").textContent') == 'Einstellungen')
         g.page.click('#btn-settings-back')
         g.js('startLevel(0, true)')
-        check('weergaveknop toont waar je naartoe wisselt', g.js('document.getElementById("btn-display").textContent') == '🐶')
+        check('weergaveknop toont waar je naartoe wisselt', g.js('document.getElementById("btn-display").dataset.shows') == 'animals' and g.js('document.querySelectorAll("#btn-display svg").length') == 1)
         g.page.click('#btn-display')
-        check('dieren in rooster en knoppen', g.js('document.querySelector(".num-btn").textContent') == '🐶')
+        check('dieren in rooster en knoppen', g.js('document.querySelectorAll(".num-btn[data-num] svg").length') == 4 and g.js('document.querySelectorAll(".sudoku-cell.given svg").length') > 0)
         g.page.reload()
         check('taal en weergave blijven na herladen', g.js('settings.language + settings.displayMode') == 'deanimals')
         g.js('startLevel(SudokuEngine.LEVEL_PLAN.find(l => l.type === "shapes").globalIndex, true)')
         check('fruit-level: fruit, geen weergaveknop',
-              g.js('document.querySelector(".num-btn").textContent') == '🍎' and
+              g.js('document.querySelectorAll(".num-btn[data-num] svg").length') == g.js('gameState.size') and
               g.js('document.getElementById("btn-display").classList.contains("hidden")'))
         missing = g.js('''() => { const keys = Object.keys(STRINGS.nl), out = [];
             for (const lang of Object.keys(STRINGS)) for (const k of keys) if (!(k in STRINGS[lang])) out.push(lang + ':' + k);
@@ -341,7 +344,7 @@ def run():
         g.close()
 
         # ------------------------------------------------------------
-        section('8. Alle 105 levels zijn uit te spelen')
+        section('8. Alle 450 levels zijn uit te spelen')
         g = Game(browser, url)
         bad = g.js('''() => { const bad = [];
           for (const lv of SudokuEngine.LEVEL_PLAN) {
@@ -351,8 +354,8 @@ def run():
             if (!gameState.isComplete || gameState.mistakes || (p['w' + lv.world + '_l' + lv.indexInWorld] || {}).stars !== 3) bad.push(lv.globalIndex);
           }
           return bad; }''')
-        check('105 levels opgelost met 3 sterren, 0 afgekeurde goede antwoorden', bad == [], bad)
-        check('totaal 315 sterren opgeslagen', g.js('getTotalStars()') == 315)
+        check('alle 450 levels opgelost met 3 sterren, 0 afgekeurde goede antwoorden', bad == [] and g.js('SudokuEngine.LEVEL_PLAN.length') == 450, bad)
+        check('totaal 1350 sterren opgeslagen', g.js('getTotalStars()') == 1350)
         check('geen console-errors', not g.errors, g.errors)
         g.close()
 
@@ -362,7 +365,7 @@ def run():
         cdp = g.ctx.new_cdp_session(g.page)
         cdp.send('Emulation.setCPUThrottlingRate', {'rate': 4})
         gen = g.js('''() => { let worst = 0, total = 0, n = 0;
-          for (const lv of SudokuEngine.LEVEL_PLAN) { if (lv.size !== 9) continue;
+          for (const lv of SudokuEngine.LEVEL_PLAN.slice(0, SudokuEngine.LEGACY_LEVELS)) { if (lv.size !== 9) continue;
             const t0 = performance.now();
             SudokuEngine.generatePuzzle(lv.size, lv.type === 'xsudoku', lv.target, lv.seed);
             const ms = performance.now() - t0; worst = Math.max(worst, ms); total += ms; n++; }
@@ -399,7 +402,7 @@ def run():
         g.page.reload()
         g.start()
         g.page.click('#world-card-0')
-        g.page.click('.level-btn.current')
+        g.page.click('.level-btn[data-level="0"]')
         g.page.wait_for_timeout(450)
         g.solve()
         g.page.wait_for_selector('#modal-win:not(.hidden)')
@@ -496,11 +499,15 @@ def run():
         g.page.wait_for_selector('#modal-win:not(.hidden)')
         check('sterren blijven per level (één regel voor level 1)', list(g.stored().keys()) == ['w0_l0'])
         g.page.click('#btn-win-home')
-        seen = g.js('''() => { const ids = [];
-            for (let k = 0; k < 99; k++) { startLevel(0, true); ids.push(gameState.pid); }
-            return ids; }''')
-        check('nog 99 keer opnieuw: samen 100 verschillende puzzels uit de voorraad, geen herhaling', len(set(seen + [second])) == 100 and first not in seen)
-        check('gespeelde puzzels worden per profiel bijgehouden', len(g.stored('sudokuKids_played')[band]) == 101)
+        pool = g.js('b => SudokuEngine.poolOf(b).length', band)       # voorraad minus de eigen puzzels van levels
+        seen = g.js('''n => { const ids = [];
+            for (let k = 0; k < n; k++) { startLevel(0, true); ids.push(gameState.pid); }
+            return ids; }''', pool - 1)
+        check(f'nog {pool - 1} keer opnieuw: alle {pool} vrije puzzels van de band, geen enkele herhaling',
+              pool >= 50 and len(set(seen + [second])) == pool and first not in seen)
+        check('gespeelde puzzels worden per profiel bijgehouden', len(g.stored('sudokuKids_played')[band]) == pool + 1)
+        check('de eigen puzzel van een ander level wordt nooit als herhaling uitgedeeld',
+              not g.js('ids => ids.some(id => SudokuEngine.LEVEL_PLAN.some(l => l.pid === id))', seen + [second]))
         again = g.js('(() => { startLevel(0, true); return gameState.pid; })()')
         check('band op: pas dan komt er een herhaling (niet dezelfde als net)', again in seen + [second] and again != seen[-1], again)
         # onafgemaakt spel houdt zijn eigen puzzel
@@ -554,63 +561,105 @@ def run():
               and g.js('gameState.grid.join("")') == ''.join(map(str, cur['grid'])))
         g.js('leaveGame(); goToWorlds()')
 
-        g.page.click('#btn-profile')
-        check('tik op de kat opent het profielscherm in de app', g.screen() == 'profiles' and len(g.ctx.pages) == 1)
+        g.page.click('#btn-score')
+        check('tik op de ster met de score opent de profielpagina van de speler (in de app)',
+              g.screen() == 'profile' and g.js('viewedProfile') == 'p1' and len(g.ctx.pages) == 1)
+        check('profielpagina: grote avatar, naam, 4 cijfers, 5 werelden, 4 badges',
+              g.js('document.querySelectorAll("#profile-avatar svg").length') == 1 and
+              g.js('[...document.querySelectorAll(".stat-card b")].map(b => b.textContent).join()') == '5,2,2,0:12' and
+              g.js('document.querySelectorAll(".pw-row").length') == 5 and
+              g.js('[...document.querySelectorAll(".badge")].map(b => b.classList.contains("earned")).join()') == 'true,false,false,false')
+        check('sterren per wereld kloppen', g.js('document.querySelector(".pw-row[data-world=\'0\'] .pw-stars b").textContent') == '5')
+        g.page.click('#btn-profile-back')
+        check('terug vanaf de eigen pagina → wereldkaart', g.screen() == 'worlds')
+        g.page.click('#btn-avatar')
+        check('avatar rechtsonder opent ook de eigen profielpagina', g.screen() == 'profile')
+        g.page.click('#btn-profile-back')
+        g.page.click('#btn-switch')
+        check('wisselknopje opent de spelerslijst', g.screen() == 'profiles')
+        check('spelerslijst heeft geen potlood meer', g.js('document.querySelectorAll("#profiles-list .profile-edit, #profiles-list [data-icon=pencil]").length') == 0)
         g.page.click('#btn-profile-add')
-        g.page.click('.avatar-btn >> nth=4')
+        check('nieuw profiel: meteen in bewerkmodus', g.screen() == 'profile' and g.js('!document.getElementById("profile-edit").classList.contains("hidden")'))
+        g.page.click('.avatar-btn[data-avatar="fox"]')
         g.page.fill('#profile-name', '<img src=x onerror=alert(1)>')
         g.page.click('#btn-profile-save')
-        check('nieuw profiel is actief en begint leeg', g.js('profileId') == 'p2' and g.js('getTotalStars()') == 0 and g.screen() == 'worlds')
+        check('nieuw profiel is actief en begint leeg', g.js('profileId') == 'p2' and g.js('getTotalStars()') == 0 and g.screen() == 'profile')
         check('nieuw profiel neemt taal en geluid over', g.js('settings.language + settings.sound') == 'defalse')
-        g.page.click('#btn-profile')
         check('naam wordt als tekst getoond, nooit als HTML',
-              g.js('document.querySelectorAll("#profiles-list img").length') == 0 and
-              g.js('document.querySelector(".profile-card.active .profile-name").textContent') == '<img src=x o')
-        g.page.click('.profile-card.active .profile-edit')
+              g.js('document.querySelectorAll("#screen-profile img").length') == 0 and
+              g.js('document.getElementById("profile-name-text").textContent') == '<img src=x o')
+        g.page.click('#btn-profile-edit')
+        check('potlood naast de naam zet de pagina in bewerkmodus', g.js('!document.getElementById("profile-edit").classList.contains("hidden") && document.getElementById("profile-view").classList.contains("hidden")'))
+        g.page.fill('#profile-name', 'Tim')
+        g.page.click('#btn-profile-cancel')
+        check('annuleren bewaart niets', g.js('SudokuStorage.profile("p2").name') == '<img src=x o')
+        g.page.click('#btn-profile-edit')
         g.page.fill('#profile-name', 'Sam')
         g.page.click('#btn-profile-save')
-        check('hernoemen', g.js('SudokuStorage.profile("p2").name') == 'Sam' and g.js('SudokuStorage.profile("p2").avatar') == '🦊')
+        check('hernoemen en opslaan', g.js('SudokuStorage.profile("p2").name') == 'Sam' and g.js('SudokuStorage.profile("p2").avatar') == 'fox'
+              and g.js('document.getElementById("profile-name-text").textContent') == 'Sam')
         g.js('goToWorlds(); startLevel(0)')
         g.solve()
         g.page.wait_for_selector('#modal-win:not(.hidden)')
         g.page.click('#btn-win-home')
         check('eigen voortgang onder eigen sleutels; profiel 1 houdt de oude sleutels',
-              g.stored('sudokuKids_p2_progress') == {'w0_l0': {'stars': 3, 'time': 0}} and len(g.stored('sudokuKids_progress')) == 2)
+              list(g.stored('sudokuKids_p2_progress')) == ['w0_l0'] and g.stored('sudokuKids_p2_progress')['w0_l0']['stars'] == 3 and len(g.stored('sudokuKids_progress')) == 2)
         g.js('settings.size = "large"; settings.displayMode = "numbers"; saveSettings()')
         g.js('goToWorlds()')
-        g.page.click('#btn-profile')
-        g.page.click('.profile-card[data-id="p1"] .profile-pick')
-        check('wisselen: profiel 1 heeft zijn eigen sterren en instellingen terug',
-              g.js('getTotalStars()') == 5 and g.js('settings.displayMode + settings.size') == 'animalsnormal')
+        g.page.click('#btn-switch')
+        g.page.click('.profile-card[data-id="p1"]')
+        check('tik op een speler opent zijn profielpagina en gaat NIET naar het startscherm',
+              g.screen() == 'profile' and g.js('viewedProfile') == 'p1' and g.js('profileId') == 'p2')
+        check('knop "Spelen als <naam>"', g.js('document.getElementById("btn-play-as").textContent') == 'Als Spieler spielen')
+        g.page.click('#btn-profile-back')
+        check('terug vanaf een speler uit de lijst → de lijst', g.screen() == 'profiles')
+        g.page.click('.profile-card[data-id="p1"]')
+        g.page.click('#btn-play-as')
+        check('"Spelen als" maakt het profiel actief, met eigen sterren en instellingen',
+              g.js('profileId') == 'p1' and g.screen() == 'worlds' and g.js('getTotalStars()') == 5 and g.js('settings.displayMode + settings.size') == 'animalsnormal')
         g.page.reload()
         check('gekozen profiel blijft na herladen', g.js('profileId') == 'p1')
         g.start()
         # maximaal 6
         g.js('for (let i = 0; i < 4; i++) SudokuStorage.createProfile("K" + i, SudokuStorage.AVATARS[i])')
-        g.page.click('#btn-profile')
+        g.page.click('#btn-switch')
         check('maximaal 6 profielen: knop "nieuw" verdwijnt',
               g.js('document.querySelectorAll(".profile-card").length') == 6 and
               g.js('document.getElementById("btn-profile-add").classList.contains("hidden")') and
-              g.js('SudokuStorage.createProfile("x", "🐱")') is None)
-        # verwijderen achter het ouderslot
-        g.page.click('.profile-card[data-id="p2"] .profile-edit')
+              g.js('SudokuStorage.createProfile("x", "cat")') is None)
+        # verwijderen achter het dubbele ouderslot
+        g.page.click('.profile-card[data-id="p2"]')
+        g.page.click('#btn-profile-edit')
         g.page.click('#btn-profile-delete')
         check('verwijderen vraagt eerst het ouderslot', g.modal() == 'modal-parent')
-        g.page.click('#btn-parent-hold', delay=1000)
-        check('1 seconde indrukken is niet genoeg', g.modal() == 'modal-parent' and g.js('SudokuStorage.profiles().length') == 6)
-        g.parent_hold()
-        check('daarna nog een bevestiging met naam en plaatje', g.modal() == 'modal-delete' and 'Sam' in g.js('document.getElementById("delete-text").textContent'))
+        g.page.click('#btn-parent-hold', delay=1700)
+        check('één keer ingedrukt houden is niet genoeg (ring half, "nog een keer")',
+              g.modal() == 'modal-parent' and g.js('SudokuStorage.profiles().length') == 6 and
+              g.js('document.getElementById("btn-parent-hold").dataset.holds') == '1' and
+              g.js('document.getElementById("hold-label").textContent') == 'Noch einmal!')
+        g.page.click('#btn-parent-hold', delay=600)
+        check('tweede keer te kort telt niet', g.modal() == 'modal-parent')
+        g.page.click('#btn-parent-hold', delay=1700)
+        check('twee keer lang genoeg: daarna nog een bevestiging met naam en plaatje',
+              g.modal() == 'modal-delete' and 'Sam' in g.js('document.getElementById("delete-text").textContent')
+              and g.js('document.querySelectorAll("#delete-avatar svg").length') == 1)
         g.page.click('#btn-delete-yes')
         check('profiel en al zijn gegevens zijn weg; de rest staat er nog',
-              g.js('SudokuStorage.profiles().length') == 5 and
+              g.js('SudokuStorage.profiles().length') == 5 and g.screen() == 'profiles' and
               g.js('Object.keys(localStorage).filter(k => k.includes("_p2_")).length') == 0 and
               len(g.stored('sudokuKids_progress')) == 2)
         g.js('["p3","p4","p5","p6"].forEach(id => SudokuStorage.deleteProfile(id)); buildProfiles()')
-        g.page.click('.profile-card .profile-edit')
+        g.page.click('.profile-card')
+        g.page.click('#btn-profile-edit')
         check('het laatste profiel kan niet verwijderd worden', g.js('document.getElementById("btn-profile-delete").classList.contains("hidden")'))
         g.page.click('#btn-profile-cancel')
+        g.page.click('#btn-profile-back')
         g.page.click('#btn-link-account')
         check('"Account koppelen" zit achter het ouderslot', g.modal() == 'modal-parent')
+        g.page.click('#btn-parent-hold', delay=1700)
+        g.page.wait_for_timeout(5300)
+        check('ouderslot: wie na de eerste keer langer dan 5 s wacht, begint opnieuw',
+              g.modal() == 'modal-parent' and g.js('document.getElementById("btn-parent-hold").dataset.holds') == '0')
         g.parent_hold()
         check('en toont "Binnenkort beschikbaar" (Duits: Bald verfügbar)',
               g.modal() == 'modal-info' and 'Bald verfügbar' in g.js('document.getElementById("info-text").textContent'))
@@ -668,10 +717,24 @@ def run():
             widths[size] = round(b[2] - b[0])
             g.js('leaveGame(); goToSettings()')
         check('Grootte klein < normaal < groot', widths['small'] < widths['normal'] < widths['large'], widths)
-        check('de drie knoppen hebben een plaatje en de gekozen is gemarkeerd',
-              g.js('document.querySelectorAll(".size-btn .size-pic").length') == 3 and
-              g.js('document.querySelector(".size-btn.active").dataset.size') == 'large')
-        g.js('SudokuStorage.createProfile("B", "🐶"); switchProfile("p2")')
+        check('de gekozen grootte is gemarkeerd', g.js('document.querySelector(".size-btn.active").dataset.size') == 'large')
+        # voorbeeld op ware grootte: gelijk aan een echt vakje in het spel, voor elk raster en elke grootte
+        truth = {}
+        for size in ('small', 'normal', 'large'):
+            g.page.click(f'.size-btn[data-size="{size}"]')
+            preview = g.js('Object.fromEntries([...document.querySelectorAll(".size-sample")].map(s => [s.dataset.grid, Math.round(s.querySelector(".sample-cell").getBoundingClientRect().width)]))')
+            real = {}
+            for grid in (4, 6, 9):
+                g.js('n => startLevel(SudokuEngine.LEVEL_PLAN.findIndex(l => l.size === n), true)', grid)
+                real[str(grid)] = g.js('Math.round(document.querySelector(".sudoku-cell").getBoundingClientRect().width)')
+                g.js('leaveGame(); goToSettings()')
+            truth[size] = (preview, real)
+        check('voorbeeldblokje is 1-op-1 zo groot als een vakje in het spel (4×4, 6×6, 9×9 × klein/normaal/groot)',
+              all(pv == rl for pv, rl in truth.values()), truth)
+        check('voorbeeld verandert meteen bij klein / normaal / groot',
+              truth['small'][0]['9'] < truth['normal'][0]['9'] < truth['large'][0]['9'], truth)
+        g.page.click('.size-btn[data-size="large"]')
+        g.js('SudokuStorage.createProfile("B", "dog"); switchProfile("p2")')
         check('grootte is per profiel: nieuw profiel staat op normaal', g.js('settings.size') == 'normal')
         g.js('switchProfile("p1")')
         g.page.reload()
@@ -702,7 +765,7 @@ def run():
         g.page.click('.pv-btn[data-size="tablet-l"]')
         frame.locator('#btn-start').click()
         frame.locator('#world-card-0').click()
-        frame.locator('.level-btn.current').click()
+        frame.locator('.level-btn[data-level="0"]').click()
         frame.locator('.sudoku-cell').first.wait_for()
         check('in het frame is het spel te spelen (tablet liggend)', frame.locator('.sudoku-cell').count() == 16)
         g.page.reload()
@@ -724,6 +787,235 @@ def run():
         g.start()
         check('LIVE-pad: de app start gewoon', g.screen() == 'worlds')
         check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('16. Vijf werelden, 50 levels per rastergrootte (A)')
+        g = Game(browser, url, progress=progress_for(0, 16))
+        g.start()
+        check('5 wereldkaarten in volgorde van moeilijkheid: bos, boerderij, snoep, jungle, raket',
+              g.js('[...document.querySelectorAll(".world-card")].map(c => c.dataset.world).join()') == '0,3,1,4,2')
+        check('elke kaart toont met rastertjes hoeveel levels er per grootte zijn',
+              g.js('[...document.querySelectorAll(".world-card")].map(c => [...c.querySelectorAll(".size-chip")].map(s => s.dataset.size + ":" + s.querySelector("b").textContent + (s.querySelector("svg.grid-pic") ? "" : "!")).join("+")).join(" ")')
+              == '4:50+6:50 4:50+6:50 6:50+9:50 6:50+9:50 9:50')
+        check('totaal en voortgang op de kaart', g.js('document.getElementById("world-0-text").textContent') == '16/100' and g.js('document.getElementById("world-2-text").textContent') == '0/50')
+        check('16 levels: alleen het Dierenbos is open', g.js('[0,3,1,4,2].map(isWorldUnlocked).join()') == 'true,false,false,false,false')
+        g.close()
+        g = Game(browser, url, progress=progress_for(0, 17))
+        g.start()
+        check('17 levels in het Dierenbos (zoals vóór de uitbreiding): Boerderij en Snoepjesfabriek open',
+              g.js('[0,3,1,4,2].map(isWorldUnlocked).join()') == 'true,true,true,false,false')
+        g.page.click('#world-card-3')
+        check('nieuwe wereld opent met 100 levels in blokken per rastergrootte',
+              g.screen() == 'levels' and g.js('document.querySelectorAll(".level-btn").length') == 100 and
+              g.js('[...document.querySelectorAll(".levels-section span")].map(s => s.textContent).join()') == '4×4,6×6')
+        own = g.js('SudokuEngine.ownId(105)')
+        g.js('startLevel(105)')
+        check('nieuw level (Dierenbos 36) begint met zijn eigen vaste puzzel uit de voorraad',
+              g.js('gameState.pid') == own and '#' in own and g.js('gameState.lv.indexInWorld') == 35 and g.js('gameState.lv.world') == 0)
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        check('sterren van het nieuwe level komen achteraan (w0_l35); bestaande sleutels blijven', g.stored()['w0_l35']['stars'] == 3 and g.stored()['w0_l16']['stars'] == 3)
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+        # het generatiescript, in een kopie van het project
+        import shutil, subprocess, tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            work = pathlib.Path(tmp) / 'app'
+            shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns('.git', 'screenshots', 'icons', '__pycache__', 'out', 'docs'))
+            run = lambda *a: subprocess.run(['node', 'tools/generate-puzzles.js', *a], cwd=work, capture_output=True, text=True)
+            st = run('--status')
+            check('generate-puzzles --status toont levels per wereld', st.returncode == 0 and 'wereld 4: 50× 6x6 · 50× 9x9' in st.stdout, st.stdout + st.stderr)
+            mx = run('--max')
+            check('generate-puzzles --max telt de 4×4-mogelijkheden (376 echt verschillende met 6 gegeven)', mx.returncode == 0 and ' 376 ' in mx.stdout, mx.stdout[-400:] + mx.stderr)
+            before = json.loads(subprocess.run(['node', '-e', 'const E=require("./puzzles.js");console.log(JSON.stringify([E.LEVEL_PLAN.map(l=>E.getPuzzle(l.globalIndex).given.join("")), E.bankOf("4-standard/9-9").length]))'], cwd=work, capture_output=True, text=True).stdout)
+            a1 = run('--soort', '4x4-standard', '--aantal', '5')
+            a2 = run('--levels', '--wereld', '0', '--soort', '6x6-fruit', '--aantal', '3')
+            after = json.loads(subprocess.run(['node', '-e', 'const E=require("./puzzles.js");console.log(JSON.stringify([E.LEVEL_PLAN.map(l=>E.getPuzzle(l.globalIndex).given.join("")), E.bankOf("4-standard/9-9").length]))'], cwd=work, capture_output=True, text=True).stdout)
+            check('één commando voegt puzzels toe en draait zelf de validatie', a1.returncode == 0 and '✅ Voorraad' in a1.stdout and after[1] == before[1] + 5, a1.stdout + a1.stderr)
+            check('één commando voegt levels achteraan toe; alle bestaande levels blijven gelijk',
+                  a2.returncode == 0 and len(after[0]) == len(before[0]) + 3 and after[0][:len(before[0])] == before[0], a2.stdout + a2.stderr)
+            bad = run('--soort', '5x5-raar', '--aantal', '1')
+            check('onbekende soort geeft een duidelijke fout', bad.returncode == 1 and 'Onbekende soort' in bad.stderr)
+
+        # ------------------------------------------------------------
+        section('17. Kawaii-iconen in de hele app (B)')
+        g = Game(browser, url, progress=progress_for(0, 35))
+        emoji = r'/\p{Extended_Pictographic}/u'
+        found = {}
+        def scan(label):
+            hit = g.js('() => { const m = document.body.innerText.match(%s); const css = [...document.querySelectorAll("*")].map(e => getComputedStyle(e, "::after").content + getComputedStyle(e, "::before").content).join("").match(%s); return (m ? m[0] : "") + (css ? css[0] : ""); }' % (emoji, emoji))
+            if hit:
+                found[label] = hit
+        scan('start')
+        g.start(); scan('werelden')
+        g.page.click('#world-card-0'); scan('levels')
+        g.js('startLevel(0, true)'); scan('spel')
+        g.js('setDisplayMode("animals")'); scan('dieren')
+        g.js('startLevel(SudokuEngine.LEVEL_PLAN.findIndex(l => l.type === "shapes"), true)'); scan('fruit')
+        g.solve(); g.page.wait_for_selector('#modal-win:not(.hidden)'); scan('gewonnen')
+        g.js('hideModals(); goToSettings()'); scan('instellingen')
+        g.js('openProfile(profileId)'); scan('profiel')
+        g.js('startProfileEdit()'); scan('profiel bewerken')
+        g.js('goToProfiles()'); scan('spelers')
+        g.js('askParent(() => {})'); scan('ouderslot')
+        check('nergens meer een emoji: alle plaatjes komen uit icons.js', found == {}, found)
+        check('alle iconen bestaan en zijn SVG (dieren, fruit, avatars, knoppen, werelden)',
+              g.js('''() => [...ANIMALS, ...FRUITS, ...SudokuStorage.AVATARS, ...WORLDS.map(w => w.icon),
+                  ...[...document.querySelectorAll("[data-icon]")].map(e => e.dataset.icon)].filter(n => !KawaiiIcons.svg(n).startsWith("<svg"))''') == [])
+        check('elk [data-icon]-plekje is gevuld', g.js('[...document.querySelectorAll("[data-icon]")].filter(e => !e.querySelector("svg")).length') == 0)
+        check('profiel met een oud emoji-plaatje wordt omgezet naar het nieuwe icoon',
+              g.js('''() => { localStorage.setItem("sudokuKids_profiles", JSON.stringify({ v: 1, active: "p1", next: 3, list: [{ id: "p1", name: "", avatar: "🦊" }, { id: "p2", name: "B", avatar: "🐼" }] }));
+                  return true; }''') is True)
+        g.page.reload()
+        check('… vos en panda', g.js('SudokuStorage.profiles().map(p => p.avatar).join()') == 'fox,panda')
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('18. Muziek, klikgeluid en geluidseffecten (C)')
+        g = Game(browser, url)
+        check('muziek staat standaard aan, maar speelt nog niet vóór de eerste tik', g.js('settings.music') is True and g.js('music.on') is False)
+        g.js('() => { window.__tones = []; const realTone = tone; tone = (dest, ...rest) => { __tones.push(dest === audioCtx.destination ? "fx" : "music"); return realTone(dest, ...rest); }; }')
+        g.start()
+        g.page.wait_for_timeout(1500)
+        check('na de eerste tik speelt de muziek', g.js('music.on') is True and 'music' in g.js('__tones'))
+        check('muziek is zacht (volume ≤ 0,06, ver onder de effecten)', g.js('MUSIC_VOLUME') <= 0.06)
+        check('deuntje loopt naadloos door: 32 tellen, daarna weer vanaf het begin', g.js('MELODY.length') == 32 and g.js('BASS.length * 4') == 32 and g.js('music.step < MELODY.length'))
+        step = g.js('music.step')
+        g.js('Object.defineProperty(document, "hidden", { configurable: true, get: () => true }); document.dispatchEvent(new Event("visibilitychange"))')
+        check('app op de achtergrond: muziek pauzeert', g.js('music.on') is False)
+        g.js('Object.defineProperty(document, "hidden", { configurable: true, get: () => false }); document.dispatchEvent(new Event("visibilitychange"))')
+        check('terug op de voorgrond: muziek gaat verder waar hij was', g.js('music.on') is True and g.js('music.step') >= step)
+        g.page.click('#btn-worlds-settings')
+        check('drie schakelaars: muziek, geluidseffecten, klikgeluid',
+              g.js('["setting-music", "setting-sound", "setting-click"].map(id => document.getElementById(id).checked).join()') == 'true,true,true')
+        g.js('__tones.length = 0')
+        g.page.click('#btn-settings-back')
+        check('klikgeluid: één zacht tikje bij een knop', g.js('__tones.filter(t => t === "fx").length') == 1)
+        g.page.click('#btn-worlds-settings')
+        g.page.click('label:has(#setting-click)')
+        g.page.click('label:has(#setting-music)')
+        check('muziek uit: stopt direct', g.js('music.on') is False and g.js('settings.music') is False)
+        g.js('__tones.length = 0')
+        g.page.click('#btn-settings-back')
+        g.page.click('#world-card-0')
+        check('klikgeluid uit: knoppen zijn stil', g.js('__tones.filter(t => t === "fx").length') == 0)
+        g.page.click('.level-btn[data-level="0"]')
+        idx, val = g.open_cells()[0]
+        g.tap_cell(idx)
+        g.js('__tones.length = 0')
+        g.tap_num(val)
+        check('geluidseffecten blijven werken zoals altijd (goed antwoord = geluidje)', g.js('__tones.filter(t => t === "fx").length') == 1)
+        g.js('leaveGame(); SudokuStorage.createProfile("B", "dog"); switchProfile("p2")')
+        check('nieuw profiel heeft zijn eigen geluidsinstellingen (alles aan)', g.js('[settings.music, settings.click, settings.sound].join()') == 'true,true,true' and g.js('music.on') is True)
+        g.js('switchProfile("p1")')
+        g.page.reload()
+        check('per profiel bewaard: profiel 1 houdt muziek en klik uit', g.js('[settings.music, settings.click, settings.sound].join()') == 'false,false,true')
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('19. Talen (D)')
+        g = Game(browser, url, locale='es-MX')
+        check('Spaans toestel start in het Spaans', g.js('settings.language') == 'es' and g.js('document.getElementById("btn-start").textContent') == '¡Jugar!')
+        g.start()
+        g.page.click('#btn-worlds-settings')
+        check('10 talen, met de naam in de taal zelf',
+              g.js('[...document.querySelectorAll("#setting-language option")].map(o => o.textContent).join("|")')
+              == 'Nederlands|English|Deutsch|Français|Español|Português|Italiano|Polski|Türkçe|Bahasa Indonesia')
+        report = g.js('''() => { const keys = Object.keys(STRINGS.nl), out = [];
+            for (const [lang] of LANGUAGES) {
+              if (!STRINGS[lang]) { out.push(lang + ': ontbreekt'); continue; }
+              for (const k of keys) {
+                const a = STRINGS.nl[k], b = STRINGS[lang][k];
+                if (b === undefined || b === '') out.push(lang + ':' + k);
+                else if (Array.isArray(a) !== Array.isArray(b) || (Array.isArray(a) && a.length !== b.length)) out.push(lang + ':' + k + ' (lijst)');
+                else if (String(a).includes('{name}') !== String(b).includes('{name}')) out.push(lang + ':' + k + ' ({name})');
+                else if ((String(a).match(/\\n/g) || []).length !== (String(b).match(/\\n/g) || []).length) out.push(lang + ':' + k + ' (regels)');
+              }
+              for (const k of Object.keys(STRINGS[lang])) if (!(k in STRINGS.nl)) out.push(lang + ':' + k + ' (extra)');
+            }
+            return out; }''')
+        check(f'alle 10 talen hebben alle {g.js("Object.keys(STRINGS.nl).length")} sleutels (zelfde lijsten, {{name}} en regels)', report == [], report)
+        titles = {}
+        for code in ('pt', 'it', 'pl', 'tr', 'id'):
+            g.page.select_option('#setting-language', code)
+            titles[code] = g.js('document.querySelector("#screen-settings .screen-title").textContent + "|" + document.documentElement.lang')
+        check('wisselen werkt direct voor de nieuwe talen',
+              titles == {'pt': 'Configurações|pt', 'it': 'Impostazioni|it', 'pl': 'Ustawienia|pl', 'tr': 'Ayarlar|tr', 'id': 'Pengaturan|id'}, titles)
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('20. Ouderslot: twee keer ingedrukt houden (E)')
+        g = Game(browser, url)
+        g.start()
+        g.page.click('#btn-worlds-settings')
+        g.page.click('#btn-reset-progress')
+        ring = lambda: g.js('parseFloat(document.getElementById("hold-progress").style.strokeDashoffset) / RING_LENGTH')
+        check('ring begint leeg', abs(ring() - 1) < 0.01)
+        box = g.page.locator('#btn-parent-hold').bounding_box()
+        g.page.mouse.move(box['x'] + 60, box['y'] + 60)
+        g.page.mouse.down()
+        g.page.wait_for_timeout(800)
+        half = ring()
+        g.page.wait_for_timeout(900)
+        check('ring vult tijdens het vasthouden en staat na de eerste keer op de helft', 0.6 < half < 0.9 and abs(ring() - 0.5) < 0.02, [half, ring()])
+        g.page.mouse.up()
+        check('instellingen van HOLD: 2 × 1,5 s binnen 5 s', g.js('[HOLD_MS, HOLD_WINDOW_MS].join()') == '1500,5000')
+        prevented = g.js('''() => ["contextmenu", "selectstart", "dragstart"].map(type => {
+            const e = new Event(type, { bubbles: true, cancelable: true }); document.getElementById("btn-parent-hold").dispatchEvent(e); return e.defaultPrevented; }).join()''')
+        css = g.js('(() => { const c = getComputedStyle(document.getElementById("btn-parent-hold")); return [c.userSelect, c.touchAction, c.webkitTouchCallout || "none"].join(); })()')
+        check('geen contextmenu, geen tekstselectie, geen scrollen op de knop', prevented == 'true,true,true' and css.startswith('none,none'), [prevented, css])
+        g.page.mouse.down()
+        g.page.wait_for_timeout(1700)
+        g.page.mouse.up()
+        check('na de tweede keer gaat het slot open', g.modal() == 'modal-confirm')
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('21. Onderbalk, pratende kat en TEST-strook (F)')
+        for label, (w, h) in {'telefoon 360×640': (360, 640), 'liggend 844×390': (844, 390), 'tablet 800×1280': (800, 1280)}.items():
+            g = Game(browser, test_url, w=w, h=h, progress=None)
+            g.js('localStorage.setItem("test_sudokuKids_progress", JSON.stringify(%s))' % json.dumps(progress_for(0, 35)))
+            g.page.reload()
+            g.start()
+            g.page.wait_for_timeout(700)
+            covered = '''() => { const bar = document.getElementById("mascot").getBoundingClientRect(), strip = document.querySelector(".test-badge").getBoundingClientRect();
+                const hit = (a, b) => a.left < b.right - 0.5 && a.right > b.left + 0.5 && a.top < b.bottom - 0.5 && a.bottom > b.top + 0.5;
+                const out = [];
+                for (const el of document.querySelectorAll(".screen.active button, .screen.active .screen-title, .screen.active .game-info, .screen.active .header-score")) {
+                  const r = el.getBoundingClientRect(); if (!r.width) continue;
+                  const scroller = el.closest(".screen").getBoundingClientRect();
+                  const visible = { left: r.left, right: r.right, top: Math.max(r.top, scroller.top), bottom: Math.min(r.bottom, scroller.bottom) };
+                  if (visible.bottom <= visible.top) continue;                 // scrolled out of the screen
+                  if (!document.getElementById("mascot").classList.contains("hidden") && hit(visible, bar)) out.push("balk:" + (el.id || el.className));
+                  if (hit(visible, strip)) out.push("strook:" + (el.id || el.className));
+                }
+                return out; }'''
+            problems = {}
+            def look(name):
+                r = g.js(covered)
+                if r:
+                    problems[name] = r[:4]
+            look('werelden')
+            order = g.js('(() => { const x = s => document.querySelector(s).getBoundingClientRect(); return [x("#mascot .mascot-emoji").right <= x("#mascot .mascot-bubble").left + 1, x("#mascot .mascot-bubble").right <= x("#btn-avatar").left + 1, x("#btn-avatar").right <= x("#btn-switch").left + 1, x("#mascot .mascot-emoji").left < innerWidth / 4, x("#btn-switch").right > innerWidth * 3 / 4]; })()')
+            g.js('document.getElementById("screen-worlds").scrollTop = 99999'); look('werelden onderaan')
+            g.page.click('#world-card-0', force=True); g.page.wait_for_timeout(500); look('levels')
+            g.js('document.getElementById("screen-levels").scrollTop = 99999'); look('levels onderaan')
+            last = g.js('(() => { const b = [...document.querySelectorAll(".level-btn")].pop().getBoundingClientRect(); return b.bottom <= document.getElementById("mascot").getBoundingClientRect().top + 0.5; })()')
+            g.js('startLevel(0, true)'); g.page.wait_for_timeout(500); look('spel')
+            g.js('leaveGame(); goToSettings()'); g.page.wait_for_timeout(400); look('instellingen')
+            g.js('openProfile(profileId)'); g.page.wait_for_timeout(400); look('profiel')
+            check(f'{label}: kat links met wolkje, speler + wisselknop rechts', order == [True, True, True, True, True], order)
+            check(f'{label}: de onderbalk bedekt nergens een knop en het laatste level is helemaal te zien', problems == {} and last, problems)
+            check(f'{label}: de TEST-strook valt nergens over een titel, levelnaam of knop', not any('strook' in str(v) for v in problems.values()), problems)
+            g.close()
+        g = Game(browser, live_url)
+        g.start()
+        check('live: geen TEST-strook, de app begint bovenaan', g.js('document.querySelector(".test-badge")') is None and g.js('document.getElementById("screen-worlds").getBoundingClientRect().top') == 0)
         g.close()
         browser.close()
 

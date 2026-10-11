@@ -11,7 +11,8 @@ from playwright.sync_api import sync_playwright
 
 from screenshots import ROOT, serve
 
-PROGRESS = {f'w0_l{i}': {'stars': 3 - (i % 2), 'time': 40} for i in range(22)}
+PROGRESS = {f'w0_l{i}': {'stars': 3 - (i % 2), 'time': 40} for i in range(34)}
+PROGRESS.update({f'w3_l{i}': {'stars': 3, 'time': 60} for i in range(12)})
 PROGRESS.update({f'w1_l{i}': {'stars': 3, 'time': 90} for i in range(6)})
 
 with serve() as url, sync_playwright() as pw:
