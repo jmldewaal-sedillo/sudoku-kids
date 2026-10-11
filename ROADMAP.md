@@ -4,11 +4,11 @@
 
 | | |
 |---|---|
-| **Huidige fase** | Volledige review afgerond en getest – klaar om in te pakken voor de Play Store |
-| **Laatste update** | 2026-10-09 |
-| **Volgende stap** | Testversie nalopen op een echte telefoon (zie Testen), daarna mergen naar `main`, `assetlinks.json` regelen en inpakken met PWABuilder |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, nu gelijk aan `review-2026-10-09` |
-| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, nog de versie van 2026-10-05 |
+| **Huidige fase** | Review van 2026-10-09 staat live (v3) – klaar om in te pakken voor de Play Store |
+| **Laatste update** | 2026-10-11 |
+| **Volgende stap** | `assetlinks.json` regelen en inpakken met PWABuilder; nieuwe functies eerst op de testlink |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test` |
+| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v3` (live sinds 2026-10-11) |
 
 ---
 
@@ -26,6 +26,13 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-11 · Review live gezet (Claude Code)
+- Gebruiker heeft de testversie van `review-2026-10-09` nagelopen en akkoord gegeven.
+- `review-2026-10-09` gemerged naar `main` (fast-forward) en gepusht; live draait nu `sudoku-kids-v3`.
+- Vooraf opnieuw gedraaid: `node tests/validate-levels.js` → beide ✅, `python3 tests/e2e.py` → 97/97.
+
+**Bestanden geraakt:** ROADMAP.md.
 
 ### 2026-10-09 · Testversie online naast de live versie (Claude Code)
 - Onderzocht hoe Flush Factor test: daar bestaat geen aparte testversie (alleen `main`, Pages vanaf `main`, workflow `ci.yml` draait alleen tests). Daarom nieuw opgezet, gekozen voor een aparte test-repository.
@@ -153,7 +160,7 @@
 Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood label TEST bovenin).
 - [ ] Zelf spelen op de telefoon (splash → wereld 1 → een paar levels uitspelen); let op of een kind de wijsvinger en de plaatjesknoppen snapt
 - [ ] Een paar levels uit elke wereld voltooien (inclusief 6×6 en 9×9) – automatisch zijn alle 105 uitgespeeld, maar niet door een mens
-- [ ] Update-gedrag: de geïnstalleerde app (v2) openen na deze release en controleren dat v3 verschijnt en de sterren er nog zijn
+- [ ] Update-gedrag: de geïnstalleerde live app openen en controleren dat v3 verschijnt (hartjes/sterren i.p.v. "0/3") en de sterren er nog zijn
 - [ ] Offline-modus op het toestel: app installeren, vliegtuigmodus, app openen (automatisch getest in Chromium op localhost, niet op Android)
 - [ ] Android-terugknop/veeggebaar in de geïnstalleerde app: spel → levels → werelden → app sluit
 - [ ] Landscape op de telefoon draaien tijdens een puzzel (automatisch getest op 640×360 en 844×390)
