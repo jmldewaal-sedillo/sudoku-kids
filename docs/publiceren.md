@@ -10,7 +10,7 @@ Uitgangspunten (besloten op 11 oktober 2026):
   (zie eis 1d).
 - **Persoonlijk Play Console-account**, dus de verplichte gesloten test geldt, tenzij het
   account van vóór 13 november 2023 is (zie eis 9).
-- Uitgever: **Studio Sedillo**, contact **support@studiosedillo.com**.
+- Uitgever: **Studio Sedillo**, contact **studio.sedillo@gmail.com**.
 - Adres van de app: **https://sudokukids.studiosedillo.com/**, package name
   **com.studiosedillo.sudokukids**.
 
@@ -25,19 +25,18 @@ staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
 |---|---|---|---|
 | 1 | De testversie nalopen (verwijderen, voortgang overzetten, spelregels, credits, privacy- en verwijderpagina) en akkoord geven | testlink | Niets gaat naar `main` zonder akkoord |
 | 2 | DNS-records aanmaken (tabel in `docs/studio-sedillo.md`) | Namecheap → Advanced DNS | Zonder DNS geen subdomein, geen privacy-URL, geen TWA |
-| 3 | E-mail doorsturen instellen: `support@studiosedillo.com` → je eigen adres, en testen met een mailtje | Namecheap → Email forwarding | Het adres staat in de app, de verklaring en straks de store |
-| 4 | Domein verifiëren bij GitHub (TXT-record) | GitHub → Settings → Pages | Beschermt tegen domeinkaping |
-| 5 | Claude Code laten draaien: `tools/eigen-domein.sh check`, daarna `site`, `test`, `live` | terminal | Zet de eigen domeinen en HTTPS aan (kan pas na stap 2) |
-| 6 | In Play Console nakijken: accounttype en aanmaakdatum; ontwikkelaarsnaam op **Studio Sedillo** zetten; ontwikkelaars-e-mail op support@studiosedillo.com | Play Console → Instellingen → Ontwikkelaarsaccount | Bepaalt of de gesloten test geldt; bij een persoonlijk account toont Google ook je wettelijke naam en land |
-| 7 | App aanmaken in Play Console: naam "Sudoku Kids & Crazy Grids", type Game, gratis | Play Console → App maken | Nodig voor de signing key |
-| 8 | TWA bouwen met Bubblewrap en de **upload key** maken; wachtwoord en keystore veilig opbergen (zie `docs/twa.md`) | eigen pc | De key heb je bij elke update nodig |
-| 9 | De `.aab` uploaden naar **Interne test**; daarna de SHA-256 van de **app signing key** kopiëren | Play Console → Testen en releasen → App-integriteit | Die vingerafdruk moet in `assetlinks.json` |
-| 10 | De vingerafdruk aan Claude Code geven (of zelf in `.well-known/assetlinks.json` zetten) en live zetten | repo | Zonder dit toont de app een adresbalk |
-| 11 | App-content invullen met de antwoorden uit dit document: privacybeleid-URL, advertenties (nee), app-toegang, doelgroep, Data safety, contentclassificatie (IARC) | Play Console → Beleid → App-content | Verplicht voor elke track behalve interne test |
-| 12 | Store-pagina vullen met het materiaal uit `store/` | Play Console → Groei → Store-vermelding | |
-| 13 | Gesloten test starten met **minstens 12 testers die 14 dagen aaneengesloten** aangemeld blijven | Play Console → Testen → Gesloten test | Verplicht voor productietoegang |
-| 14 | Productietoegang aanvragen (vragenlijst over de test), daarna de productierelease | Play Console → Dashboard | Beoordeling duurt meestal tot 7 dagen |
-| 15 | Privacyverklaring en vertalingen laten nakijken (staat al op de roadmap) | | Vóór productie |
+| 3 | Domein verifiëren bij GitHub (TXT-record) | GitHub → Settings → Pages | Beschermt tegen domeinkaping |
+| 4 | Claude Code laten draaien: `tools/eigen-domein.sh check`, daarna `site`, `test`, `live` | terminal | Zet de eigen domeinen en HTTPS aan (kan pas na stap 2 en 3) |
+| 5 | In Play Console nakijken: accounttype en aanmaakdatum; ontwikkelaarsnaam op **Studio Sedillo** zetten; ontwikkelaars-e-mail op studio.sedillo@gmail.com | Play Console → Instellingen → Ontwikkelaarsaccount | Bepaalt of de gesloten test geldt; bij een persoonlijk account toont Google ook je wettelijke naam en land |
+| 6 | App aanmaken in Play Console: naam "Sudoku Kids & Crazy Grids", type Game, gratis | Play Console → App maken | Nodig voor de signing key |
+| 7 | TWA bouwen met Bubblewrap en de **upload key** maken; wachtwoord en keystore veilig opbergen (zie `docs/twa.md`) | eigen pc | De key heb je bij elke update nodig |
+| 8 | De `.aab` uploaden naar **Interne test**; daarna de SHA-256 van de **app signing key** kopiëren | Play Console → Testen en releasen → App-integriteit | Die vingerafdruk moet in `assetlinks.json` |
+| 9 | De vingerafdruk aan Claude Code geven (of zelf in `.well-known/assetlinks.json` zetten) en live zetten | repo | Zonder dit toont de app een adresbalk |
+| 10 | App-content invullen met de antwoorden uit dit document: privacybeleid-URL, advertenties (nee), app-toegang, doelgroep, Data safety, contentclassificatie (IARC) | Play Console → Beleid → App-content | Verplicht voor elke track behalve interne test |
+| 11 | Store-pagina vullen met het materiaal uit `store/` | Play Console → Groei → Store-vermelding | |
+| 12 | Gesloten test starten met **minstens 12 testers die 14 dagen aaneengesloten** aangemeld blijven | Play Console → Testen → Gesloten test | Verplicht voor productietoegang |
+| 13 | Productietoegang aanvragen (vragenlijst over de test), daarna de productierelease | Play Console → Dashboard | Beoordeling duurt meestal tot 7 dagen |
+| 14 | Privacyverklaring en vertalingen laten nakijken (staat al op de roadmap) | | Vóór productie |
 
 ---
 
@@ -73,7 +72,7 @@ worden. Bron: [Data safety][datasafety]. Onderbouwing: `docs/privacy-audit.md`.
 | Worden alle verzamelde gegevens versleuteld tijdens overdracht? | (vraag vervalt bij "nee") | De site gaat hoe dan ook alleen via HTTPS |
 | Kunnen gebruikers vragen hun gegevens te laten verwijderen? | (vraag vervalt bij "nee") | Verwijderen kan in de app en staat uitgelegd op de webpagina |
 | Kunnen gebruikers in je app een account aanmaken? | **Nee** | Een profiel met een dierenplaatje op het toestel is geen account: geen gebruikersnaam, e-mail of wachtwoord, en niets op een server |
-| URL voor het verwijderen van gegevens | `https://sudokukids.studiosedillo.com/verwijderen` | Niet verplicht zonder accounts, wel invullen als het veld er is |
+| URL voor het verwijderen van gegevens | `https://sudokukids.studiosedillo.com/delete` | Niet verplicht zonder accounts, wel invullen als het veld er is |
 | Beveiligingspraktijken: "Committed to follow the Play Families Policy" | **Aanvinken** | Kan zodra de doelgroep kinderen bevat en de app aan het beleid voldoet |
 | Onafhankelijke beveiligingscontrole (MASA) | Nee | Optioneel en betaald |
 | Privacybeleid-URL | `https://sudokukids.studiosedillo.com/privacy` | Verplicht om het formulier te kunnen afronden |
@@ -94,9 +93,9 @@ hebben.
 |---|---|---|
 | Duidelijk "privacyverklaring" in de titel | Titel "Privacyverklaring" / "Privacy policy" | klaar op test |
 | De naam uit de store-vermelding (ontwikkelaar of app) | Studio Sedillo en "Sudoku Kids & Crazy Grids" | klaar op test |
-| Gegevens van de ontwikkelaar en een contactpunt voor privacy | Onderdeel "Wie is verantwoordelijk", support@studiosedillo.com | klaar op test |
+| Gegevens van de ontwikkelaar en een contactpunt voor privacy | Onderdeel "Wie is verantwoordelijk", studio.sedillo@gmail.com | klaar op test |
 | Welke gegevens de app benadert, verzamelt, gebruikt en deelt | "Wat er wordt bewaard, en waar", "Wat de app niet doet", "Delen met anderen" | klaar op test |
-| Hoe gegevens veilig worden verwerkt | "Delen met anderen": alleen HTTPS, niets verlaat het toestel | klaar op test |
+| Hoe gegevens veilig worden verwerkt | "Delen met anderen": alleen HTTPS, niets verlaat het toestel; "Als je ons mailt" en "Gegevens buiten de EU" voor e-mail en hosting | klaar op test |
 | Bewaar- en verwijderbeleid | "Hoe lang gegevens bewaard blijven", "Hoe je gegevens verwijdert" | klaar op test |
 | Op een actieve, openbare URL, niet per land afgeschermd, geen pdf, niet door bezoekers te bewerken | `https://sudokukids.studiosedillo.com/privacy` | open (wacht op DNS) |
 | Link in Play Console én in de app zelf | Instellingen → "Privacy (voor ouders)"; Play Console doet Jenn | klaar op test / open |
@@ -117,7 +116,7 @@ kunnen uitoefenen.
 |---|---|---|---|
 | In de app: één profiel verwijderen | Profiel → potlood → "Profiel verwijderen", dubbel ouderslot, bevestiging | Claude Code | klaar op test |
 | In de app: alles verwijderen | Instellingen → "Alle gegevens van deze app verwijderen", dubbel ouderslot, bevestiging; wist alle sleutels, de cache en de service worker | Claude Code | klaar op test |
-| Webpagina met uitleg, zonder dat je de app hoeft te openen, met de naam van de app en ontwikkelaar | `https://sudokukids.studiosedillo.com/verwijderen` (5 talen) | Claude Code | klaar op test, URL wacht op DNS |
+| Webpagina met uitleg, zonder dat je de app hoeft te openen, met de naam van de app en ontwikkelaar | `https://sudokukids.studiosedillo.com/delete` (5 talen) | Claude Code | klaar op test, URL wacht op DNS |
 | De link in Play Console invullen | Data safety → gegevens verwijderen | Jenn | open |
 
 ### 5. Leeftijdsclassificatie (IARC)
@@ -129,7 +128,7 @@ leiden. De vragenlijst staat onder Beleid → App-content.
 
 | Vraag | Antwoord |
 |---|---|
-| E-mailadres voor IARC | support@studiosedillo.com |
+| E-mailadres voor IARC | studio.sedillo@gmail.com |
 | Categorie | Game (spel) |
 | Geweld, bloed, enge beelden | Nee |
 | Seksualiteit of naaktheid | Nee |
@@ -178,7 +177,7 @@ Bronnen: [previewmateriaal][assets], [metadatabeleid][metadata].
 | Tablet (7 en 10 inch): 1080–7680 px, 16:9 of 9:16; Google raadt minstens 4 aan | 4 stuks (2 staand 1440×2560, 2 liggend 2560×1440) | klaar |
 | Screenshots tonen de echte app, geen vingers of toestellen | Rechtstreeks uit de app gemaakt door `tests/store.py` | klaar |
 | Ontwikkelaarsnaam | Studio Sedillo | open (Jenn, Play Console) |
-| Contact: e-mail verplicht, website aanbevolen | support@studiosedillo.com, https://studiosedillo.com | open (Jenn) |
+| Contact: e-mail verplicht, website aanbevolen | studio.sedillo@gmail.com, https://studiosedillo.com | open (Jenn) |
 | Categorie en tags | Game → Puzzel; tag "Sudoku" | open (Jenn) |
 
 **Let op bij een persoonlijk account:** Google toont op de store-pagina naast de
@@ -246,7 +245,9 @@ AVG, artikel 5).
 | Toestemming van ouders (art. 8) | Nee | Artikel 8 gaat over verwerking op basis van toestemming. Er is geen verwerking door ons en geen toestemming nodig. Dat verandert bij cloud-opslag, statistieken of advertenties | n.v.t. |
 | Begrijpelijke informatie, ook voor kinderen (art. 12) | Ja | Privacyverklaring in eenvoudige taal met een onderdeel "In het kort" | klaar op test |
 | Hosting | Ja, beperkt | GitHub Pages levert de bestanden en kan daarbij als elke webserver het IP-adres vastleggen. Staat in de verklaring. Er zijn geen cookies en geen scripts van derden | klaar op test |
-| E-mail aan support@ | Ja | Wie mailt, geeft zelf een e-mailadres. Alleen gebruiken om te antwoorden; niet langer bewaren dan nodig (advies: na afhandeling binnen een jaar weggooien). Staat in de verklaring | klaar op test; Jenn houdt zich eraan |
+| E-mail aan studio.sedillo@gmail.com | Ja | Wie mailt, geeft zelf een e-mailadres. De mail loopt via Gmail (Google). Grondslag: gerechtvaardigd belang om de vraag te beantwoorden (art. 6 lid 1 sub f). Alleen gebruiken om te antwoorden; na afhandeling binnen een jaar weggooien. Staat in de verklaring ("Als je ons mailt") | klaar op test; Jenn houdt zich eraan |
+| Doorgifte buiten de EU | Ja, beperkt | GitHub (hosting) en Google (e-mail) zijn Amerikaanse bedrijven. Beide doen mee aan het EU-U.S. Data Privacy Framework ([GitHub][gh-privacy], verklaring van 27 april 2026; [Google][google-frameworks]). Het adequaatheidsbesluit van 10 juli 2023 geldt nog: het Gerecht van de EU wees het beroep ertegen af op 3 september 2025; het hoger beroep bij het Hof van Justitie (zaak C-703/25 P) loopt nog. Staat in de verklaring ("Gegevens buiten de EU") met links naar beide privacyverklaringen | klaar op test; opnieuw nakijken na de uitspraak van het Hof |
+| Wie is de verantwoordelijke (art. 13 lid 1 sub a) | Ja | Vermeld als "Studio Sedillo" met het e-mailadres (keuze van Jenn, 11 oktober 2026). Studio Sedillo heeft een KvK-inschrijving, dus de handelsnaam is te herleiden | klaar op test |
 | Rechten van betrokkenen | Ja | Inzage, correctie, verwijdering en overdraagbaarheid kan de ouder zelf uitoefenen in de app (profiel bewerken, verwijderen, "Voortgang overzetten") | klaar op test |
 | Register van verwerkingen, functionaris, DPIA | Nee | Niet verplicht bij deze omvang en zonder verwerking van gegevens van spelers. Bewaar dit document en `docs/privacy-audit.md` als onderbouwing | klaar |
 | COPPA (VS) | Ja, zelfde uitkomst | Geen verzameling van persoonlijke informatie van kinderen, dus geen ouderlijke toestemming nodig | klaar |
@@ -289,6 +290,9 @@ AVG, artikel 5).
 [twa]: https://developer.chrome.com/docs/android/trusted-web-activity/quick-start
 [applinks]: https://developer.android.com/training/app-links/verify-android-applinks
 [gdpr]: https://eur-lex.europa.eu/eli/reg/2016/679/oj
+[gh-privacy]: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
+[google-frameworks]: https://policies.google.com/privacy/frameworks?hl=en
+[dpf-ec]: https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/eu-us-data-transfers_en
 
 **Wat ik niet uit de bronnen kon halen:** de precieze vragen van de IARC-vragenlijst (de
 Help-pagina noemt ze niet; de conceptantwoorden volgen de gebruikelijke onderwerpen), de

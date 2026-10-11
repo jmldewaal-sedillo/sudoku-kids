@@ -44,7 +44,6 @@ check() {
   check_cname "$LIVE_HOST"
   check_cname "$TEST_HOST"
   if dig +short TXT "_github-pages-challenge-$USER_GH.$APEX" | grep -q .; then good "TXT _github-pages-challenge-$USER_GH (domeinverificatie)"; else bad "TXT _github-pages-challenge-$USER_GH (domeinverificatie, zie docs/studio-sedillo.md)"; fi
-  if dig +short MX "$APEX" | grep -q .; then good "MX (e-mail doorsturen)"; else bad "MX (e-mail doorsturen via Namecheap)"; fi
   if [ "$ok" = 1 ]; then say "Alles staat goed."; else say "Nog niet alles staat goed. DNS-wijzigingen kunnen tot 24 uur duren."; fi
 }
 

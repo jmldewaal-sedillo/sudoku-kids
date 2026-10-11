@@ -4,11 +4,11 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v6 staat live; **v7 (voorbereiding publiceren) staat op de testlink** en wacht op akkoord: gegevens verwijderen, voortgang overzetten, spelregels, credits, nieuwe privacyverklaring, eigen domein voorbereid, store-materiaal |
+| **Huidige fase** | v6 staat live; **v8 (voorbereiding publiceren) staat op de testlink** en wacht op akkoord: gegevens verwijderen, voortgang overzetten, spelregels, credits, nieuwe privacyverklaring, eigen domein voorbereid, store-materiaal |
 | **Laatste update** | 2026-10-11 |
 | **Volgende stap** | Jenn: testlink nalopen, daarna DNS bij Namecheap en de rest van "Wat Jenn zelf moet doen" in `docs/publiceren.md` |
-| **Uitgever** | Studio Sedillo · support@studiosedillo.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v7 (`publish-prep`). Na DNS: https://test-sudokukids.studiosedillo.com/ |
+| **Uitgever** | Studio Sedillo (heeft een KvK-inschrijving) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v8 (`publish-prep`). Na DNS: https://test-sudokukids.studiosedillo.com/ |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v6` (live sinds 2026-10-11; v3 stond live van 's ochtends tot 's middags) |
 
 ---
@@ -23,7 +23,7 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v6`, test: `sudoku-kids-v7`), anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v6`, test: `sudoku-kids-v8`), anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, build-stappen, externe CDN's, tracking, advertenties of accounts.** `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Komt er ooit iets bij dat het toestel verlaat, dan eerst `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
@@ -35,6 +35,20 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-11 · v8 op de testlink: nieuw contactadres, privacyverklaring aangevuld, /delete (Claude Code, branch `publish-prep`)
+Vooraf gevraagd: hoe de verantwoordelijke vermeld wordt → **alleen "Studio Sedillo"**. **Studio Sedillo heeft een KvK-inschrijving** (opgegeven door Jenn), dus de handelsnaam is te herleiden.
+
+- **Contactadres:** overal `studio.sedillo@gmail.com` (app, credits, privacyverklaringen, verwijderpagina, hoofdsite, `store/`, `docs/`, roadmap). Het oude adres komt nergens meer voor; een test bewaakt dat. E-mail doorsturen bij Namecheap is vervallen (taak weg, MX-controle uit `tools/eigen-domein.sh`).
+- **Privacyverklaring Sudoku Kids (5 talen) en hoofdsite (EN/NL):** twee nieuwe onderdelen. "Als je ons mailt": e-mail loopt via Gmail (Google) met link naar de privacyverklaring van Google; grondslag gerechtvaardigd belang (art. 6 lid 1 sub f AVG). "Gegevens buiten de EU": GitHub en Google zijn Amerikaanse bedrijven en doen mee aan het EU-U.S. Data Privacy Framework, met links naar beide privacyverklaringen. Nagekeken op 11 oktober 2026: privacyverklaring GitHub (27 april 2026) en Google "Data transfer frameworks" noemen beide de deelname; het adequaatheidsbesluit geldt nog, het hoger beroep (C-703/25 P) loopt. Datum bovenaan blijft 11 oktober 2026 (vandaag).
+- **/delete:** `verwijderen.html` heet nu `delete.html`; het oude adres verwijst door en houdt de taalkeuze vast. Links bijgewerkt in de app, de verklaring, de hoofdsite, `docs/publiceren.md` en `store/listing.json`. De zin "we antwoorden binnen 30 dagen" is weg, ook op de verwijderpagina.
+- **Credits (10 talen):** alleen nog "Iconen, muziek en puzzels zijn eigen werk van Studio Sedillo."
+- **Hoofdsite (repo `studio-sedillo`):** inleidende zin weg, nieuwe contacttekst, 404-pagina linkt nu ook op github.io naar de eigen startpagina.
+- `CACHE_VERSION` → `sudoku-kids-v8`.
+
+**Bewijs:** `python3 tests/e2e.py` twee keer achter elkaar → `✅ 361/361 controles geslaagd.` (5 nieuw: credits in 10 talen, privacyverklaring in 5 talen met Gmail/grondslag/DPF/links, doorverwijzing van `verwijderen.html`, `/delete` zonder `.html`, het oude adres komt nergens meer voor). `python3 tests/screenshots.py` → 7 formaten × 34 schermen, `✅ Niets buiten beeld, alle knoppen minstens 48x48 px, 0 console-errors.`; credits en de nieuwe onderdelen van de privacyverklaring zelf bekeken. `node tests/validate-levels.js` ✅. `python3 tests/store.py --check` ✅. Netwerktest opnieuw: 30 verzoeken, alleen GET, alleen het eigen adres (de links naar GitHub en Google laden niets). Zoekactie naar het oude adres in beide repo's: geen treffers.
+
+**Bestanden geraakt:** privacy.html, delete.html (was verwijderen.html), verwijderen.html (doorverwijzing), index.html, i18n.js, sw.js, beide workflows, tools/eigen-domein.sh, store/listing.json, store/teksten.md, tests/e2e.py, tests/screenshots.py, tests/store.py, docs/publiceren.md, docs/studio-sedillo.md, docs/privacy-audit.md, README.md, ROADMAP.md. Repo `studio-sedillo`: index.html, privacy.html, 404.html.
 
 ### 2026-10-11 · v7 op de testlink: voorbereiding publiceren (Claude Code, branch `publish-prep`)
 Vooraf gevraagd: advertenties → **geen** (later eventueel verwijzingen naar eigen spellen); Play Console-account → **persoonlijk** (gesloten test geldt, tenzij het account van vóór 13 november 2023 is).
@@ -315,7 +329,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [x] Spelregels met plaatjes per sudoku-type: ?-knop, Instellingen, en vanzelf bij het eerste level (op test)
 - [x] Nieuwe icoon- of emojiset → eigen kawaii-SVG's (`icons.js`)
 - [x] Account koppelen: keuze gemaakt → geen login (doelgroep alleen kinderen); in plaats daarvan "Voortgang overzetten" met een code (op test)
-- [x] Gegevens en profiel verwijderen in de app + webpagina `verwijderen.html` (op test)
+- [x] Gegevens en profiel verwijderen in de app + webpagina `delete.html` (op test; `verwijderen.html` verwijst door)
 - [x] Google Play-ontwikkelaarsaccount → bestaat al (persoonlijk account), AdMob-account ook (niet gebruikt)
 - [x] Domeinnaam kiezen → eigen subdomein per app: `sudokukids.studiosedillo.com`
 - [x] Store-materiaal: teksten in 10 talen, icoon, feature graphic, screenshots telefoon en tablet → `store/`
@@ -326,22 +340,24 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] v7: een testprofiel verwijderen; daarna "Alle gegevens van deze app verwijderen" (alleen op de testlink!) en kijken of de app schoon start
 - [ ] v7: privacyverklaring en "Gegevens verwijderen (uitleg)" lezen in het Nederlands en Engels
 - [ ] Hoofdsite nalopen: https://jmldewaal-sedillo.github.io/studio-sedillo/ (klopt de tekst over Studio Sedillo? wat moet er bij The Flush Factor staan?)
+- [ ] v8: credits (één zin over eigen werk), privacyverklaring (onderdelen "Als je ons mailt" en "Gegevens buiten de EU") en de hoofdsite opnieuw lezen
 - [ ] Store-materiaal bekijken: `store/feature-graphic.png`, `store/screenshots/`, `store/teksten.md`
 
 **Eigen domein**
 - [ ] J: DNS-records aanmaken bij Namecheap (tabel in `docs/studio-sedillo.md`); parkeer-records weghalen
-- [ ] J: e-mail doorsturen `support@studiosedillo.com` instellen en testen
 - [ ] J: domein verifiëren bij GitHub (TXT-record `_github-pages-challenge-jmldewaal-sedillo`)
 - [ ] C: `tools/eigen-domein.sh check`, dan `site` en `test`; opnieuw naar test pushen; controleren op https://test-sudokukids.studiosedillo.com/
 - [ ] J: repository `sudoku-kids-live` en de deploy key aanmaken (vijf commando's in `docs/studio-sedillo.md`)
 - [ ] C: `tools/eigen-domein.sh live`, na akkoord mergen naar `main`, Pages aanzetten op `sudoku-kids-live`, `tools/eigen-domein.sh https`
-- [ ] C: controleren op het echte adres: `/privacy`, `/verwijderen`, `/.well-known/assetlinks.json` (rechtstreeks, als JSON), HTTPS afgedwongen
+- [ ] C: controleren op het echte adres: `/privacy`, `/delete` (en dat `/verwijderen` doorverwijst), `/.well-known/assetlinks.json` (rechtstreeks, als JSON), HTTPS afgedwongen
 - [ ] C: daarna `NEW_HOME` in `script.js` invullen (verhuismelding op het oude adres), cache verhogen, testen, live
 - [ ] J: de verhuizing op je eigen telefoon doen vanaf het oude adres en kijken of je sterren meekomen
 - [ ] C: links op de hoofdsite controleren zodra het subdomein live is
+- [ ] Nieuwe lay-out voor studiosedillo.com (ontwerp volgt)
+- [ ] C: privacyverklaringen nalopen na de uitspraak van het Hof van Justitie over het EU-U.S. Data Privacy Framework (zaak C-703/25 P, loopt nog); vervalt het besluit, dan de alinea "Gegevens buiten de EU" aanpassen
 
 **Android-app (TWA)**
-- [ ] J: app aanmaken in Play Console; ontwikkelaarsnaam Studio Sedillo, e-mail support@studiosedillo.com; accounttype en aanmaakdatum nakijken
+- [ ] J: app aanmaken in Play Console; ontwikkelaarsnaam Studio Sedillo, e-mail studio.sedillo@gmail.com; accounttype en aanmaakdatum nakijken
 - [ ] J: TWA bouwen met Bubblewrap en de upload key maken (`docs/twa.md`); keystore en wachtwoord op twee plekken bewaren, nooit in Git
 - [ ] C/J: in de build controleren: `targetSdkVersion` 36 of hoger, geen `AD_ID`-, locatie- of meldingspermissie, start offline
 - [ ] J: `.aab` uploaden naar Interne test; SHA-256 van de app signing key kopiëren
@@ -419,7 +435,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 
 ## Bekende beperkingen
 
-- **De eigen domeinen staan nog niet aan** (stand 2026-10-11): `studiosedillo.com` wijst nog naar de parkeerpagina van Namecheap. Tot de DNS klopt draaien test en live op github.io, en bestaan `/privacy` en `/verwijderen` alleen daar (als `…/sudoku-kids/privacy.html`).
+- **De eigen domeinen staan nog niet aan** (stand 2026-10-11): `studiosedillo.com` wijst nog naar de parkeerpagina van Namecheap. Tot de DNS klopt draaien test en live op github.io, en bestaan `/privacy` en `/delete` alleen daar (als `…/sudoku-kids/privacy.html`).
 - **`assetlinks.json` bevat nog geen vingerafdruk.** Die bestaat pas nadat de app in Play Console is aangemaakt. Tot dan toont een TWA een adresbalk.
 - **Verhuizen naar een ander adres neemt de voortgang niet vanzelf mee** (opslag hangt aan het adres). Daarvoor is de verhuisknop of de overzet-code. Een snelkoppeling op het startscherm moet opnieuw geïnstalleerd worden.
 - **Test en live delen nu nog één domein** (`jmldewaal-sedillo.github.io`), net als Flush Factor. De opslag is gescheiden met de `test_`-prefix. De live versie van vóór deze review (cache v2) en Flush Factor ruimen bij een eigen update nog wel alle caches op het domein op; de testversie haalt zijn bestanden dan gewoon opnieuw op, maar is op dat moment even niet offline beschikbaar.

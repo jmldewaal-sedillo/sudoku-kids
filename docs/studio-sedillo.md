@@ -65,10 +65,8 @@ De CNAME's wijzen naar je gebruikersnaam, zonder de naam van de repository; GitH
 aan de hand van het ingestelde domein welke repository erbij hoort. Maak **geen**
 wildcard-record (`*`): daarmee kan iemand anders een subdomein kapen, ook na verificatie.
 
-**E-mail:** onder *Mail Settings* op dezelfde pagina staat "Email Forwarding" al aan (de
-MX-records en het SPF-record van Namecheap bestaan al). Voeg bij *Redirect Email* de alias
-`support` toe met je eigen adres als bestemming, en stuur een testmail. Laat die MX- en
-TXT-records staan.
+**E-mail:** het contactadres is `studio.sedillo@gmail.com` (Gmail). Voor e-mail hoeft er bij
+Namecheap niets ingesteld te worden.
 
 **Controleren:** `tools/eigen-domein.sh check` laat per record zien of het goed staat. Een
 wijziging kan tot 24 uur duren, meestal een paar minuten.
@@ -182,7 +180,7 @@ Wat er bij zo'n verhuizing wél moet gebeuren:
 
    Het spel op `/spelen/` registreert daar zijn eigen service worker met een eigen cache.
 3. **Doorverwijzen:** op `/index.html` (de nieuwe website) een duidelijke knop naar
-   `/spelen/`; `/privacy` en `/verwijderen` blijven op het oude pad bestaan (de links staan
+   `/spelen/`; `/privacy` en `/delete` blijven op het oude pad bestaan (de links staan
    in Play Console) of verwijzen door.
 4. **Manifest:** zet `"id": "/"` vast in `manifest.json` (nu `./`, wat op de nieuwe plek
    `/spelen/` zou worden). Zo blijft een geïnstalleerde app dezelfde app.
@@ -217,11 +215,11 @@ Voorbeeld: The Flush Factor op `flushfactor.studiosedillo.com`.
    de SHA-256 van de app signing key uit Play Console. De koppeling tussen een Android-app
    en een website geldt per hostnaam; de hoofdsite heeft er dus geen nodig. Zonder
    `.nojekyll` slaat GitHub Pages mappen die met een punt beginnen over.
-7. **Privacy en verwijderen:** `privacy.html` en `verwijderen.html` in de app
-   (bereikbaar als `/privacy` en `/verwijderen`), in dezelfde opzet als hier.
+7. **Privacy en verwijderen:** `privacy.html` en `delete.html` in de app
+   (bereikbaar als `/privacy` en `/delete`), in dezelfde opzet als hier.
 8. **Hoofdsite:** een kaart in `index.html` van `studio-sedillo` en een regel in de
    privacylijst daar.
-9. **Play Console:** ontwikkelaarsnaam Studio Sedillo, contact support@studiosedillo.com,
+9. **Play Console:** ontwikkelaarsnaam Studio Sedillo, contact studio.sedillo@gmail.com,
    en de checklist uit `docs/publiceren.md`.
 
 [gh-domain]: https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site

@@ -4,7 +4,7 @@ Een sudoku-spel voor kinderen als PWA: 5 werelden, 450 levels, 3 soorten sudoku
 (standaard, X-Sudoku, fruit), 3.700 puzzels, tot 6 profielen per toestel, eigen
 kawaii-iconen, muziek, en 10 talen (NL, EN, DE, FR, ES, PT, IT, PL, TR, ID).
 
-Gemaakt door **Studio Sedillo** · support@studiosedillo.com · package name
+Gemaakt door **Studio Sedillo** · studio.sedillo@gmail.com · package name
 `com.studiosedillo.sudokukids`.
 
 | Onderwerp | Document |
@@ -72,7 +72,8 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `test-preview.js` | Formaat-balk van de testversie |
 | `docs/account-koppelen.md` | Onderzoek en advies over inloggen/koppelen in een kinderapp |
 | `docs/publiceren.md`, `docs/studio-sedillo.md`, `docs/twa.md`, `docs/privacy-audit.md` | Publiceren: beleid, domeinen, Android-app, privacy-audit |
-| `verwijderen.html` | Uitleg over gegevens verwijderen in 5 talen (de link die Google Play vraagt); bereikbaar als `/verwijderen` |
+| `delete.html` | Uitleg over gegevens verwijderen in 5 talen (de link die Google Play vraagt); bereikbaar als `/delete` |
+| `verwijderen.html` | Het oude adres van die pagina; verwijst door naar `delete.html` |
 | `.well-known/assetlinks.json`, `.nojekyll` | Koppeling tussen de Android-app en dit (sub)domein; zonder `.nojekyll` slaat GitHub Pages de map over |
 | `store/` | Store-materiaal: teksten in 10 talen (`listing.json`, `teksten.md`), icoon, feature graphic, screenshots |
 | `twa/twa-manifest.json` | Instellingen voor Bubblewrap (Android-app) |

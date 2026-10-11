@@ -4,9 +4,10 @@ Gemaakt door `tests/store.py` uit `store/listing.json`. Pas de teksten daar aan,
 
 - Titel: **Sudoku Kids & Crazy Grids** (25 tekens)
 - Ontwikkelaar: Studio Sedillo
-- E-mail: support@studiosedillo.com
+- E-mail: studio.sedillo@gmail.com
 - Website: https://studiosedillo.com
 - Privacybeleid: https://sudokukids.studiosedillo.com/privacy
+- Gegevens verwijderen: https://sudokukids.studiosedillo.com/delete
 - Categorie: Game – Puzzle
 
 ## en-US
@@ -15,7 +16,7 @@ Gemaakt door `tests/store.py` uit `store/listing.json`. Pas de teksten daar aan,
 
 Sudoku for kids: 450 levels with numbers, animals and fruit. No ads.
 
-**Volledige beschrijving** (1390 tekens)
+**Volledige beschrijving** (1389 tekens)
 
 ```
 Sudoku Kids & Crazy Grids is a sudoku adventure made for children. Start with tiny 4×4 grids and grow, step by step, to a real 9×9 sudoku.
@@ -53,7 +54,7 @@ SAFE FOR CHILDREN
 
 Available in English, Dutch, German, French, Spanish, Portuguese, Italian, Polish, Turkish and Indonesian.
 
-Made by Studio Sedillo. Questions? support@studiosedillo.com
+Made by Studio Sedillo. Questions? studio.sedillo@gmail.com
 ```
 
 ## nl-NL
@@ -62,7 +63,7 @@ Made by Studio Sedillo. Questions? support@studiosedillo.com
 
 Sudoku voor kinderen: 450 levels met cijfers, dieren en fruit. Geen reclame.
 
-**Volledige beschrijving** (1502 tekens)
+**Volledige beschrijving** (1501 tekens)
 
 ```
 Sudoku Kids & Crazy Grids is een sudoku-avontuur dat speciaal voor kinderen is gemaakt. Begin met kleine roosters van 4×4 en groei stap voor stap naar een echte sudoku van 9×9.
@@ -100,7 +101,7 @@ VEILIG VOOR KINDEREN
 
 Beschikbaar in het Nederlands, Engels, Duits, Frans, Spaans, Portugees, Italiaans, Pools, Turks en Indonesisch.
 
-Gemaakt door Studio Sedillo. Vragen? support@studiosedillo.com
+Gemaakt door Studio Sedillo. Vragen? studio.sedillo@gmail.com
 ```
 
 ## es-ES
@@ -109,7 +110,7 @@ Gemaakt door Studio Sedillo. Vragen? support@studiosedillo.com
 
 Sudoku para niños: 450 niveles con números, animales y fruta. Sin anuncios.
 
-**Volledige beschrijving** (1515 tekens)
+**Volledige beschrijving** (1514 tekens)
 
 ```
 Sudoku Kids & Crazy Grids es una aventura de sudoku hecha para niños. Empieza con cuadrículas pequeñas de 4×4 y avanza, paso a paso, hasta un sudoku de verdad de 9×9.
@@ -147,7 +148,7 @@ SEGURO PARA NIÑOS
 
 Disponible en español, inglés, neerlandés, alemán, francés, portugués, italiano, polaco, turco e indonesio.
 
-Hecho por Studio Sedillo. ¿Preguntas? support@studiosedillo.com
+Hecho por Studio Sedillo. ¿Preguntas? studio.sedillo@gmail.com
 ```
 
 ## pt-BR
@@ -156,7 +157,7 @@ Hecho por Studio Sedillo. ¿Preguntas? support@studiosedillo.com
 
 Sudoku para crianças: 450 níveis com números, animais e frutas. Sem anúncios.
 
-**Volledige beschrijving** (1479 tekens)
+**Volledige beschrijving** (1478 tekens)
 
 ```
 Sudoku Kids & Crazy Grids é uma aventura de sudoku feita para crianças. Comece com grades pequenas de 4×4 e avance, passo a passo, até um sudoku de verdade de 9×9.
@@ -194,7 +195,7 @@ SEGURO PARA CRIANÇAS
 
 Disponível em português, inglês, holandês, alemão, francês, espanhol, italiano, polonês, turco e indonésio.
 
-Feito por Studio Sedillo. Dúvidas? support@studiosedillo.com
+Feito por Studio Sedillo. Dúvidas? studio.sedillo@gmail.com
 ```
 
 ## id
@@ -203,7 +204,7 @@ Feito por Studio Sedillo. Dúvidas? support@studiosedillo.com
 
 Sudoku untuk anak: 450 level dengan angka, hewan, dan buah. Tanpa iklan.
 
-**Volledige beschrijving** (1546 tekens)
+**Volledige beschrijving** (1545 tekens)
 
 ```
 Sudoku Kids & Crazy Grids adalah petualangan sudoku yang dibuat untuk anak-anak. Mulai dari kotak kecil 4×4 dan maju, selangkah demi selangkah, sampai sudoku 9×9 yang sesungguhnya.
@@ -241,7 +242,7 @@ AMAN UNTUK ANAK
 
 Tersedia dalam bahasa Indonesia, Inggris, Belanda, Jerman, Prancis, Spanyol, Portugis, Italia, Polandia, dan Turki.
 
-Dibuat oleh Studio Sedillo. Ada pertanyaan? support@studiosedillo.com
+Dibuat oleh Studio Sedillo. Ada pertanyaan? studio.sedillo@gmail.com
 ```
 
 ## de-DE
@@ -250,7 +251,7 @@ Dibuat oleh Studio Sedillo. Ada pertanyaan? support@studiosedillo.com
 
 Sudoku für Kinder: 450 Level mit Zahlen, Tieren und Obst. Ohne Werbung.
 
-**Volledige beschrijving** (1479 tekens)
+**Volledige beschrijving** (1478 tekens)
 
 ```
 Sudoku Kids & Crazy Grids ist ein Sudoku-Abenteuer für Kinder. Beginne mit kleinen 4×4-Feldern und wachse Schritt für Schritt bis zum echten 9×9-Sudoku.
@@ -288,7 +289,7 @@ SICHER FÜR KINDER
 
 Verfügbar auf Deutsch, Englisch, Niederländisch, Französisch, Spanisch, Portugiesisch, Italienisch, Polnisch, Türkisch und Indonesisch.
 
-Gemacht von Studio Sedillo. Fragen? support@studiosedillo.com
+Gemacht von Studio Sedillo. Fragen? studio.sedillo@gmail.com
 ```
 
 ## fr-FR
@@ -297,7 +298,7 @@ Gemacht von Studio Sedillo. Fragen? support@studiosedillo.com
 
 Sudoku pour enfants : 450 niveaux avec chiffres, animaux et fruits. Sans pub.
 
-**Volledige beschrijving** (1578 tekens)
+**Volledige beschrijving** (1577 tekens)
 
 ```
 Sudoku Kids & Crazy Grids est une aventure de sudoku conçue pour les enfants. Commence par de petites grilles 4×4 et progresse, pas à pas, jusqu’au vrai sudoku 9×9.
@@ -335,7 +336,7 @@ SÛR POUR LES ENFANTS
 
 Disponible en français, anglais, néerlandais, allemand, espagnol, portugais, italien, polonais, turc et indonésien.
 
-Créé par Studio Sedillo. Des questions ? support@studiosedillo.com
+Créé par Studio Sedillo. Des questions ? studio.sedillo@gmail.com
 ```
 
 ## it-IT
@@ -344,7 +345,7 @@ Créé par Studio Sedillo. Des questions ? support@studiosedillo.com
 
 Sudoku per bambini: 450 livelli con numeri, animali e frutta. Senza pubblicità.
 
-**Volledige beschrijving** (1527 tekens)
+**Volledige beschrijving** (1526 tekens)
 
 ```
 Sudoku Kids & Crazy Grids è un’avventura di sudoku pensata per i bambini. Inizia con piccole griglie 4×4 e cresci, passo dopo passo, fino al vero sudoku 9×9.
@@ -382,7 +383,7 @@ SICURO PER I BAMBINI
 
 Disponibile in italiano, inglese, olandese, tedesco, francese, spagnolo, portoghese, polacco, turco e indonesiano.
 
-Creato da Studio Sedillo. Domande? support@studiosedillo.com
+Creato da Studio Sedillo. Domande? studio.sedillo@gmail.com
 ```
 
 ## pl-PL
@@ -391,7 +392,7 @@ Creato da Studio Sedillo. Domande? support@studiosedillo.com
 
 Sudoku dla dzieci: 450 poziomów z cyframi, zwierzętami i owocami. Bez reklam.
 
-**Volledige beschrijving** (1455 tekens)
+**Volledige beschrijving** (1454 tekens)
 
 ```
 Sudoku Kids & Crazy Grids to przygoda z sudoku stworzona dla dzieci. Zacznij od małych plansz 4×4 i krok po kroku dojdź do prawdziwego sudoku 9×9.
@@ -429,7 +430,7 @@ BEZPIECZNE DLA DZIECI
 
 Dostępne po polsku, angielsku, niderlandzku, niemiecku, francusku, hiszpańsku, portugalsku, włosku, turecku i indonezyjsku.
 
-Stworzone przez Studio Sedillo. Pytania? support@studiosedillo.com
+Stworzone przez Studio Sedillo. Pytania? studio.sedillo@gmail.com
 ```
 
 ## tr-TR
@@ -438,7 +439,7 @@ Stworzone przez Studio Sedillo. Pytania? support@studiosedillo.com
 
 Çocuklar için sudoku: sayılar, hayvanlar ve meyvelerle 450 seviye. Reklamsız.
 
-**Volledige beschrijving** (1460 tekens)
+**Volledige beschrijving** (1459 tekens)
 
 ```
 Sudoku Kids & Crazy Grids, çocuklar için hazırlanmış bir sudoku macerasıdır. Küçük 4×4 tablolarla başla ve adım adım gerçek 9×9 sudokuya ilerle.
@@ -476,5 +477,5 @@ OYNAMAYA DEVAM ET
 
 Türkçe, İngilizce, Felemenkçe, Almanca, Fransızca, İspanyolca, Portekizce, İtalyanca, Lehçe ve Endonezce olarak kullanılabilir.
 
-Studio Sedillo tarafından yapıldı. Sorularınız mı var? support@studiosedillo.com
+Studio Sedillo tarafından yapıldı. Sorularınız mı var? studio.sedillo@gmail.com
 ```

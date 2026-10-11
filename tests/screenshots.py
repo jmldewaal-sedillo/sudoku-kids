@@ -271,7 +271,7 @@ def run():
                 page.click('#btn-move-later')
                 page.goto(url + 'privacy.html')
                 shot('33-privacy')
-                page.goto(url + 'verwijderen.html')
+                page.goto(url + 'delete.html')
                 shot('34-verwijderen')
             except Exception as exc:  # een knop is niet te bereiken: dat is zelf een bevinding
                 failed = True

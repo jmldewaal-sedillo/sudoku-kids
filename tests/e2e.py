@@ -1265,7 +1265,7 @@ def run():
             shape[code] = [g.js('document.querySelector("h1").textContent') == title, g.js('document.querySelectorAll("#policy li").length'),
                            g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelector(\'#langs button[aria-pressed="true"]\').dataset.lang') == code,
                            g.js('document.querySelector(".back").textContent.length > 5'), g.js(emoji_js) == '']
-        check('alle 5 talen compleet: titel, 16 punten, 10 kopjes, terugknop', all(v == [True, 16, 10, True, True, True] for v in shape.values()), shape)
+        check('alle 5 talen compleet: titel, 16 punten, 12 kopjes, terugknop', all(v == [True, 16, 12, True, True, True] for v in shape.values()), shape)
         g.js('const s = JSON.parse(localStorage.getItem("sudokuKids_settings") || "{}"); s.language = "de"; localStorage.setItem("sudokuKids_settings", JSON.stringify(s))')
         g.page.reload()
         check('app in een taal zonder vertaling (Duits): de verklaring start in het Engels', g.js('document.documentElement.lang') == 'en')
@@ -1447,25 +1447,45 @@ def run():
         g.page.click('#btn-credits')
         check('creditspagina via Instellingen: "Gemaakt door Studio Sedillo" met contactadres',
               g.modal() == 'modal-credits' and g.js('document.querySelector(".credits-by").textContent') == 'Gemaakt door Studio Sedillo' and
-              'support@studiosedillo.com' in g.js('document.getElementById("modal-credits").textContent'))
+              'studio.sedillo@gmail.com' in g.js('document.getElementById("modal-credits").textContent'))
+        own = g.js('Object.fromEntries(Object.entries(STRINGS).map(([code, t]) => [code, t.ownWork]))')
+        shown = g.js('document.querySelector(\'[data-i18n="ownWork"]\').textContent')
+        check('credits in 10 talen: één zin over eigen werk, niets meer over advertenties of onderdelen van anderen',
+              shown == own['nl'] and own['en'] == "Icons, music and puzzles are Studio Sedillo's own work." and own['nl'] == 'Iconen, muziek en puzzels zijn eigen werk van Studio Sedillo.' and
+              all(v.count('.') == 1 and 'Studio Sedillo' in v for v in own.values()) and len(set(own.values())) == 10, own)
         g.page.click('#btn-credits-ok')
         check('links naar privacy en "gegevens verwijderen" in Instellingen',
-              g.js('[...document.querySelectorAll(".settings-link")].map(a => a.getAttribute("href")).join()') == 'privacy.html,verwijderen.html')
-        for page_name, min_sections in (('privacy.html', 10), ('verwijderen.html', 5)):
+              g.js('[...document.querySelectorAll(".settings-link")].map(a => a.getAttribute("href")).join()') == 'privacy.html,delete.html')
+        for page_name, min_sections in (('privacy.html', 12), ('delete.html', 5)):
             g.page.goto(url + page_name)
             shape = {}
             for code in ('en', 'nl', 'es', 'pt', 'id'):
                 g.page.click(f'#langs button[data-lang="{code}"]')
                 shape[code] = [g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelectorAll("#policy li").length'),
-                               g.js('document.querySelectorAll(\'#policy a[href="mailto:support@studiosedillo.com"]\').length') >= 1,
+                               g.js('document.querySelectorAll(\'#policy a[href="mailto:studio.sedillo@gmail.com"]\').length') >= 1,
                                'Studio Sedillo' in g.js('document.getElementById("policy").textContent')]
             check(f'{page_name} in 5 talen: zelfde opbouw ({min_sections} onderdelen), Studio Sedillo en het contactadres',
                   len({json.dumps(v) for v in shape.values()}) == 1 and shape['en'][0] == min_sections and shape['en'][2] and shape['en'][3], shape)
+        legal = {}
+        g.page.goto(url + 'privacy.html')
+        for code in ('en', 'nl', 'es', 'pt', 'id'):
+            g.page.click(f'#langs button[data-lang="{code}"]')
+            text = g.js('document.getElementById("policy").textContent')
+            legal[code] = ['Gmail' in text and 'Google' in text, 'Data Privacy Framework' in text, '6' in text and ('GDPR' in text or 'AVG' in text or 'RGPD' in text),
+                           g.js('[...document.querySelectorAll("#policy a")].map(a => a.getAttribute("href")).filter(h => /^https:/.test(h)).sort().join()'),
+                           g.js('document.querySelector(\'#policy a[href="delete.html"]\') !== null')]
+        check('privacyverklaring in 5 talen: e-mail via Gmail (Google), grondslag art. 6 lid 1 sub f, Data Privacy Framework, links naar GitHub en Google, link naar delete.html',
+              all(v == [True, True, True, 'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement,https://policies.google.com/privacy,https://policies.google.com/privacy', True]
+                  for v in legal.values()), legal)
+        g.page.goto(url + 'verwijderen.html?lang=nl')
+        g.page.wait_for_url('**/delete.html?lang=nl')
+        check('het oude adres verwijderen.html verwijst door naar delete.html en houdt de taal vast',
+              g.js('document.querySelector("h1").textContent') == 'Gegevens verwijderen')
         g.page.goto(url + 'privacy.html?lang=nl')
         heads = g.js('[...document.querySelectorAll("#policy h2")].map(h => h.textContent)')
         check('privacyverklaring bevat de verplichte onderdelen',
               heads == ['Wie is verantwoordelijk', 'In het kort', 'Wat er wordt bewaard, en waar', 'Wat de app niet doet', 'Delen met anderen',
-                        'Hoe lang gegevens bewaard blijven', 'Hoe je gegevens verwijdert', 'Je rechten (AVG)', 'Kinderen en ouders', 'Wijzigingen'] and
+                        'Als je ons mailt', 'Gegevens buiten de EU', 'Hoe lang gegevens bewaard blijven', 'Hoe je gegevens verwijdert', 'Je rechten (AVG)', 'Kinderen en ouders', 'Wijzigingen'] and
               '11 oktober 2026' in g.js('document.querySelector(".updated").textContent'), heads)
         check('geen console-errors', not g.errors, g.errors)
         g.close()
@@ -1497,7 +1517,7 @@ def run():
         g.js('goToSettings()')
         g.page.click('#btn-credits')
         g.page.click('#btn-credits-ok')
-        for page_name in ('privacy.html', 'verwijderen.html', ''):
+        for page_name in ('privacy.html', 'delete.html', 'verwijderen.html', ''):
             g.page.goto(url + page_name)
         g.page.wait_for_timeout(1500)
         hosts = sorted({re.sub(r'^https?://([^/]+)/.*$', r'\1', r) for r in g.requests})
@@ -1536,8 +1556,9 @@ def run():
         # ------------------------------------------------------------
         section('32. Eigen domein: privacy-URL, assetlinks, deploy en store-teksten (publiceren 4, 5)')
         g = Game(browser, url)
-        for path, title in (('privacy', 'Privacyverklaring'), ('verwijderen', 'Gegevens verwijderen')):
+        for path, title in (('privacy', 'Privacyverklaring'), ('delete', 'Gegevens verwijderen'), ('verwijderen', 'Gegevens verwijderen')):
             g.page.goto(url + path + '?lang=nl')
+            g.page.wait_for_selector('#policy h1')
             check(f'/{path} (zonder .html, zoals op GitHub Pages) toont de pagina', g.js('document.querySelector("h1").textContent') == title)
         links = g.js('fetch(".well-known/assetlinks.json").then(r => r.ok ? r.json() : null)')
         check('/.well-known/assetlinks.json is geldige JSON met de package name com.studiosedillo.sudokukids',
@@ -1556,6 +1577,11 @@ def run():
         live = (ROOT / '.github' / 'workflows' / 'live-deploy.yml').read_text()
         check('live-deploy.yml draait alleen op main, alleen als LIVE_DOMAIN bestaat, en neemt de formaat-balk van de testversie niet mee',
               'branches: [main]' in live and "vars.LIVE_DOMAIN != ''" in live and 'test-preview.js' not in live)
+        old_mail = 'support@' + 'studiosedillo.com'
+        skip = {'.git', 'node_modules', 'out'}
+        found = [str(f.relative_to(ROOT)) for f in ROOT.rglob('*') if f.is_file() and not skip & set(f.relative_to(ROOT).parts)
+                 and f.suffix in ('.html', '.js', '.json', '.md', '.py', '.yml', '.sh', '.css', '.txt') and old_mail in f.read_text(errors='ignore')]
+        check('het oude contactadres komt nergens meer voor; overal studio.sedillo@gmail.com', not found, found)
         check('.nojekyll staat in de repo en er staat geen CNAME in de root (anders neemt de bron-repo het domein over)',
               (ROOT / '.nojekyll').is_file() and not (ROOT / 'CNAME').exists())
         twa = json.loads((ROOT / 'twa' / 'twa-manifest.json').read_text())

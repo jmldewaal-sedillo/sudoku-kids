@@ -1,6 +1,6 @@
 # Privacy-audit – wat de app verstuurt en bewaart
 
-*Uitgevoerd op 11 oktober 2026 op branch `publish-prep` (cache `sudoku-kids-v7`). Opnieuw
+*Uitgevoerd op 11 oktober 2026 op branch `publish-prep` (cache `sudoku-kids-v8`, opnieuw gemeten na de wijzigingen van v8). Opnieuw
 uit te voeren met `python3 tests/e2e.py`; onderdeel 31 doet de meting en schrijft de ruwe
 uitkomst naar `tests/out/privacy-audit.json`.*
 
@@ -27,14 +27,14 @@ en opnieuw de startpagina.
 
 | | |
 |---|---|
-| Aantal verzoeken | 26 |
+| Aantal verzoeken | 30 |
 | Verschillende domeinen | 1: het eigen adres (in de test `127.0.0.1`) |
 | Verzoeken naar een ander domein | **0** |
 | Andere methoden dan GET (POST, PUT, …) | 0 |
-| Opgevraagde bestanden | `/`, `badges.js`, `i18n.js`, `icons.js`, `level-plan.js`, `privacy.html`, `puzzle-bank.js`, `puzzles.js`, `script.js`, `storage.js`, `style.css`, `verwijderen.html` |
+| Opgevraagde bestanden | `/`, `badges.js`, `i18n.js`, `icons.js`, `level-plan.js`, `delete.html`, `privacy.html`, `puzzle-bank.js`, `puzzles.js`, `script.js`, `storage.js`, `style.css`, `verwijderen.html` (verwijst door naar `delete.html`) |
 | Cookies / sessionStorage / IndexedDB | geen / leeg / geen |
 | Toestemmingen verleend | geen |
-| Cache van de service worker | 1 cache (`sudoku-kids-v7`) met 17 eigen bestanden, voor offline spelen |
+| Cache van de service worker | 1 cache (`sudoku-kids-v8`) met 18 eigen bestanden, voor offline spelen |
 
 De iconen, het manifest en de service worker zelf haalt de browser buiten de pagina om op;
 ook die komen van het eigen adres (de lijst staat in `sw.js`, `ASSETS`).
@@ -45,7 +45,9 @@ ook die komen van het eigen adres (de lijst staat in `sw.js`, `ASSETS`).
   link en komt in geen enkel verzoek naar de server voor (onderdeel 29).
 - In de broncode staan geen adressen van andere domeinen die geladen worden: geen CDN,
   lettertypen, statistieken of advertenties. De enige externe adressen in de app zijn tekst
-  (het mailadres) en, zodra ingesteld, het nieuwe eigen adres in de verhuismelding.
+  (het mailadres), twee links in de privacyverklaring (naar de privacyverklaringen van GitHub
+  en Google; die worden pas geopend als iemand erop tikt) en, zodra ingesteld, het nieuwe eigen
+  adres in de verhuismelding.
 - Offline: na één keer laden werkt de app zonder netwerk (onderdeel 10).
 
 **Wat buiten de app valt:** de webserver. GitHub Pages levert de bestanden en kan daarbij,
