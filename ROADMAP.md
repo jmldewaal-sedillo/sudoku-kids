@@ -36,6 +36,12 @@
 
 ## Logboek (nieuwste bovenaan)
 
+### 2026-10-11 · Adrescontrole met de ingevulde lijst; vangnet in template en Flush Factor (Claude Code)
+- Jenn heeft de blocklist ingevuld (2 patronen) en het geheim `PRIVATE_BLOCKLIST` gezet in `sudoku-kids` en `studio-sedillo`.
+- **Eenmalige controle, uitkomst: niets gevonden.** Met `tools/no-private-data.py`: alle bestanden (ook niet-gecommit werk) en de hele geschiedenis van alle branches van de vier lokale repo's; de volledige geschiedenis op GitHub van alle 11 repo's van het account (ook `sudoku-kids-test`, `proef-app`, `proef-app-test` en de vier privé-repo's); en de gepubliceerde pagina's van de testlink, de live app, de hoofdsite en The Flush Factor. Afbeeldingen worden niet gelezen.
+- Vangnet toegevoegd aan `studio-sedillo-app-template` (main) en `the-flush-factor` (branch `sprint-9`, alleen deze vier bestanden): controle, hooks, stap in de workflow; geheim in beide repo's gezet. `Apps/tools/nieuwe-app.sh` zet voor een nieuwe app de hooks aan vóór de eerste commit en zet het geheim in beide repo's. Tests van de template: 37 geslaagd; dry-run van `nieuwe-app.sh` werkt.
+- Geen wijziging aan de app zelf, dus `CACHE_VERSION` blijft `sudoku-kids-v9`.
+
 ### 2026-10-11 · v9 op de testlink: bedrijfsgegevens, onderzoek adres en Play-account, adres-vangnet (Claude Code, branch `publish-prep`)
 Gegevens van Jenn: Studio Sedillo is een eenmanszaak, KvK 42122276, Nederland; handelsnamen Studio Sedillo en Clever Creatures Club. **Vast besluit: naam en land mogen publiek, het adres (huisadres) en het vestigingsnummer nergens.** Btw-id nog niet bekend.
 
@@ -358,14 +364,15 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] Store-materiaal bekijken: `store/feature-graphic.png`, `store/screenshots/`, `store/teksten.md`
 
 **Bedrijf en adres (uitleg in `docs/bedrijf.md`)**
-- [ ] J: straatnaam en postcode in `~/.studio-sedillo/blocklist.txt` zetten; daarna C: alle repo's en hun geschiedenis nalopen met de ingevulde lijst
-- [ ] J: geheim `PRIVATE_BLOCKLIST` aanmaken in `sudoku-kids` en `studio-sedillo` (commando's in `docs/bedrijf.md`)
+- [x] J: straatnaam en postcode in `~/.studio-sedillo/blocklist.txt`; C: alle repo's en hun geschiedenis nagelopen → niets gevonden (2026-10-11)
+- [x] Geheim `PRIVATE_BLOCKLIST` in `sudoku-kids`, `studio-sedillo`, `studio-sedillo-app-template` en `the-flush-factor`
 - [ ] J: Zakelijk postadres regelen en bij KvK als vestigingsadres registreren: nodig vóór een app met advertenties of aankopen, of voor een organisatie-account. (Uit het onderzoek: bij de KVK leg je het vast als *postadres* en scherm je het bezoekadres af; tot dan is het huisadres te vinden in het Handelsregister.)
 - [ ] J: Testers verzamelen voor de gesloten test (12 personen, 14 dagen)
 - [ ] Btw-id toevoegen aan de footer (nog niet bekend; J geeft het door, C zet het op de hoofdsite en op de privacy- en verwijderpagina)
 - [ ] J: beslissen of er een telefoonnummer bij de bedrijfsgegevens moet (Ondernemersplein en ACM noemen het)
 - [ ] J: in Play Console nakijken dat het account persoonlijk is en dat er geen betaalde apps of aankopen aan staan; eigen ontwikkelaarspagina bekijken
-- [ ] C: het vangnet (`tools/no-private-data.py`, hooks) ook in de template `studio-sedillo-app-template` en in The Flush Factor zetten
+- [x] Het vangnet (`tools/no-private-data.py`, hooks, stap in de workflow) ook in de template `studio-sedillo-app-template` en in The Flush Factor (branch `sprint-9`); `Apps/tools/nieuwe-app.sh` zet het aan voor elke nieuwe app
+- [ ] Verandert de blocklist, dan het geheim `PRIVATE_BLOCKLIST` in alle vier de repo's opnieuw zetten (commando in `docs/bedrijf.md`)
 
 **Eigen domein**
 - [ ] J: DNS-records aanmaken bij Namecheap (tabel in `docs/studio-sedillo.md`); parkeer-records weghalen

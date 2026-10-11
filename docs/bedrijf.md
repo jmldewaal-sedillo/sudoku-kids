@@ -188,12 +188,14 @@ python3 tools/no-private-data.py --history   # de hele git-geschiedenis, alle br
 leesbaar, ook niet voor jou):
 
 ```bash
-gh secret set PRIVATE_BLOCKLIST -R jmldewaal-sedillo/sudoku-kids < ~/.studio-sedillo/blocklist.txt
-gh secret set PRIVATE_BLOCKLIST -R jmldewaal-sedillo/studio-sedillo < ~/.studio-sedillo/blocklist.txt
+for r in sudoku-kids studio-sedillo studio-sedillo-app-template the-flush-factor; do
+  gh secret set PRIVATE_BLOCKLIST -R jmldewaal-sedillo/$r < ~/.studio-sedillo/blocklist.txt
+done
 ```
 
 Zonder geheim slaat de controle in GitHub Actions zich over met een waarschuwing. Verander
-je de lijst later, draai dan beide commando's opnieuw.
+je de lijst later, draai dit dan opnieuw. Een nieuwe app krijgt het geheim vanzelf van
+`Apps/tools/nieuwe-app.sh`.
 
 **Grenzen van het vangnet:**
 - Het vindt alleen wat in de lijst staat. Een andere schrijfwijze van je straat vindt het niet.
