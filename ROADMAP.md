@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v3 staat live; v5 staat op de testlink (5 werelden / 450 levels, kawaii-iconen, muziek, 10 talen, profielpagina's, dubbel ouderslot) |
+| **Huidige fase** | v3 staat live; v6 staat op de testlink (v5 + 100 badges, meldingen, geschiedenis, levels gesorteerd op moeilijkheid, privacyverklaring in 5 talen) |
 | **Laatste update** | 2026-10-11 |
-| **Volgende stap** | v5 nalopen op de testlink (zie Testen), daarna mergen naar `main`; dan de groep "Voor publiceren" |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, nu gelijk aan `feature-2026-10-11` (cache v5) |
+| **Volgende stap** | v6 nalopen op de testlink (zie Testen), daarna mergen naar `main`; dan de groep "Voor publiceren" |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, nu gelijk aan `feature-2026-10-11` (cache v6) |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v3` (live sinds 2026-10-11) |
 
 ---
@@ -17,13 +17,14 @@
 1. **Bestaande puzzels veranderen nooit.**
    - *De eerste 105 levels:* houden hun seed `20261004 + i * 7919` en hun plek in `LEVEL_PLAN`. Die volgorde en seeds nooit wijzigen.
    - *Alle levels daarna* staan in `level-plan.js` als (wereld, soort, band, puzzelnummer). Alleen ACHTERAAN aanvullen via `tools/generate-puzzles.js`, nooit regels verplaatsen of weghalen: `w<wereld>_l<index>` in de voortgang van spelers mag nooit verschuiven. Wereld-id's (0 bos, 1 snoep, 2 raket, 3 boerderij, 4 jungle) veranderen nooit; de volgorde op het scherm staat los daarvan in `WORLDS`.
+   - *Volgorde op het scherm:* levels worden per wereld gesorteerd op moeilijkheid getoond (`orderedLevels`). Dat is alleen weergave; opslaan gebeurt altijd onder de vaste index. Badge-id's in `badges.js` ook nooit hernoemen (behaalde badges staan op id opgeslagen).
    - *Ontgrendelen:* een wereld gaat open na 17 gehaalde levels in de wereld ervoor (was "de helft van 35"). Dat getal niet verhogen, anders gaat een wereld bij bestaande spelers weer op slot.
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live: `sudoku-kids-v3`, test: `sudoku-kids-v5`), anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live: `sudoku-kids-v3`, test: `sudoku-kids-v6`), anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
-5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
+5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, build-stappen, externe CDN's, tracking, advertenties of accounts.** `tests/e2e.py` controleert dat er geen verzoek naar een ander domein gaat.
 7. **testen = push naar branch `test`, live = merge naar `main`.** Niets gaat naar `main` voordat het op de testlink is nagelopen. De testversie gebruikt `test_`-sleutels en een eigen cache; dat onderscheid (`IS_TEST` in `script.js` en `sw.js`) nooit weghalen.
 8. **Voor elke release alles groen:** `node tests/validate-levels.js`, `python3 tests/e2e.py` en `python3 tests/screenshots.py` (zie README).
@@ -31,6 +32,29 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-11 · v6 op de testlink: bovenbalk, meldingen, 100 badges, geschiedenis (Claude Code, branch `feature-2026-10-11`)
+Vooraf gevraagd (H): de weergave van de levels sorteren op moeilijkheid, zonder de opslag te raken → gekozen en gebouwd.
+
+**H – volgorde.** Per wereld eerst alle 4×4 (veel → weinig gegeven vakjes), dan 6×6, dan 9×9, met doorlopende nummers op het scherm. Opslag ongewijzigd. Levels die bij een bestaande speler open waren, blijven open.
+
+**A – bovenbalk en speler.** Rechtsboven: belletje + één knop met avatar en sterren (opent het profiel). Rechtsonder alleen de wisselknop met mini-avatar; de kat met wolkje blijft linksonder (en is aaibaar). Meldingen per profiel: nieuwe badge, nieuwe wereld open, 10/25/50 levels, alle sterren in een wereld, en berichtjes van de kat; elk met icoon, een tik gaat naar het juiste scherm, openen markeert alles als gelezen. Alleen lokaal (maximaal 50), geen push, geen internet.
+
+**B – grootte.** Twee keuzes: klein (68% van de ruimte, max. 420 px) en groot (alles, max. 900 px). "Normaal" en "groot" worden "groot", "klein" blijft "klein". Oorzaak van "ziet er hetzelfde uit": normaal en groot verschilden alleen in de bovengrens (720 vs 1100 px), die een telefoon nooit haalt.
+
+**C – privacyverklaring.** Terugknop met het kawaii-icoon; verklaring in Engels, Nederlands, Spaans, Portugees en Indonesisch met taalknoppen (start in de taal van de app, anders Engels). Zoekactie door het project: geen emoji meer in index.html, privacy.html, docs/, manifest, css, js of de icoon-SVG's (de oude avatar-omzetting staat nu als codepunten in `storage.js`; de telefoon-emoji is uit de formaat-balk).
+
+**D – profielpagina.** Drie onderdelen: Badges (100 stuks in `badges.js`, elk een eigen plaatje, naam en uitleg in 10 talen; grijs met voortgang tot ze gehaald zijn; tik voor details), Werelden (voortgang, sterren, levels per grootte, een stip per level; tik → levelkeuze) en Geschiedenis (alle gespeelde puzzels met datum, tijd, fouten, hints en sterren; uitleg van de sterren; filter per wereld; laatste 500). Bestaande voortgang staat als "Eerder gespeeld".
+Badges: aantallen levels en sterren, per wereld, per type, per rastergrootte, snelheid, foutloos op rij, zonder hints, dagen op rij (hooguit 7) en dagen totaal (hooguit 20), tijdstip, grappige (gum, notities, hints, 1 ster, doorzetter, kat aaien, …) en verzamelbadges. Geen badge beloont lang achter elkaar spelen en niets heeft met geld te maken.
+
+**Ook gevonden en opgelost:** de pagina kon onder omstandigheden nog 20 px wegscrollen (focus op een knop in een verborgen scherm) → `overflow: clip` op html/body.
+
+**Bewijs:**
+- `node tests/validate-levels.js` → drie keer ✅; `node tests/difficulty.js` → beide ✅.
+- `python3 tests/e2e.py` → `✅ 294/294 controles geslaagd.` (63 nieuw; o.a. een test die alle 450 levels speelt, 20 dagen in de tijd reist en daarna alle 100 badges gehaald heeft; opslag na 500+ puzzels 44 kB).
+- `python3 tests/screenshots.py` → 7 formaten × 27 schermen = 189 screenshots, `✅ Niets buiten beeld, alle knoppen minstens 48x48 px, 0 console-errors.`
+
+**Bestanden geraakt:** script.js, style.css, index.html, i18n.js, storage.js, icons.js, sw.js, privacy.html, test-preview.js, badges.js (nieuw), tests/e2e.py, tests/screenshots.py, screenshots/, .github/workflows/test-deploy.yml, README.md, ROADMAP.md.
 
 ### 2026-10-11 · v5 op de testlink: feedbackronde A t/m F (Claude Code, branch `feature-2026-10-11`)
 Vooraf gevraagd en beantwoord: A1 = 50 levels per rastergrootte per wereld (later verder aanvullen), B1 = optie 1 (zelf getekende iconen), A3 = Boerderij + Jungle.
@@ -211,6 +235,12 @@ Vooraf gevraagd en beantwoord: A1 = 50 levels per rastergrootte per wereld (late
 
 ### Testen (op een echte telefoon/tablet)
 Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood label TEST bovenin).
+- [ ] v6, badges: zijn de namen leuk en de plaatjes duidelijk genoeg? Vind je 100 te veel of juist goed?
+- [ ] v6, meldingen: belletje → lijst → tik op een badge of wereld; is het aantal meldingen na een paar levels niet te veel?
+- [ ] v6, volgorde: lopen de levels in het Dierenbos nu logisch op? (Bij jouw bestaande testprofiel staan gehaalde levels verspreid; maak een nieuw profiel voor het zuivere beeld.)
+- [ ] v6, grootte: klein en groot op je telefoon en op de pc
+- [ ] v6, geschiedenis: klopt wat er staat met wat je net speelde?
+- [ ] v6, privacyverklaring: taalknoppen en de terugknop
 - [ ] v5, muziek: klinkt het deuntje vrolijk en rustig genoeg, en niet te hard naast de geluidseffecten? Stopt het als je de app wegzet?
 - [ ] v5, klikgeluid: prettig of irritant bij elke knop?
 - [ ] v5, iconen: zijn de dieren en het fruit in een 9×9 op je telefoon nog goed uit elkaar te houden?
@@ -240,7 +270,9 @@ Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood
 - [x] Relatieve paden in manifest.json controleren na keuze van subpad → `tests/e2e.py` controleert manifest, iconen en `sw.js`-bestanden
 - [ ] Beleid: Families-beleid van Google Play, AVG voor kinderen, leeftijdsclassificatie (IARC), Data safety-formulier, privacyverklaring afmaken (contact-e-mail, NL en EN, plus de gevolgen van account koppelen), en eventueel gebruiksvoorwaarden. Basis staat in `privacy.html` en `docs/account-koppelen.md`.
 - [ ] Credits: een creditspagina in de app (via Instellingen) met de makers. Voor iconen is geen vermelding nodig (eigen tekeningen in `icons.js`); er zijn geen externe lettertypen, geluiden of bibliotheken. Wel noemen: "Iconen en muziek: eigen werk".
-- [ ] Vertalingen laten nakijken door een moedertaalspreker (ze zijn door de AI gemaakt):
+- [ ] Privacyverklaring per taal juridisch laten nakijken voor publicatie:
+  - [ ] Engels  - [ ] Nederlands  - [ ] Spaans  - [ ] Portugees  - [ ] Indonesisch
+- [ ] Vertalingen laten nakijken door een moedertaalspreker (ze zijn door de AI gemaakt; sinds v6 ook de namen en uitleg van de 100 badges in `badges.js` en de meldingen):
   - [ ] Engels  - [ ] Duits  - [ ] Frans
   - [ ] Spaans (es)
   - [ ] Portugees – Braziliaans (pt)
@@ -274,9 +306,12 @@ Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood
 - [x] Reset-knop is voor een kind bereikbaar → ouderslot (3 seconden ingedrukt houden) vóór voortgang wissen en profiel verwijderen
 - [ ] Binnen een band verschilt het aantal "rondes" nog (zie logboek 2026-10-11). Overweeg de banden ook op rondes in te delen als kinderen het verschil merken.
 - [x] Het TEST-label ligt op een telefoon net over de levelnaam → eigen strook boven de app
-- [ ] Nieuwe levels staan achteraan per wereld, waardoor na level 35 (6×6) weer makkelijke 4×4-levels komen. Overweeg het levelscherm te sorteren op rastergrootte (alleen de weergave; de opslag blijft per index).
+- [x] Nieuwe levels stonden achteraan per wereld → het levelscherm is nu gesorteerd op moeilijkheid (alleen de weergave; de opslag blijft per index)
+- [ ] Badge-plaatjes zijn samengesteld (medaille + icoon + getal). Voor de mooiste 10–20 badges een eigen tekening maken.
+- [ ] Privacyverklaring ook in Duits, Frans, Italiaans, Pools en Turks (de app heeft die talen wel; de verklaring valt daar nu terug op Engels)
+- [ ] Geschiedenis: alleen gewonnen puzzels worden bijgehouden; overweeg ook afgebroken pogingen te tonen
 - [ ] Muziek: één deuntje voor alles. Overweeg een eigen deuntje per wereld en een volumeschuif.
-- [ ] Badges op de profielpagina zijn nu vier vaste; uitbreiden (per wereld, 3 sterren, zonder hints).
+- [x] Badges op de profielpagina waren vier vaste → 100 badges in `badges.js`
 - [ ] Profielscherm: laat per profiel ook de voortgang per wereld zien
 - [ ] Mascotte en tekstballon liggen op het levelscherm over de onderste levelknoppen
 - [ ] De sprong van 6×6 naar het eerste 9×9-level (35 open vakjes) is groot; overweeg een paar extra makkelijke 9×9's. Let op: mag de volgorde van `LEVEL_PLAN` niet veranderen.

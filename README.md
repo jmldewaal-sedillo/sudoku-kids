@@ -15,7 +15,7 @@ kawaii-iconen, muziek, en 10 talen (NL, EN, DE, FR, ES, PT, IT, PL, TR, ID).
 | Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt rechtstreeks vanaf `main` |
 | Herkennen | rood label **TEST + commit-id** bovenin, titel "TEST · …" | geen label |
 | Opslag | sleutels met `test_` ervoor (`test_sudokuKids_progress`, …) | `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current` |
-| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v5-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v5` |
+| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v6-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v6` |
 | TEST-strook | rode strook van 16 px bóven de app (valt nergens overheen) | bestaat niet |
 | Formaat-balk | op een pc: balk bovenin met telefoon- en tabletformaten | bestaat niet |
 
@@ -54,7 +54,8 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `puzzles.js` | Puzzelmotor: generator, oplosser, het levelplan (105 levels) en de moeilijkheidsbanden |
 | `puzzle-bank.js` | Voorraad van 3.700 puzzels (100 per band), gemaakt door `tools/generate-puzzles.js` |
 | `level-plan.js` | Alle levels na de eerste 105 (wereld, soort, band, puzzelnummer); alleen achteraan aanvullen |
-| `icons.js` | Eigen kawaii-iconen als SVG (dieren, fruit, knoppen, werelden); geen licentie nodig |
+| `icons.js` | Eigen kawaii-iconen als SVG (dieren, fruit, knoppen, werelden) en de badge-plaatjes; geen licentie nodig |
+| `badges.js` | Alle 100 badges: voorwaarde, plaatje, naam en uitleg in 10 talen |
 | `storage.js` | Profielen en opslag; de enige plek die weet waar gegevens staan |
 | `test-preview.js` | Formaat-balk van de testversie |
 | `docs/account-koppelen.md` | Onderzoek en advies over inloggen/koppelen in een kinderapp |
@@ -97,8 +98,14 @@ Verander de seeds niet meer nadat de app gepubliceerd is.
 
 Het id is het nummer in de opgeslagen voortgang (`w<id>_l<index>`) en verandert nooit; de
 volgorde op het scherm staat in `WORLDS` in `script.js`. De eerste 35 levels van wereld 0–2
-zijn precies de levels van vroeger. Nieuwe levels staan er achteraan, in blokken per
-rastergrootte; het eerste level van elk blok is altijd open.
+zijn precies de levels van vroeger; nieuwe levels staan in de opslag achteraan.
+
+**Op het scherm** staan de levels van een wereld gesorteerd op moeilijkheid
+(`orderedLevels` in `script.js`): eerst alle 4×4 van veel naar weinig gegeven vakjes, dan 6×6,
+dan 9×9. Het nummer dat een kind ziet is de plek in die volgorde. Dat is alleen weergave: de
+sterren blijven onder de vaste sleutel van het level staan. Een level is open als het vorige
+op het scherm gehaald is of als het het eerste van een rastergrootte is; levels die bij
+bestaande spelers al open waren, blijven open.
 
 ## Nieuwe puzzels of levels maken
 
@@ -154,6 +161,11 @@ De 1.000 4×4-puzzels in de voorraad zijn onderling allemaal echt verschillend.
   Muziek (een rustig deuntje van 32 tellen dat naadloos doorloopt, zacht, pauzeert op de
   achtergrond en start pas na de eerste tik), klikgeluid en geluidseffecten zijn drie losse
   schakelaars, per profiel bewaard.
+- **Grootte**: twee keuzes, klein en groot. Groot vult de ruimte (tot 900 px), klein is 68%
+  daarvan (tot 420 px); het voorbeeldblokje in Instellingen is exact zo groot als een vakje in
+  het spel.
+- **Privacyverklaring**: `privacy.html` in 5 talen (EN, NL, ES, PT, ID) met taalknoppen;
+  start in de taal van de app, anders Engels. De teksten staan in het bestand zelf.
 - **Talen**: `i18n.js` bevat `LANGUAGES` (volgorde en naam in de eigen taal) en `STRINGS`.
   Een taal toevoegen = een regel in `LANGUAGES` en een blok in `STRINGS` met álle sleutels van
   `nl`; onderdeel 19 van de e2e-test faalt als er een sleutel ontbreekt. Er staan geen emoji
@@ -166,7 +178,26 @@ plaatje van de speler met een wisselknopje. Het plaatje (en de ster met de score
 opent de profielpagina van de speler: grote avatar, naam, sterren, levels, gespeelde puzzels,
 snelste tijd, sterren per wereld en badges. Het potlood naast de naam zet de pagina in
 bewerkmodus. Het wisselknopje opent "Wie speelt er?"; tikken op een speler opent diens
-pagina, met de knop "Spelen als …". Maximaal 6 profielen, elk met eigen sterren, gespeelde
+pagina, met de knop "Spelen als …".
+
+Sinds v6: rechtsboven staan het belletje (meldingen) en één knop met avatar + sterren die
+het profiel opent; rechtsonder staat alleen nog de wisselknop met een mini-avatar. De
+profielpagina heeft drie onderdelen:
+
+- **Badges** – 100 badges uit `badges.js`: behaald in kleur, de rest grijs met voortgang
+  ("7/10"); een tik toont naam, uitleg en datum. Een badge toevoegen is één `add(...)`-regel
+  (plus een tekst per taal als het een nieuwe familie is). De e2e-test speelt net zo lang tot
+  alle 100 gehaald zijn.
+- **Werelden** – per wereld voortgang, sterren, levels per rastergrootte en een stip per
+  level; een tik gaat naar de levelkeuze.
+- **Geschiedenis** – elke gespeelde puzzel (level, wereld, grootte, type, datum, tijd, fouten,
+  hints, sterren), nieuwste bovenaan, te filteren per wereld, met uitleg van de sterren. Er
+  worden hooguit de laatste 500 puzzels bewaard; voortgang van vóór v6 staat er als "Eerder
+  gespeeld".
+
+**Meldingen** (belletje): nieuwe badge, nieuwe wereld open, 10/25/50 levels, alle sterren in
+een wereld, en een paar berichtjes van de kat. Per profiel, hooguit 50, alleen op het toestel:
+er zijn geen pushmeldingen en er gaat niets over internet. Maximaal 6 profielen, elk met eigen sterren, gespeelde
 puzzels, instellingen (ook taal, grootte, muziek, klik en geluid) en onafgemaakt spel.
 
 Ouderslot: de knop twee keer achter elkaar 1,5 seconde ingedrukt houden, de tweede keer
@@ -176,6 +207,7 @@ voortgang wissen en account koppelen.
 | Sleutel in localStorage | Inhoud |
 |---|---|
 | `sudokuKids_progress`, `_settings`, `_current`, `_played` | profiel 1 – dezelfde sleutels als vóór de profielen, dus bestaande voortgang is vanzelf profiel 1 |
+| `sudokuKids_stats`, `_history`, `_inbox` | profiel 1 – tellers voor badges, de laatste 500 puzzels, meldingen (samen ± 45 kB als alles vol is) |
 | `sudokuKids_p2_progress`, … | profiel 2 en verder |
 | `sudokuKids_profiles` | lijst van profielen en wie er actief is (ontstaat pas bij het tweede profiel) |
 
