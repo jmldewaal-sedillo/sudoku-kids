@@ -112,8 +112,8 @@ def run():
         check('vergrendelde wereld schudt (feedback zonder tekst)', g.js('document.getElementById("world-card-1").classList.contains("shake")'))
         g.page.click('#world-card-0')
         check('levelscherm van wereld 1', g.screen() == 'levels')
-        check('open zijn alleen het eerste level van elk blok (4×4, 6×6, 4×4, 6×6)',
-              g.js('[...document.querySelectorAll(".level-btn:not(.locked)")].map(b => +b.dataset.level + 1).join()') == '1,21,36,66')
+        check('open zijn alleen het eerste level van elk blok (4×4 en 6×6)',
+              g.js('[...document.querySelectorAll(".level-btn:not(.locked)")].map(b => b.querySelector(".level-number").textContent).join()') == '1,51')
         g.page.click('.level-btn[data-level="0"]')
         g.page.wait_for_timeout(450)
         check('spelscherm geopend', g.screen() == 'game')
@@ -443,7 +443,7 @@ def run():
         g.js('setDisplayMode("animals")')
         live_before = g.js('JSON.stringify(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)]))')
         check('live: gebruikt de bestaande sleutels zonder prefix',
-              g.js('Object.keys(localStorage).sort().join()') == 'sudokuKids_current,sudokuKids_played,sudokuKids_progress,sudokuKids_settings')
+              g.js('Object.keys(localStorage).sort().join()') == 'sudokuKids_current,sudokuKids_history,sudokuKids_inbox,sudokuKids_played,sudokuKids_progress,sudokuKids_settings,sudokuKids_stats')
         check(f'live: cache heet {CACHE_VERSION}', g.js('caches.keys()') == [CACHE_VERSION], g.js('caches.keys()'))
 
         g.page.goto(test_url)
@@ -552,8 +552,10 @@ def run():
         check('migratie: v3-voortgang is het eerste profiel (5 sterren, Duits, dieren, geluid uit)',
               g.js('getTotalStars()') == 5 and g.js('settings.language + settings.displayMode + settings.sound') == 'deanimalsfalse'
               and g.js('SudokuStorage.profiles().length') == 1)
-        check('migratie: opslag is niet aangeraakt door alleen te starten',
-              g.js('JSON.stringify(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)]))') == before)
+        old_keys = '["sudokuKids_progress","sudokuKids_settings","sudokuKids_current"]'
+        check('migratie: de bestaande sleutels zijn onaangeroerd; erbij komen alleen stats, history en inbox',
+              g.js('JSON.stringify(%s.sort().map(k => [k, localStorage.getItem(k)]))' % old_keys) == before and
+              g.js('Object.keys(localStorage).sort().join()') == 'sudokuKids_current,sudokuKids_history,sudokuKids_inbox,sudokuKids_progress,sudokuKids_settings,sudokuKids_stats')
         g.start()
         g.js('startLevel(2)')
         check('migratie: onafgemaakt v3-spel gaat verder (1 fout, 1 hint, 77 s)',
@@ -566,15 +568,14 @@ def run():
               g.screen() == 'profile' and g.js('viewedProfile') == 'p1' and len(g.ctx.pages) == 1)
         check('profielpagina: grote avatar, naam, 4 cijfers, 5 werelden, 4 badges',
               g.js('document.querySelectorAll("#profile-avatar svg").length') == 1 and
-              g.js('[...document.querySelectorAll(".stat-card b")].map(b => b.textContent).join()') == '5,2,2,0:12' and
-              g.js('document.querySelectorAll(".pw-row").length') == 5 and
-              g.js('[...document.querySelectorAll(".badge")].map(b => b.classList.contains("earned")).join()') == 'true,false,false,false')
-        check('sterren per wereld kloppen', g.js('document.querySelector(".pw-row[data-world=\'0\'] .pw-stars b").textContent') == '5')
+              g.js('[...document.querySelectorAll(".stat-card b")].map(b => b.textContent).join()') == '5,2,2,–' and
+              g.js('document.querySelectorAll(".profile-tab").length') == 3 and
+              g.js('document.querySelectorAll(".badge-tile").length') == 100)
+        g.page.click('#tab-worlds')
+        check('sterren per wereld kloppen', g.js('document.querySelectorAll(".wp-card").length') == 5 and
+              g.js('document.querySelector(".wp-card[data-world=\'0\'] .wp-stars b").textContent') == '5')
         g.page.click('#btn-profile-back')
         check('terug vanaf de eigen pagina → wereldkaart', g.screen() == 'worlds')
-        g.page.click('#btn-avatar')
-        check('avatar rechtsonder opent ook de eigen profielpagina', g.screen() == 'profile')
-        g.page.click('#btn-profile-back')
         g.page.click('#btn-switch')
         check('wisselknopje opent de spelerslijst', g.screen() == 'profiles')
         check('spelerslijst heeft geen potlood meer', g.js('document.querySelectorAll("#profiles-list .profile-edit, #profiles-list [data-icon=pencil]").length') == 0)
@@ -604,7 +605,7 @@ def run():
         g.page.click('#btn-win-home')
         check('eigen voortgang onder eigen sleutels; profiel 1 houdt de oude sleutels',
               list(g.stored('sudokuKids_p2_progress')) == ['w0_l0'] and g.stored('sudokuKids_p2_progress')['w0_l0']['stars'] == 3 and len(g.stored('sudokuKids_progress')) == 2)
-        g.js('settings.size = "large"; settings.displayMode = "numbers"; saveSettings()')
+        g.js('settings.size = "small"; settings.displayMode = "numbers"; saveSettings()')
         g.js('goToWorlds()')
         g.page.click('#btn-switch')
         g.page.click('.profile-card[data-id="p1"]')
@@ -616,7 +617,7 @@ def run():
         g.page.click('.profile-card[data-id="p1"]')
         g.page.click('#btn-play-as')
         check('"Spelen als" maakt het profiel actief, met eigen sterren en instellingen',
-              g.js('profileId') == 'p1' and g.screen() == 'worlds' and g.js('getTotalStars()') == 5 and g.js('settings.displayMode + settings.size') == 'animalsnormal')
+              g.js('profileId') == 'p1' and g.screen() == 'worlds' and g.js('getTotalStars()') == 5 and g.js('settings.displayMode + settings.size') == 'animalslarge')
         g.page.reload()
         check('gekozen profiel blijft na herladen', g.js('profileId') == 'p1')
         g.start()
@@ -708,37 +709,15 @@ def run():
             return r.width && (r.left < 0 || r.right > innerWidth || r.top < 0 || r.bottom > innerHeight); }).length''')
         check('Ctrl + tot 200% (960×540 css-pixels): alles blijft in beeld', z == 0, z)
         g.page.set_viewport_size({'width': 1920, 'height': 1080})
-        g.js('leaveGame(); goToSettings()')
-        widths = {}
-        for size in ('small', 'normal', 'large'):
-            g.page.click(f'.size-btn[data-size="{size}"]')
-            g.js('i => startLevel(i, true)', nine)
-            b = box('#sudoku-grid')
-            widths[size] = round(b[2] - b[0])
-            g.js('leaveGame(); goToSettings()')
-        check('Grootte klein < normaal < groot', widths['small'] < widths['normal'] < widths['large'], widths)
-        check('de gekozen grootte is gemarkeerd', g.js('document.querySelector(".size-btn.active").dataset.size') == 'large')
-        # voorbeeld op ware grootte: gelijk aan een echt vakje in het spel, voor elk raster en elke grootte
-        truth = {}
-        for size in ('small', 'normal', 'large'):
-            g.page.click(f'.size-btn[data-size="{size}"]')
-            preview = g.js('Object.fromEntries([...document.querySelectorAll(".size-sample")].map(s => [s.dataset.grid, Math.round(s.querySelector(".sample-cell").getBoundingClientRect().width)]))')
-            real = {}
-            for grid in (4, 6, 9):
-                g.js('n => startLevel(SudokuEngine.LEVEL_PLAN.findIndex(l => l.size === n), true)', grid)
-                real[str(grid)] = g.js('Math.round(document.querySelector(".sudoku-cell").getBoundingClientRect().width)')
-                g.js('leaveGame(); goToSettings()')
-            truth[size] = (preview, real)
-        check('voorbeeldblokje is 1-op-1 zo groot als een vakje in het spel (4×4, 6×6, 9×9 × klein/normaal/groot)',
-              all(pv == rl for pv, rl in truth.values()), truth)
-        check('voorbeeld verandert meteen bij klein / normaal / groot',
-              truth['small'][0]['9'] < truth['normal'][0]['9'] < truth['large'][0]['9'], truth)
-        g.page.click('.size-btn[data-size="large"]')
-        g.js('SudokuStorage.createProfile("B", "dog"); switchProfile("p2")')
-        check('grootte is per profiel: nieuw profiel staat op normaal', g.js('settings.size') == 'normal')
-        g.js('switchProfile("p1")')
+        g.js('leaveGame()')
+        g.js('SudokuStorage.write("p1", "settings", { ...settings, size: "normal" })')
         g.page.reload()
-        check('en profiel 1 houdt "groot" na herladen', g.js('settings.size') == 'large' and g.js('document.body.classList.contains("ui-large")'))
+        check('profiel met de oude grootte "normaal" wordt "groot"', g.js('settings.size') == 'large' and g.js('document.body.classList.contains("ui-large")'))
+        g.js('SudokuStorage.write("p1", "settings", { ...settings, size: "small" })')
+        g.page.reload()
+        check('profiel met "klein" blijft "klein"', g.js('settings.size') == 'small')
+        g.js('SudokuStorage.createProfile("B", "dog"); switchProfile("p2")')
+        check('grootte is per profiel: een nieuw profiel staat op groot', g.js('settings.size') == 'large')
         check('geen console-errors', not g.errors, g.errors)
         g.close()
 
@@ -1001,7 +980,7 @@ def run():
                 if r:
                     problems[name] = r[:4]
             look('werelden')
-            order = g.js('(() => { const x = s => document.querySelector(s).getBoundingClientRect(); return [x("#mascot .mascot-emoji").right <= x("#mascot .mascot-bubble").left + 1, x("#mascot .mascot-bubble").right <= x("#btn-avatar").left + 1, x("#btn-avatar").right <= x("#btn-switch").left + 1, x("#mascot .mascot-emoji").left < innerWidth / 4, x("#btn-switch").right > innerWidth * 3 / 4]; })()')
+            order = g.js('(() => { const x = s => document.querySelector(s).getBoundingClientRect(); return [x("#btn-cat").right <= x("#mascot .mascot-bubble").left + 1, x("#mascot .mascot-bubble").right <= x("#btn-switch").left + 1, document.querySelectorAll("#btn-switch .switch-avatar svg").length === 1 && !document.getElementById("btn-avatar"), x("#btn-cat").left < innerWidth / 4, x("#btn-switch").right > innerWidth * 3 / 4]; })()')
             g.js('document.getElementById("screen-worlds").scrollTop = 99999'); look('werelden onderaan')
             g.page.click('#world-card-0', force=True); g.page.wait_for_timeout(500); look('levels')
             g.js('document.getElementById("screen-levels").scrollTop = 99999'); look('levels onderaan')
@@ -1009,7 +988,7 @@ def run():
             g.js('startLevel(0, true)'); g.page.wait_for_timeout(500); look('spel')
             g.js('leaveGame(); goToSettings()'); g.page.wait_for_timeout(400); look('instellingen')
             g.js('openProfile(profileId)'); g.page.wait_for_timeout(400); look('profiel')
-            check(f'{label}: kat links met wolkje, speler + wisselknop rechts', order == [True, True, True, True, True], order)
+            check(f'{label}: kat links met wolkje; rechts alleen de wisselknop met mini-avatar', order == [True, True, True, True, True], order)
             check(f'{label}: de onderbalk bedekt nergens een knop en het laatste level is helemaal te zien', problems == {} and last, problems)
             check(f'{label}: de TEST-strook valt nergens over een titel, levelnaam of knop', not any('strook' in str(v) for v in problems.values()), problems)
             g.close()
@@ -1017,6 +996,293 @@ def run():
         g.start()
         check('live: geen TEST-strook, de app begint bovenaan', g.js('document.querySelector(".test-badge")') is None and g.js('document.getElementById("screen-worlds").getBoundingClientRect().top') == 0)
         g.close()
+
+        # ------------------------------------------------------------
+        section('22. Levels op het scherm gesorteerd op moeilijkheid (H)')
+        g = Game(browser, url)
+        g.start()
+        g.page.click('#world-card-0')
+        order = g.js('''() => [...document.querySelectorAll(".level-btn")].map(b => { const lv = worldLevels(0)[+b.dataset.level];
+            return [lv.size, SudokuEngine.getPuzzle(lv.globalIndex).givens, +b.dataset.level, b.getAttribute("aria-label")]; })''')
+        check('eerst alle 4×4, dan alle 6×6; binnen een grootte van veel naar weinig gegeven vakjes',
+              len(order) == 100 and all(a[0] < b[0] or (a[0] == b[0] and a[1] >= b[1]) for a, b in zip(order, order[1:])), order[:6])
+        check('doorlopende nummers 1 t/m 100 op het scherm', [o[3] for o in order] == [f'Level {n}' for n in range(1, 101)])
+        check('nieuwe en oude levels staan door elkaar (de opslag-index is niet de volgorde)', [o[2] for o in order] != sorted(o[2] for o in order))
+        third = order[2][2]
+        g.js('i => startLevel(worldLevels(0)[i].globalIndex, true)', third)
+        check('het spel toont het nummer van het scherm', g.js('document.getElementById("game-level-label").textContent') == 'Level 3')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        check('de sterren staan onder de eigen, vaste sleutel van het level', list(g.stored().keys()) == [f'w0_l{third}'])
+        g.page.click('#btn-win-next')
+        check('"Volgende" gaat naar het volgende level op het scherm', g.js('displayNumber(gameState.lv)') == 4 and g.js('gameState.lv.indexInWorld') == order[3][2])
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+        g = Game(browser, url, progress=progress_for(0, 10))
+        g.start()
+        g.page.click('#world-card-0')
+        check('bestaande speler (levels 1–10 gehaald): het level dat open was, blijft open; niets gaat op slot',
+              g.js('isLevelUnlocked(0, 10)') is True and g.js('[...Array(10).keys()].every(i => isLevelUnlocked(0, i))') and
+              g.js('document.querySelector(\'.level-btn[data-level="10"]\').classList.contains("current")'))
+        g.close()
+
+        # ------------------------------------------------------------
+        section('23. Bovenbalk, wisselknop en meldingen (A)')
+        g = Game(browser, url)
+        g.start()
+        check('rechtsboven: avatar + sterren in één knop', g.js('document.querySelectorAll("#btn-score .score-avatar svg").length') == 1 and
+              g.js('document.getElementById("total-stars-display").textContent') == '0' and g.js('!!document.getElementById("btn-score").closest(".screen-header")'))
+        check('rechtsonder: alleen de wisselknop met mini-avatar; kat met wolkje linksonder',
+              g.js('[...document.querySelectorAll("#mascot button")].map(b => b.id).join()') == 'btn-cat,btn-switch' and
+              g.js('document.querySelectorAll("#btn-switch .switch-avatar svg").length') == 1)
+        check('belletje met 1 ongelezen melding (welkom van de kat)', g.js('document.getElementById("bell-count").textContent') == '1' and
+              g.js('!document.getElementById("bell-count").classList.contains("hidden")') and g.js('document.querySelectorAll("#btn-bell svg").length') == 1)
+        g.page.click('#btn-score')
+        check('de knop rechtsboven opent het profiel', g.screen() == 'profile')
+        g.page.click('#btn-profile-back')
+        g.page.click('#btn-bell')
+        check('tik op het belletje opent de lijst', g.screen() == 'inbox' and g.js('document.querySelectorAll(".inbox-item").length') == 1 and
+              g.js('document.querySelector(".inbox-text").textContent') == 'Welkom! Fijn dat je er bent.')
+        check('openen markeert alles als gelezen', g.js('document.getElementById("bell-count").classList.contains("hidden")') and g.stored('sudokuKids_inbox')[0]['r'] == 1)
+        g.page.click('.inbox-item')
+        g.js('startLevel(0, true)')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        g.page.click('#btn-win-home')
+        g.page.click('#btn-levels-back')
+        kinds = g.js('inbox.filter(n => !n.r).map(n => n.k)')
+        check('na het eerste level: een bericht van de kat en nieuwe badges', 'cat' in kinds and kinds.count('badge') >= 3 and
+              g.js('document.getElementById("bell-count").textContent') == str(len(kinds)), kinds)
+        g.page.click('#btn-bell')
+        check('elke melding heeft een icoon en een tekst',
+              g.js('[...document.querySelectorAll(".inbox-item")].every(r => r.querySelector(".inbox-pic svg") && r.querySelector(".inbox-text").textContent.length > 3)'))
+        badge_id = g.js('inbox.find(n => n.k === "badge").a.id')
+        g.page.click('.inbox-item[data-kind="badge"] >> nth=0')
+        check('tik op een badge-melding gaat naar die badge', g.screen() == 'profile' and g.modal() == 'modal-badge' and
+              g.js('document.getElementById("modal-badge").dataset.badge') == badge_id)
+        g.page.click('#btn-badge-ok')
+        g.page.click('#btn-profile-back')
+        check('terug gaat weer naar de meldingen', g.screen() == 'inbox')
+        g.js('for (let i = 1; i < 17; i++) progress["w0_l" + i] = { stars: 3, time: 20 }; saveProgress(); markReached(false); checkBadges();')
+        g.js('goToWorlds()')
+        fresh = g.js('inbox.filter(n => !n.r).map(n => n.k + ":" + JSON.stringify(n.a))')
+        check('17 levels: meldingen "nieuwe wereld open" (Boerderij en Snoepjesfabriek) en "10 levels gehaald"',
+              'world:{"w":3}' in fresh and 'world:{"w":1}' in fresh and 'levels:{"n":10}' in fresh and 'levels:{"n":25}' not in fresh, fresh)
+        g.page.click('#btn-bell')
+        check('tekst van de meldingen', g.js('[...document.querySelectorAll(".inbox-text")].map(e => e.textContent)').count('Nieuwe wereld open: De Boerderij') == 1 and
+              '10 levels gehaald!' in g.js('[...document.querySelectorAll(".inbox-text")].map(e => e.textContent)'))
+        g.page.click('.inbox-item[data-kind="world"] >> nth=0')
+        check('tik op "nieuwe wereld" gaat naar de levels van die wereld', g.screen() == 'levels' and g.js('currentWorld') in (1, 3))
+        g.js('worldLevels(2).forEach(l => { progress["w2_l" + l.indexInWorld] = { stars: 3, time: 20 }; }); saveProgress(); markReached(false); goToWorlds()')
+        g.page.click('#btn-bell')
+        check('alle sterren in een wereld geeft een melding', 'Alle sterren in De Ruimte-raket!' in g.js('[...document.querySelectorAll(".inbox-text")].map(e => e.textContent)'))
+        g.page.click('.inbox-item[data-kind="worldStars"]')
+        check('… en die gaat naar het werelden-overzicht van het profiel', g.screen() == 'profile' and g.js('profileTab') == 'worlds')
+        g.js('for (let i = 0; i < 80; i++) notify("cat", { m: 0 })')
+        check('hooguit 50 meldingen bewaard', len(g.stored('sudokuKids_inbox')) == 50)
+        g.js('SudokuStorage.createProfile("B", "dog"); switchProfile("p2")')
+        check('meldingen zijn per profiel (nieuw profiel: alleen het welkom)', g.js('inbox.length') == 1 and g.js('document.getElementById("bell-count").textContent') == '1')
+        check('alles blijft lokaal: geen pushmeldingen, geen verzoek naar een ander domein',
+              not [r for r in g.requests if not r.startswith(url)] and g.js('!("Notification" in window) || Notification.permission !== "granted"'))
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('24. Honderd badges, en elke badge is te halen (D1)')
+        g = Game(browser, url)
+        check('100 badges in badges.js, elk met een eigen plaatje',
+              g.js('SudokuBadges.all.length') == 100 and g.js('new Set(SudokuBadges.all.map(b => b.id)).size') == 100 and
+              g.js('new Set(SudokuBadges.all.map(b => KawaiiIcons.badge(b.emblem, b.color, b.label))).size') == 100)
+        texts = g.js('''() => { const out = [], fill = { world: w => STRINGS.nl['world' + w], type: k => k, time: s => s + 's' };
+            for (const [lang] of LANGUAGES) { const names = new Set();
+              if (!SudokuBadges.TEXT[lang]) { out.push(lang + ': ontbreekt'); continue; }
+              for (const b of SudokuBadges.all) { const key = b.args.all ? 'worldAll' : b.family;
+                if (!SudokuBadges.TEXT[lang][key]) { out.push(lang + ':' + key); continue; }
+                const t = SudokuBadges.text(lang, b, fill);
+                if (!t.name || !t.desc || /[{}]/.test(t.name + t.desc)) out.push(lang + ':' + b.id);
+                names.add(t.name); }
+              if (names.size !== 100) out.push(lang + ': ' + names.size + ' verschillende namen'); }
+            return out; }''')
+        check('naam en uitleg voor elke badge in alle 10 talen (100 verschillende namen per taal)', texts == [], texts[:8])
+        g.start()
+        g.page.click('#btn-score')
+        check('nieuw profiel: 100 tegels, nog niets gehaald, grijs met voortgang',
+              g.js('document.querySelectorAll(".badge-tile").length') == 100 and g.js('document.querySelectorAll(".badge-tile.earned").length') == 0 and
+              g.js('document.querySelector(\'.badge-tile[data-badge="levels-10"] .badge-todo\').textContent') == '0/10' and
+              g.js('document.getElementById("tab-badges-count").textContent') == '0/100')
+        g.page.click('.badge-tile[data-badge="levels-10"]')
+        check('tik op een badge: details met naam, uitleg, voortgang en "nog te halen"',
+              g.modal() == 'modal-badge' and g.js('document.getElementById("badge-name").textContent') == 'Puzzelaar III' and
+              g.js('document.getElementById("badge-desc").textContent') == 'Levels gehaald: 10' and
+              g.js('document.getElementById("badge-count").textContent') == '0/10' and g.js('document.getElementById("badge-state").textContent') == 'Nog te halen')
+        g.page.click('#btn-badge-ok')
+        # Nu echt spelen tot alles gehaald is. De klok wordt verzet met window.__now.
+        left = g.js('''() => {
+          const solve = (wrong) => { for (let i = 0; i < gameState.grid.length; i++) { if (gameState.grid[i] === gameState.solution[i]) continue;
+              onCellClick(i);
+              for (let k = 0; k < (wrong || 0); k++) { const v = gameState.solution[i] % gameState.size + 1; gameState.tried[i].clear(); onNumPress(v); }
+              wrong = 0; onNumPress(gameState.solution[i]); } };
+          const at = (y, m, d, h) => { window.__now = new Date(y, m, d, h, 30).getTime(); };
+          const first = n => LEVELS.findIndex(l => l.size === n && l.type !== 'shapes');
+          // zaterdag 3 januari 2026, 07:30: vroege vogel + weekend
+          at(2026, 0, 3, 7); startLevel(0, true); solve();
+          // zeven dagen achter elkaar, ook rond de middag en 's avonds
+          for (let d = 4; d <= 9; d++) { at(2026, 0, d, d === 4 ? 12 : 19); startLevel(1, true); solve(); }
+          // en nog 13 losse dagen (samen 20)
+          for (let d = 0; d < 13; d++) { at(2026, 1, 1 + d * 2, 15); startLevel(2, true); solve(); }
+          // gum, notities, hints
+          startLevel(3, true);
+          const open = gameState.grid.findIndex((v, i) => v !== gameState.solution[i]);
+          onCellClick(open);
+          for (let k = 0; k < 50; k++) { gameState.tried[open].clear(); onNumPress(gameState.solution[open] % 4 + 1); onErase(); }
+          setNotesMode(true); for (let k = 0; k < 50; k++) { onNumPress(1); onNumPress(1); } setNotesMode(false);
+          solve();                                     // 50 fouten: 1 ster
+          for (let k = 0; k < 9; k++) { startLevel(4 + k, true); giveHint(); giveHint(); giveHint(); solve(); }
+          // doorzetter: eerst game over, dan toch halen
+          const six = first(6); startLevel(six, true);
+          const c = gameState.grid.findIndex((v, i) => v !== gameState.solution[i]); onCellClick(c);
+          [1, 2, 3, 4, 5, 6].filter(v => v !== gameState.solution[c]).slice(0, 3).forEach(v => onNumPress(v));
+          startLevel(six, true); solve();
+          // dieren: een level en een hele 9×9
+          setDisplayMode('animals'); startLevel(first(9), true); solve(); setDisplayMode('numbers');
+          // alle levels één keer foutloos
+          for (const lv of LEVELS) { startLevel(lv.globalIndex, true); solve(); }
+          // de kat aaien, een tweede speler, een ander plaatje
+          for (let k = 0; k < 10; k++) document.getElementById('btn-cat').click();
+          SudokuStorage.createProfile('B', 'dog'); checkBadges();
+          openProfile(profileId); startProfileEdit(); document.querySelector('.avatar-btn[data-avatar="lion"]').click(); saveProfileEdit();
+          window.__now = undefined;
+          return SudokuBadges.evaluate(badgeStats(profileId)).filter(r => !(r.badge.id in stats.earned)).map(r => r.badge.id + ' ' + r.value + '/' + r.target);
+        }''')
+        check('na echt spelen (alle 450 levels, 20 dagen, gum, notities, hints, dieren, …) zijn alle 100 badges gehaald', left == [], left)
+        g.js('openProfile(profileId)')
+        check('overzicht: 100 in kleur, teller 100/100', g.js('document.querySelectorAll(".badge-tile.earned").length') == 100 and
+              g.js('document.getElementById("tab-badges-count").textContent') == '100/100')
+        g.page.click('.badge-tile[data-badge="dayStreak-7"]')
+        check('gehaalde badge toont de datum', g.js('document.getElementById("badge-state").textContent').startswith('Gehaald op ') and
+              g.js('document.getElementById("badge-count").textContent') == '7/7')
+        g.page.click('#btn-badge-ok')
+        played_total = g.js('''() => { const before = playLog.length;
+            for (let k = 0; k < 60; k++) { startLevel(k, true); for (let i = 0; i < gameState.grid.length; i++) if (gameState.grid[i] !== gameState.solution[i]) { onCellClick(i); onNumPress(gameState.solution[i]); } }
+            return before + 60; }''')
+        check(f'geschiedenis blijft klein: {played_total} puzzels gespeeld, de laatste 500 bewaard',
+              played_total > 500 and g.js('playLog.length') == 500 and len(g.stored('sudokuKids_history')) == 500)
+        size_kb = g.js('JSON.stringify(localStorage).length / 1024')
+        print(f'     alle opslag van dit profiel na 500+ puzzels: {size_kb:.0f} kB')
+        check('opslag blijft klein (< 100 kB)', size_kb < 100, size_kb)
+        g.page.reload()
+        check('badges blijven na herladen', g.js('Object.keys(stats.earned).length') == 100)
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('25. Profielpagina: werelden en geschiedenis (D2, D3)')
+        g = Game(browser, url, progress=progress_for(0, 20))
+        g.start()
+        g.js('startLevel(worldLevels(3)[0].globalIndex, true)')
+        idx = g.open_cells()[0][0]
+        g.tap_cell(idx)
+        g.tap_num(g.wrong_values(idx)[0])
+        g.page.click('#btn-hint')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        g.page.click('#btn-win-home')
+        g.js('goToWorlds()')
+        g.page.click('#btn-score')
+        check('drie onderdelen: badges, werelden, geschiedenis', g.js('[...document.querySelectorAll(".profile-tab")].map(b => b.dataset.tab).join()') == 'badges,worlds,history')
+        g.page.click('.stat-card[data-stat="stars"]')
+        check('tik op het blok "sterren" opent de geschiedenis', g.js('profileTab') == 'history' and g.js('!document.getElementById("panel-history").classList.contains("hidden")'))
+        g.page.click('#tab-badges')
+        g.page.click('.stat-card[data-stat="levels"]')
+        check('tik op het blok "levels gehaald" ook', g.js('profileTab') == 'history')
+        rows = g.js('[...document.querySelectorAll(".history-row")].map(r => [r.dataset.old, r.querySelector(".h-title").textContent, r.querySelector(".h-sub").textContent, r.querySelector(".h-stars").dataset.stars, r.querySelector(".h-details").textContent])')
+        check('nieuwste bovenaan: het zojuist gespeelde level met wereld, grootte, type, datum, tijd, fouten, hints en sterren',
+              rows[0][0] == '0' and rows[0][1] == 'Level 1 · 4×4 · Standaard' and rows[0][2].startswith('De Boerderij · ') and rows[0][3] == '2' and rows[0][4].endswith('11'), rows[0])
+        check('bestaande voortgang: 20 regels "Eerder gespeeld" zonder details',
+              len(rows) == 21 and all(r[0] == '1' and r[2].endswith('Eerder gespeeld') and r[4] == '' for r in rows[1:]), rows[1])
+        check('uitleg van de sterren (3 regels met sterretjes)', g.js('[...document.querySelectorAll(".how-row")].map(r => r.querySelectorAll("svg").length + ":" + r.textContent).join("|")')
+              == '3:geen fouten en geen hints|3:samen hoogstens 2 fouten of hints|3:meer dan 2 fouten of hints')
+        g.page.click('.filter-chip[data-filter="3"]')
+        check('filteren per wereld', g.js('document.querySelectorAll(".history-row").length') == 1 and g.js('document.querySelector(".filter-chip.active").dataset.filter') == '3')
+        g.page.click('.filter-chip[data-filter="0"]')
+        check('… en een andere wereld', g.js('document.querySelectorAll(".history-row").length') == 20)
+        g.page.click('.filter-chip[data-filter="all"]')
+        g.page.click('#tab-worlds')
+        cards = g.js('[...document.querySelectorAll(".wp-card")].map(c => [c.dataset.world, c.querySelector(".wp-total").textContent, [...c.querySelectorAll(".size-chip b")].map(b => b.textContent).join("+"), c.querySelectorAll(".wp-dots i").length, c.querySelectorAll(".wp-dots i:not(.s0)").length])')
+        check('werelden: voortgang, levels per rastergrootte en een stip per level',
+              cards[0] == ['0', '20/100', '20/50+0/50', 100, 20] and cards[1] == ['3', '1/100', '1/50+0/50', 100, 1] and len(cards) == 5, cards[:2])
+        g.page.click('.wp-card[data-world="3"]')
+        check('tik op een wereld gaat naar de levelkeuze van die wereld', g.screen() == 'levels' and g.js('currentWorld') == 3)
+        g.js('SudokuStorage.createProfile("B", "dog"); goToProfiles()')
+        g.page.click('.profile-card[data-id="p2"]')
+        g.page.click('#tab-worlds')
+        g.page.click('.wp-card[data-world="0"]')
+        check('bij een andere speler dan de actieve gaat de tik nergens heen', g.screen() == 'profile')
+        g.page.click('#tab-history')
+        check('lege geschiedenis geeft een melding', g.js('document.querySelector("#history-list .empty-text").textContent') == 'Nog niets gespeeld.')
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('26. Grootte: klein en groot verschillen echt, op elk formaat (B)')
+        for label, (w, h) in {'360×640': (360, 640), '390×844': (390, 844), '844×390': (844, 390), '800×1280': (800, 1280), '1280×800': (1280, 800), '1920×1080': (1920, 1080)}.items():
+            g = Game(browser, url, w=w, h=h, progress=progress_for(0, 35))
+            g.start()
+            g.js('goToSettings()')
+            if w == 360:
+                check('twee keuzes: klein en groot', g.js('[...document.querySelectorAll(".size-btn")].map(b => b.dataset.size).join()') == 'small,large')
+            seen = {}
+            for size in ('small', 'large'):
+                g.page.click(f'.size-btn[data-size="{size}"]')
+                preview = g.js('Object.fromEntries([...document.querySelectorAll(".size-sample")].map(s => [s.dataset.grid, Math.round(s.querySelector(".sample-cell").getBoundingClientRect().width)]))')
+                real = {}
+                for grid in (4, 6, 9):
+                    g.js('n => startLevel(SudokuEngine.LEVEL_PLAN.findIndex(l => l.size === n), true)', grid)
+                    real[str(grid)] = g.js('Math.round(document.querySelector(".sudoku-cell").getBoundingClientRect().width)')
+                    g.js('leaveGame(); goToSettings()')
+                seen[size] = (preview, real)
+            same = all(pv == rl for pv, rl in seen.values())
+            ratio = {k: round(seen['small'][1][k] / seen['large'][1][k], 2) for k in ('4', '6', '9')}
+            check(f'{label}: voorbeeldblokje = echt vakje, en klein is duidelijk kleiner dan groot (verhouding {ratio})',
+                  same and all(r <= 0.8 for r in ratio.values()), seen)
+            g.close()
+
+        # ------------------------------------------------------------
+        section('27. Privacyverklaring en geen emoji meer (C)')
+        g = Game(browser, url)
+        g.start()
+        g.page.goto(url + 'privacy.html')
+        emoji_js = r'() => (document.body.innerText.match(/\p{Extended_Pictographic}/u) || [""])[0]'
+        check('terugknop met het kawaii-icoon, geen emoji op de pagina', g.js('document.querySelectorAll(".back svg").length') == 2 and g.js(emoji_js) == '')
+        check('taalknoppen bovenaan: Engels, Nederlands, Spaans, Portugees, Indonesisch',
+              g.js('[...document.querySelectorAll("#langs button")].map(b => b.textContent).join("|")') == 'English|Nederlands|Español|Português|Bahasa Indonesia')
+        check('standaard de taal van de app (Nederlands)', g.js('document.documentElement.lang') == 'nl' and g.js('document.querySelector("h1").textContent') == 'Privacyverklaring')
+        shape = {}
+        for code, title in (('en', 'Privacy policy'), ('es', 'Política de privacidad'), ('pt', 'Política de privacidade'), ('id', 'Kebijakan privasi'), ('nl', 'Privacyverklaring')):
+            g.page.click(f'#langs button[data-lang="{code}"]')
+            shape[code] = [g.js('document.querySelector("h1").textContent') == title, g.js('document.querySelectorAll("#policy li").length'),
+                           g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelector(\'#langs button[aria-pressed="true"]\').dataset.lang') == code,
+                           g.js('document.querySelector(".back").textContent.length > 5'), g.js(emoji_js) == '']
+        check('alle 5 talen compleet: titel, 6 punten, 4 kopjes, terugknop', all(v == [True, 6, 4, True, True, True] for v in shape.values()), shape)
+        g.js('const s = JSON.parse(localStorage.getItem("sudokuKids_settings") || "{}"); s.language = "de"; localStorage.setItem("sudokuKids_settings", JSON.stringify(s))')
+        g.page.reload()
+        check('app in een taal zonder vertaling (Duits): de verklaring start in het Engels', g.js('document.documentElement.lang') == 'en')
+        g.js('const s = JSON.parse(localStorage.getItem("sudokuKids_settings")); s.language = "pt"; localStorage.setItem("sudokuKids_settings", JSON.stringify(s))')
+        g.page.reload()
+        check('app in het Portugees: de verklaring start in het Portugees', g.js('document.documentElement.lang') == 'pt')
+        g.page.click('.back')
+        g.page.wait_for_selector('#btn-start')
+        check('terugknop gaat terug naar het spel', g.js('typeof startLevel') == 'function')
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+        # zoekactie door het hele project: geen emoji in iets wat de speler te zien krijgt
+        emoji_re = re.compile('[\U0001F000-\U0001FAFF☀-➿⬀-⯿️‍]')
+        hits = {}
+        for path in sorted([*ROOT.glob('*.html'), *ROOT.glob('*.js'), *ROOT.glob('*.css'), *ROOT.glob('*.json'), *ROOT.glob('docs/*.html'), *ROOT.glob('icons/*.svg')]):
+            found = sorted(set(emoji_re.findall(path.read_text(encoding='utf-8'))))
+            if found:
+                hits[path.name] = found
+        check('zoekactie: geen emoji in index.html, privacy.html, docs/, manifest, css, js en de icoon-SVG\'s', hits == {}, hits)
         browser.close()
 
     failed = results.count(False)

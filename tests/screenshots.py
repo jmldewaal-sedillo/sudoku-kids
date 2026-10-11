@@ -43,7 +43,7 @@ MEASURE_JS = """
 (minTap) => {
   const vw = innerWidth, vh = innerHeight, small = [], outside = [];
   const sel = 'button, select, a, input[type=text], .sudoku-cell, label.settings-row';
-  const scopes = [...document.querySelectorAll('.screen.active, .modal:not(.hidden)')];
+  const scopes = [...document.querySelectorAll('.screen.active, .modal:not(.hidden), #mascot:not(.hidden), main')];
   const modalOpen = scopes.some(s => s.classList.contains('modal'));
   for (const scope of scopes) {
     if (modalOpen && !scope.classList.contains('modal')) continue;
@@ -54,7 +54,7 @@ MEASURE_JS = """
       if (cs.visibility === 'hidden' || cs.display === 'none') continue;
       const name = (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) +
                    ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
-      const scrollable = el.closest('.levels-grid, .worlds-container, .settings-list, .profiles-container, .profile-page, .modal-content');
+      const scrollable = el.closest('.levels-grid, .worlds-container, .settings-list, .profiles-container, .profile-page, .inbox-list, .modal-content, main');
       if (!el.classList.contains('sudoku-cell') && (r.width < minTap - 0.5 || r.height < minTap - 0.5)) small.push(name);
       if (r.left < -0.5 || r.right > vw + 0.5 || ((r.top < -0.5 || r.bottom > vh + 0.5) && !scrollable)) outside.push(name);
     }
@@ -204,13 +204,26 @@ def run():
                     page.evaluate('i => startLevel(i, true)', nine)
                     shot(label)
                     page.evaluate('goToSettings()')
-                page.click('.size-btn[data-size="normal"]')
-                # Profielen
+                page.click('.size-btn[data-size="large"]')
+                # Meldingen en profielpagina (badges, werelden, geschiedenis)
                 page.evaluate('goToWorlds()')
+                page.click('#btn-bell')
+                shot('19-meldingen')
+                page.click('#btn-inbox-back')
                 page.click('#btn-score')
-                shot('19-profielpagina')
+                shot('20-profiel-badges')
+                page.click('.badge-tile >> nth=0')
+                shot('21-badge-details')
+                page.click('#btn-badge-ok')
+                page.click('#tab-worlds')
+                page.evaluate('document.getElementById("screen-profile").scrollTop = document.getElementById("tab-worlds").offsetTop - 90')
+                shot('22-profiel-werelden')
+                page.click('#tab-history')
+                page.evaluate('document.getElementById("screen-profile").scrollTop = document.getElementById("tab-history").offsetTop - 90')
+                shot('23-profiel-geschiedenis')
+                page.evaluate('document.getElementById("screen-profile").scrollTop = 0')
                 page.click('#btn-profile-edit')
-                shot('20-profiel-bewerken')
+                shot('24-profiel-bewerken')
                 page.click('#btn-profile-cancel')
                 page.click('#btn-profile-back')
                 page.click('#btn-switch')
@@ -218,10 +231,12 @@ def run():
                 page.fill('#profile-name', 'Sam')
                 page.click('#btn-profile-save')
                 page.click('#btn-profile-back')
-                shot('21-spelers')
+                shot('25-spelers')
                 page.evaluate('goToWorlds()')
                 page.evaluate('document.getElementById("screen-worlds").scrollTop = 99999')
-                shot('22-werelden-onderaan')
+                shot('26-werelden-onderaan')
+                page.goto(url + 'privacy.html')
+                shot('27-privacy')
             except Exception as exc:  # een knop is niet te bereiken: dat is zelf een bevinding
                 failed = True
                 report.append(f'{name:26} VASTGELOPEN: ' + str(exc).split('Call log')[0].strip()[:160]
