@@ -12,6 +12,13 @@
      7. identical to tests/levels.snapshot.json, so a change to puzzles.js
         can never silently give players a different puzzle for a level.
         After a DELIBERATE change: node tests/validate-levels.js --update-snapshot
+   And every puzzle of the bank (puzzle-bank.js, 100 per difficulty band) for:
+     8. valid, exactly one solution, solvable without guessing
+     9. the number of givens that belongs to its band (equally hard)
+    10. no duplicates – also not with a level puzzle, and for 4×4 not even
+        after mirroring, swapping or renaming the numbers
+    11. puzzle (kind, n) is exactly what bankSeed(kind, n) produces
+    12. unchanged since tests/bank.snapshot.json (puzzles may be ADDED, never changed)
    Exits with code 1 if anything is wrong.
    ============================================================ */
 'use strict';
@@ -70,12 +77,81 @@ if (process.argv.includes('--update-snapshot')) {
   });
 }
 
+// ---------- Puzzle bank ----------
+const crypto = require('crypto');
+const BANK_SNAPSHOT = path.join(__dirname, 'bank.snapshot.json');
+const MIN_PER_BAND = 100;
+const exact = new Map();           // size:givens -> where
+const canon4 = new Map();
+E.LEVEL_PLAN.forEach(lv => {
+  const g = E.getPuzzle(lv.globalIndex).given;
+  exact.set(lv.size + ':' + g.join(''), 'level ' + lv.globalIndex);
+  if (lv.size === 4) canon4.set(E.canonical4(g), 'level ' + lv.globalIndex);
+  if (!E.levelBand(lv.globalIndex)) errors.push(`Level ${lv.globalIndex} valt in geen enkele moeilijkheidsband`);
+});
+let bankTotal = 0;
+const bankHashes = {};
+const bankLines = [];
+for (const kind of Object.keys(E.BANDS)) {
+  const size = +kind.split('-')[0], diag = kind.endsWith('xsudoku');
+  const counts = [];
+  E.BANDS[kind].forEach((band, bi) => {
+    const id = E.bandId(kind, band);
+    const list = E.bankOf(id);
+    counts.push(list.length);
+    bankTotal += list.length;
+    if (list.length < MIN_PER_BAND) errors.push(`${id}: ${list.length} puzzels, minder dan ${MIN_PER_BAND}`);
+    if (bi > 0 && band[1] >= E.BANDS[kind][bi - 1][0]) errors.push(`${id}: band overlapt met de vorige of is niet moeilijker`);
+    list.forEach(({ id: pid, n, text }) => {
+      const given = E.decodeGiven(text);
+      const givens = given.filter(v => v).length;
+      const v = E.getVariant(pid);
+      if (given.length !== size * size) { errors.push(`${pid}: verkeerde lengte`); return; }
+      if (E.countSolutions(given, size, diag, 2) !== 1) errors.push(`${pid}: niet precies één oplossing`);
+      if (!v || !E.isValidSolution(v.solution, size, diag)) errors.push(`${pid}: ongeldige oplossing`);
+      if (!E.solvableBySingles(given, size, diag)) errors.push(`${pid}: niet op te lossen zonder gokken`);
+      if (givens < band[0] || givens > band[1]) errors.push(`${pid}: ${givens} gegeven vakjes, hoort niet in band ${id}`);
+      if (E.bankCandidate(kind, n).given.join('') !== given.join('')) errors.push(`${pid}: komt niet overeen met bankSeed(${kind}, ${n})`);
+      const key = size + ':' + given.join('');
+      if (exact.has(key)) errors.push(`${pid}: zelfde puzzel als ${exact.get(key)}`);
+      exact.set(key, pid);
+      if (size === 4) {
+        const c = E.canonical4(given);
+        if (canon4.has(c)) errors.push(`${pid}: na draaien/omnummeren gelijk aan ${canon4.get(c)}`);
+        canon4.set(c, pid);
+      }
+    });
+    bankHashes[id] = list.map(p => p.n + ':' + p.text);
+  });
+  bankLines.push(`${kind.padEnd(11)} ${E.BANDS[kind].length} banden | puzzels per band: ${counts.join(', ')}`);
+}
+const hashOf = arr => crypto.createHash('sha256').update(arr.join('|')).digest('hex').slice(0, 16);
+if (process.argv.includes('--update-snapshot')) {
+  const snap = {};
+  Object.keys(bankHashes).forEach(id => { snap[id] = { count: bankHashes[id].length, hash: hashOf(bankHashes[id]) }; });
+  fs.writeFileSync(BANK_SNAPSHOT, JSON.stringify(snap, null, 1) + '\n');
+  console.log('Snapshot bijgewerkt: tests/bank.snapshot.json');
+} else if (!fs.existsSync(BANK_SNAPSHOT)) {
+  errors.push('tests/bank.snapshot.json ontbreekt (maak hem met --update-snapshot)');
+} else {
+  const snap = JSON.parse(fs.readFileSync(BANK_SNAPSHOT, 'utf8'));
+  Object.keys(snap).forEach(id => {
+    const now = bankHashes[id] || [];
+    if (now.length < snap[id].count || hashOf(now.slice(0, snap[id].count)) !== snap[id].hash) {
+      errors.push(`${id}: bestaande puzzels in de voorraad zijn veranderd of verdwenen`);
+    }
+  });
+}
+
 perWorld.forEach((rows, w) => {
   const sizes = [...new Set(rows.map(r => r.lv.size))].map(s => `${s}x${s}`).join(', ');
   const g = rows.map(r => r.givens);
   console.log(`${WORLD_NAMES[w].padEnd(16)} ${rows.length} levels | ${sizes} | gegeven cellen: ${g[0]} → ${g[g.length - 1]}`);
 });
 console.log(`Totaal: ${E.LEVEL_PLAN.length} levels, traagste generatie ${slowest} ms`);
+console.log('\nVoorraad (puzzle-bank.js):');
+bankLines.forEach(l => console.log('  ' + l));
+console.log(`  Totaal: ${bankTotal} puzzels in ${Object.keys(bankHashes).length} banden`);
 
 if (E.LEVEL_PLAN.length < 105) errors.push('Minder dan 105 levels');
 [0, 1, 2].forEach(w => { if (perWorld[w].length < 35) errors.push(`${WORLD_NAMES[w]} heeft minder dan 35 levels`); });
@@ -86,3 +162,4 @@ if (errors.length) {
 }
 console.log('\n✅ Alle levels geldig, uniek oplosbaar en stabiel.');
 console.log('✅ Zonder gokken op te lossen en gelijk aan de snapshot.');
+console.log(`✅ Voorraad: ${bankTotal} puzzels geldig, uniek oplosbaar, zonder gokken, geen dubbele, per band even veel gegeven vakjes, gelijk aan de snapshot.`);

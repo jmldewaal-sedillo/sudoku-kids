@@ -1,0 +1,150 @@
+{
+ "4-standard/11-11": {
+  "count": 100,
+  "hash": "6f4578f5d038b72f"
+ },
+ "4-standard/10-10": {
+  "count": 100,
+  "hash": "f82da8af0b0d19f1"
+ },
+ "4-standard/9-9": {
+  "count": 100,
+  "hash": "ad15167701a88e47"
+ },
+ "4-standard/8-8": {
+  "count": 100,
+  "hash": "4e6bc9d4806b7350"
+ },
+ "4-standard/7-7": {
+  "count": 100,
+  "hash": "409d4ffbb849a633"
+ },
+ "4-standard/6-6": {
+  "count": 100,
+  "hash": "63302448724e35b5"
+ },
+ "4-shapes/9-9": {
+  "count": 100,
+  "hash": "f42ff8cab9186628"
+ },
+ "4-shapes/8-8": {
+  "count": 100,
+  "hash": "53f6a81fa008c69b"
+ },
+ "4-shapes/7-7": {
+  "count": 100,
+  "hash": "8e557ecd0e9b1da2"
+ },
+ "4-shapes/6-6": {
+  "count": 100,
+  "hash": "b3a9adb302a587f2"
+ },
+ "6-standard/23-24": {
+  "count": 100,
+  "hash": "aa380718a11bd21f"
+ },
+ "6-standard/21-22": {
+  "count": 100,
+  "hash": "3c83410d8b573c6d"
+ },
+ "6-standard/19-20": {
+  "count": 100,
+  "hash": "90a0c9e454d94696"
+ },
+ "6-standard/17-18": {
+  "count": 100,
+  "hash": "d7b0b339c2209bb7"
+ },
+ "6-standard/15-16": {
+  "count": 100,
+  "hash": "299bbf3677f63cd4"
+ },
+ "6-standard/12-14": {
+  "count": 100,
+  "hash": "f8c33d2b6906d338"
+ },
+ "6-xsudoku/19-20": {
+  "count": 100,
+  "hash": "da77942cd95277bf"
+ },
+ "6-xsudoku/16-18": {
+  "count": 100,
+  "hash": "06428b09ebd58f32"
+ },
+ "6-xsudoku/14-15": {
+  "count": 100,
+  "hash": "a4778dc92050145a"
+ },
+ "6-shapes/17-18": {
+  "count": 100,
+  "hash": "1762b15342d38d68"
+ },
+ "6-shapes/15-16": {
+  "count": 100,
+  "hash": "078237ef4b53eee4"
+ },
+ "6-shapes/13-14": {
+  "count": 100,
+  "hash": "49194dfef417b60b"
+ },
+ "9-standard/44-46": {
+  "count": 100,
+  "hash": "192aaff3ac8d8aa6"
+ },
+ "9-standard/41-43": {
+  "count": 100,
+  "hash": "2a49caee04a35cb9"
+ },
+ "9-standard/38-40": {
+  "count": 100,
+  "hash": "d37df46fe1731477"
+ },
+ "9-standard/35-37": {
+  "count": 100,
+  "hash": "025a71cdf3073c2e"
+ },
+ "9-standard/32-34": {
+  "count": 100,
+  "hash": "479432fad9f1d33a"
+ },
+ "9-standard/29-31": {
+  "count": 100,
+  "hash": "e2c39029128a82e2"
+ },
+ "9-standard/26-28": {
+  "count": 100,
+  "hash": "82933dc21ac25371"
+ },
+ "9-standard/24-25": {
+  "count": 100,
+  "hash": "958d5a8ebd8492ee"
+ },
+ "9-xsudoku/36-38": {
+  "count": 100,
+  "hash": "1936f5e525eb3994"
+ },
+ "9-xsudoku/33-35": {
+  "count": 100,
+  "hash": "76df261bb4a6df4e"
+ },
+ "9-xsudoku/30-32": {
+  "count": 100,
+  "hash": "7dff9ea32242ac44"
+ },
+ "9-xsudoku/27-29": {
+  "count": 100,
+  "hash": "701e4b28f61f89c1"
+ },
+ "9-xsudoku/25-26": {
+  "count": 100,
+  "hash": "e3de873d68b905e9"
+ },
+ "9-shapes/28-30": {
+  "count": 100,
+  "hash": "6896e5bd5509901f"
+ },
+ "9-shapes/25-27": {
+  "count": 100,
+  "hash": "6eaa5a2a2fd5c3d9"
+ }
+}

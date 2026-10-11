@@ -18,9 +18,9 @@
 const path = require('path');
 const E = require(path.join(__dirname, '..', 'puzzles.js'));
 
-function analyse(lv) {
+function analyse(lv, given) {
   const diag = lv.type === 'xsudoku';
-  const g = E.getPuzzle(lv.globalIndex).given.slice();
+  const g = (given || E.getPuzzle(lv.globalIndex).given).slice();
   const open = g.filter(v => !v).length;
   const findSingles = () => E.findSingles(g, lv.size, diag);
   let solved = 0, rounds = 0, start = 0;
@@ -67,8 +67,38 @@ blocks.forEach(b => {
     `${(f.open + ' → ' + l.open).padEnd(10)} ${(easy + '/' + b.rows.length).padEnd(15)} ${min}%`);
 });
 
+// ---------- Voorraad: is elke band echt even moeilijk? ----------
+// Binnen een band moet elke puzzel evenveel gegeven vakjes hebben (binnen de
+// grenzen van de band) en zonder gokken op te lossen zijn. "start" = hoeveel
+// vakjes meteen te vinden zijn, "rondes" = hoe vaak je opnieuw moet rondkijken.
+// Een moeilijkere band moet gemiddeld minder gegeven vakjes hebben.
+console.log('\nVoorraad per band (puzzle-bank.js)');
+console.log('band                    aantal  gegeven    open       zonder gokken  start (gem.)  rondes (gem. / max)  levels');
+const levelsPerBand = {};
+E.LEVEL_PLAN.forEach(lv => { const b = E.levelBand(lv.globalIndex); levelsPerBand[b] = (levelsPerBand[b] || 0) + 1; });
+for (const kind of Object.keys(E.BANDS)) {
+  const [size, type] = kind.split('-');
+  let prevAvg = Infinity;
+  for (const band of E.BANDS[kind]) {
+    const id = E.bandId(kind, band);
+    const rs = E.bankOf(id).map(p => analyse({ size: +size, type }, E.decodeGiven(p.text)));
+    if (!rs.length) { console.log(`${id.padEnd(23)} LEEG`); bad++; continue; }
+    const gmin = Math.min(...rs.map(r => r.givens)), gmax = Math.max(...rs.map(r => r.givens));
+    const avg = f => rs.reduce((a, r) => a + f(r), 0) / rs.length;
+    const easy = rs.filter(r => r.easyPct === 100).length;
+    const outside = rs.filter(r => r.givens < band[0] || r.givens > band[1]).length;
+    const avgGivens = avg(r => r.givens);
+    if (easy !== rs.length || outside || avgGivens >= prevAvg) bad++;
+    prevAvg = avgGivens;
+    console.log(
+      `${id.padEnd(23)} ${String(rs.length).padStart(6)}  ${(gmin + '–' + gmax).padEnd(10)} ${((size * size - gmax) + '–' + (size * size - gmin)).padEnd(10)} ` +
+      `${(easy + '/' + rs.length).padEnd(14)} ${avg(r => r.start).toFixed(1).padStart(6)}        ${avg(r => r.rounds).toFixed(1).padStart(4)} / ${String(Math.max(...rs.map(r => r.rounds))).padEnd(12)} ${levelsPerBand[id] || 0}`);
+  }
+}
+
 if (bad) {
-  console.error(`\n❌ ${bad} level(s) zijn niet met eenvoudige logica op te lossen.`);
+  console.error(`\n❌ ${bad} level(s) of band(en) voldoen niet (gokken nodig, buiten de band of niet oplopend).`);
   process.exit(1);
 }
 console.log('\n✅ Alle levels zijn met eenvoudige logica op te lossen (geen gokken nodig).');
+console.log('✅ Elke band: alle puzzels binnen de grenzen van de band, zonder gokken, en elke volgende band is moeilijker.');

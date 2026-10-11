@@ -259,7 +259,139 @@
     return p;
   }
 
+  // ---------- 4×4 symmetry (to tell really different puzzles apart) ----------
+  // Two 4×4 puzzles are "the same" for a child if one becomes the other by
+  // swapping rows/columns inside a block, swapping the blocks, mirroring over
+  // the diagonal, or renaming the numbers. canonical4() gives every such
+  // family one fixed name.
+  let syms4 = null;
+  function symmetries4() {
+    if (syms4) return syms4;
+    const orders = [];
+    for (const bandSwap of [0, 1]) for (const a of [0, 1]) for (const b of [0, 1]) {
+      const bands = [[a ? 1 : 0, a ? 0 : 1], [b ? 3 : 2, b ? 2 : 3]];
+      orders.push(bandSwap ? [...bands[1], ...bands[0]] : [...bands[0], ...bands[1]]);
+    }
+    syms4 = [];
+    for (const rows of orders) for (const cols of orders) for (const flip of [0, 1]) {
+      const perm = [];
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        const rr = rows[r], cc = cols[c];
+        perm.push(flip ? cc * 4 + rr : rr * 4 + cc);
+      }
+      syms4.push(perm);
+    }
+    return syms4;
+  }
+  function canonical4(grid) {
+    let best = null;
+    for (const perm of symmetries4()) {
+      const map = [0, 0, 0, 0, 0];
+      let next = 1, key = '';
+      for (let i = 0; i < 16; i++) {
+        const v = grid[perm[i]];
+        if (v && !map[v]) map[v] = next++;
+        key += map[v];
+      }
+      if (best === null || key < best) best = key;
+    }
+    return best;
+  }
+
+  // ---------- Puzzle bank: many puzzles per kind, grouped by difficulty ----------
+  // A "kind" is size + type (e.g. '4-standard', '6-xsudoku'). Every kind has
+  // difficulty bands: ranges of given cells, easiest first. All puzzles of a
+  // band are equally hard: the same number of givens and solvable without
+  // guessing. Each level belongs to the band that holds its original puzzle.
+  //
+  // Bank puzzles are numbered per kind: puzzle (kind, n) always comes from
+  // bankSeed(kind, n). Nothing depends on the order of levels or worlds, so
+  // puzzles, levels and worlds can be added later without anything shifting.
+  // The puzzles themselves are stored in puzzle-bank.js (made by
+  // tools/build-bank.js), so a later change to the generator can never
+  // change a puzzle a player has already seen.
+  const BANDS = {
+    '4-standard': [[11, 11], [10, 10], [9, 9], [8, 8], [7, 7], [6, 6]],
+    '4-shapes':   [[9, 9], [8, 8], [7, 7], [6, 6]],
+    '6-standard': [[23, 24], [21, 22], [19, 20], [17, 18], [15, 16], [12, 14]],
+    '6-xsudoku':  [[19, 20], [16, 18], [14, 15]],
+    '6-shapes':   [[17, 18], [15, 16], [13, 14]],
+    '9-standard': [[44, 46], [41, 43], [38, 40], [35, 37], [32, 34], [29, 31], [26, 28], [24, 25]],
+    '9-xsudoku':  [[36, 38], [33, 35], [30, 32], [27, 29], [25, 26]],
+    '9-shapes':   [[28, 30], [25, 27]],
+  };
+  function kindOf(lv) { return lv.size + '-' + lv.type; }
+  function bandId(kind, band) { return kind + '/' + band[0] + '-' + band[1]; }
+  function bandFor(kind, givens) {
+    const band = (BANDS[kind] || []).find(b => givens >= b[0] && givens <= b[1]);
+    return band ? bandId(kind, band) : null;
+  }
+  function hashString(str) {             // FNV-1a, 32 bit
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h >>> 0;
+  }
+  function bankSeed(kind, n) { return hashString('sudoku-kids|' + kind + '|' + n); }
+  // Candidate n of a kind: the seed fixes the solution and the removal order,
+  // a second hash picks how many givens to aim for (anywhere in the kind's range).
+  function bankCandidate(kind, n) {
+    const [size, type] = kind.split('-');
+    const bands = BANDS[kind];
+    const hi = bands[0][1], lo = bands[bands.length - 1][0];
+    const target = lo + hashString('target|' + kind + '|' + n) % (hi - lo + 1);
+    return generatePuzzle(+size, type === 'xsudoku', target, bankSeed(kind, n));
+  }
+  // Givens as text: digits, and a..z for a run of 1..26 empty cells.
+  function encodeGiven(given) {
+    let out = '', run = 0;
+    const flush = () => { while (run > 0) { const k = Math.min(run, 26); out += String.fromCharCode(96 + k); run -= k; } };
+    for (const v of given) { if (v) { flush(); out += v; } else run++; }
+    flush();
+    return out;
+  }
+  function decodeGiven(text) {
+    const out = [];
+    for (const ch of text) {
+      if (ch >= '1' && ch <= '9') out.push(+ch);
+      else for (let k = ch.charCodeAt(0) - 96; k > 0; k--) out.push(0);
+    }
+    return out;
+  }
+
+  let bankData = null;                   // { kind: { 'lo-hi': [[n, 'encoded'], ...] } }
+  function setBank(data) { bankData = data; }
+  function bankOf(id) {                  // id = 'kind/lo-hi'  ->  [{ id: 'kind#n', n, text }]
+    const [kind, range] = id.split('/');
+    const list = (bankData && bankData[kind] && bankData[kind][range]) || [];
+    return list.map(([n, text]) => ({ id: kind + '#' + n, n, text }));
+  }
+  const variantCache = {};
+  // A bank puzzle by id ('kind#n'); null if it does not exist (any more).
+  function getVariant(id) {
+    if (variantCache[id]) return variantCache[id];
+    const [kind, num] = id.split('#');
+    const [size, type] = kind.split('-');
+    let text = null;
+    Object.values((bankData && bankData[kind]) || {}).some(list => list.some(([n, t]) => (n === +num ? (text = t, true) : false)));
+    if (text === null) return null;
+    const given = decodeGiven(text);
+    const solution = new Array(given.length).fill(0);
+    if (solve(given, +size, type === 'xsudoku', 1, null, solution) !== 1) return null;
+    variantCache[id] = { given, solution, givens: given.filter(v => v).length };
+    return variantCache[id];
+  }
+  // The band a level belongs to: the one that holds its original puzzle.
+  function levelBand(globalIndex) {
+    const lv = LEVEL_PLAN[globalIndex];
+    return bandFor(kindOf(lv), getPuzzle(globalIndex).givens);
+  }
+  if (typeof module !== 'undefined' && module.exports) {
+    try { setBank(require('./puzzle-bank.js')); } catch (e) { /* bank not built yet */ }
+  } else if (root.SUDOKU_BANK) setBank(root.SUDOKU_BANK);
+
   const api = {
+    BANDS, kindOf, bandId, bandFor, bankSeed, bankCandidate, encodeGiven, decodeGiven,
+    setBank, bankOf, getVariant, levelBand, symmetries4, canonical4,
     LEVEL_PLAN, getPuzzle, generatePuzzle, countSolutions,
     isValidSolution, getUnits, boxDims, makeRng, findSingles, solvableBySingles,
   };
