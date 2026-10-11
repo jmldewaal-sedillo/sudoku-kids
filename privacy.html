@@ -7,8 +7,9 @@
   <title>Privacy – Sudoku Kids &amp; Crazy Grids</title>
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #FFF5FA; color: #3D2C6B; margin: 0; line-height: 1.6; }
-    main { max-width: 640px; margin: 0 auto; padding: 16px 20px 48px; }
-    h1 { font-size: 24px; margin: 16px 0 0; } h2 { font-size: 18px; margin-top: 28px; }
+    main { max-width: 680px; margin: 0 auto; padding: 16px 20px 48px; }
+    h1 { font-size: 24px; margin: 16px 0 0; } h2 { font-size: 18px; margin-top: 26px; }
+    a { color: #3D2C6B; font-weight: 700; }
     .back { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; margin: 8px 0 4px; padding: 6px 20px 6px 8px;
             background: #EDD9FF; color: #3D2C6B; border-radius: 50px; font-weight: 800; text-decoration: none; }
     .back svg { width: 36px; height: 36px; display: block; }
@@ -17,12 +18,12 @@
                     font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 3px 10px rgba(100,60,120,.15); }
     .langs button[aria-pressed="true"] { border-color: #3D2C6B; background: #FFD93D; }
     .updated { font-style: italic; margin-top: 0; }
+    ol li, ul li { margin-bottom: 4px; }
   </style>
 </head>
 <body>
 <main>
-  <a class="back" id="back-top" href="./"><span data-icon="back"></span><span data-text="back"></span></a>
-  <!-- the policy in five languages; starts in the language of the app, otherwise English -->
+  <a class="back" href="./"><span data-icon="back"></span><span data-text="back"></span></a>
   <div class="langs" id="langs" role="group" aria-label="Language"></div>
   <article id="policy"></article>
   <a class="back" href="./"><span data-icon="back"></span><span data-text="back"></span></a>
@@ -33,112 +34,271 @@
 <script>
 (function () {
   'use strict';
-  var UPDATED = { en: '11 October 2026', nl: '11 oktober 2026', es: '11 de octubre de 2026', pt: '11 de outubro de 2026', id: '11 Oktober 2026' };
-  var TEXT = {
-    en: {
-      name: 'English', back: 'Back to the game', title: 'Privacy policy', updated: 'last updated',
-      intro: 'This app is made for children. It is built so that <strong>no data is collected</strong>.',
-      notTitle: 'What the app does not do',
-      not: ['No accounts, no sign-in, no e-mail addresses.', 'No advertising.', 'No tracking, no analytics, no third-party cookies.', 'No in-app purchases.',
-            'No access to camera, microphone, location, contacts or files.', 'No push notifications and no links to other websites or social media.'],
-      storedTitle: 'What is stored on the device',
-      stored: 'The app only stores on the device itself: the stars and times per level, which puzzles have been played (a history of the last 500 puzzles at most), the badges that were earned, the notifications inside the app, the game in progress, and the settings (sound, music, language, display, size). You can create up to six profiles with an animal picture and, if you wish, a name or nickname. The name is optional and also stays on the device only. This data never leaves the device and is not shared with anyone. You can delete it via <em>Settings → Reset all progress</em>, by deleting a profile, or by uninstalling the app.',
-      netTitle: 'Internet',
-      net: 'The app only downloads its own files from the website it is hosted on, so that it can be played offline afterwards. Like any web server, the server may briefly log technical data such as the IP address. The app itself sends nothing.',
-      askTitle: 'Questions',
-      ask: 'Questions about this policy? Use the developer contact details on the app\'s Google Play page.'
-    },
-    nl: {
-      name: 'Nederlands', back: 'Terug naar het spel', title: 'Privacyverklaring', updated: 'laatst bijgewerkt op',
-      intro: 'Deze app is gemaakt voor kinderen. Daarom is hij zo gebouwd dat er <strong>geen gegevens verzameld worden</strong>.',
-      notTitle: 'Wat de app niet doet',
-      not: ['Geen accounts, geen inloggen, geen e-mailadressen.', 'Geen advertenties.', 'Geen tracking, geen statistieken, geen cookies van derden.', 'Geen aankopen in de app.',
-            'Geen toegang tot camera, microfoon, locatie, contacten of bestanden.', 'Geen pushmeldingen en geen links naar andere websites of sociale media.'],
-      storedTitle: 'Wat er op het toestel wordt bewaard',
-      stored: 'De app bewaart alleen op het eigen toestel: de behaalde sterren en tijden per level, welke puzzels al gespeeld zijn (een geschiedenis van hoogstens de laatste 500 puzzels), de behaalde badges, de meldingen in de app, het spel waar je mee bezig bent, en de instellingen (geluid, muziek, taal, weergave, grootte). Je kunt tot zes profielen maken met een dierenplaatje en, als je dat wilt, een naam of bijnaam. Die naam is niet verplicht en blijft ook alleen op het toestel. Deze gegevens verlaten het toestel nooit en worden met niemand gedeeld. Je wist ze via <em>Instellingen → Reset alle voortgang</em>, door een profiel te verwijderen of door de app te verwijderen.',
-      netTitle: 'Internet',
-      net: 'De app haalt alleen zijn eigen bestanden op bij de website waar hij staat, zodat je daarna ook zonder internet kunt spelen. De webserver kan daarbij, zoals elke webserver, technische gegevens zoals het IP-adres kort vastleggen. De app zelf stuurt niets mee.',
-      askTitle: 'Vragen',
-      ask: 'Vragen over deze verklaring? Neem contact op via de contactgegevens van de ontwikkelaar op de pagina van de app in Google Play.'
-    },
-    es: {
-      name: 'Español', back: 'Volver al juego', title: 'Política de privacidad', updated: 'última actualización:',
-      intro: 'Esta aplicación está hecha para niños. Está diseñada para que <strong>no se recopile ningún dato</strong>.',
-      notTitle: 'Lo que la aplicación no hace',
-      not: ['Sin cuentas, sin inicio de sesión, sin direcciones de correo electrónico.', 'Sin publicidad.', 'Sin rastreo, sin estadísticas, sin cookies de terceros.', 'Sin compras dentro de la aplicación.',
-            'Sin acceso a la cámara, el micrófono, la ubicación, los contactos ni los archivos.', 'Sin notificaciones push y sin enlaces a otros sitios web o redes sociales.'],
-      storedTitle: 'Lo que se guarda en el dispositivo',
-      stored: 'La aplicación solo guarda en el propio dispositivo: las estrellas y los tiempos de cada nivel, qué puzles se han jugado (un historial de los últimos 500 puzles como máximo), las insignias conseguidas, los avisos dentro de la aplicación, la partida en curso y los ajustes (sonido, música, idioma, visualización, tamaño). Se pueden crear hasta seis perfiles con un dibujo de un animal y, si se quiere, un nombre o apodo. El nombre es opcional y también se queda solo en el dispositivo. Estos datos nunca salen del dispositivo y no se comparten con nadie. Se pueden borrar en <em>Ajustes → Borrar todo el progreso</em>, eliminando un perfil o desinstalando la aplicación.',
-      netTitle: 'Internet',
-      net: 'La aplicación solo descarga sus propios archivos del sitio web donde está alojada, para que después se pueda jugar sin conexión. Como cualquier servidor web, el servidor puede registrar brevemente datos técnicos como la dirección IP. La aplicación en sí no envía nada.',
-      askTitle: 'Preguntas',
-      ask: '¿Preguntas sobre esta política? Utiliza los datos de contacto del desarrollador en la página de la aplicación en Google Play.'
-    },
-    pt: {
-      name: 'Português', back: 'Voltar ao jogo', title: 'Política de privacidade', updated: 'última atualização:',
-      intro: 'Este aplicativo foi feito para crianças. Ele foi construído para que <strong>nenhum dado seja coletado</strong>.',
-      notTitle: 'O que o aplicativo não faz',
-      not: ['Sem contas, sem login, sem endereços de e-mail.', 'Sem publicidade.', 'Sem rastreamento, sem estatísticas, sem cookies de terceiros.', 'Sem compras no aplicativo.',
-            'Sem acesso à câmera, ao microfone, à localização, aos contatos ou aos arquivos.', 'Sem notificações push e sem links para outros sites ou redes sociais.'],
-      storedTitle: 'O que fica guardado no aparelho',
-      stored: 'O aplicativo guarda apenas no próprio aparelho: as estrelas e os tempos de cada nível, quais quebra-cabeças já foram jogados (um histórico de no máximo os últimos 500), as medalhas conquistadas, os avisos dentro do aplicativo, o jogo em andamento e as configurações (som, música, idioma, exibição, tamanho). É possível criar até seis perfis com a imagem de um animal e, se quiser, um nome ou apelido. O nome é opcional e também fica apenas no aparelho. Esses dados nunca saem do aparelho e não são compartilhados com ninguém. Você pode apagá-los em <em>Configurações → Apagar todo o progresso</em>, excluindo um perfil ou desinstalando o aplicativo.',
-      netTitle: 'Internet',
-      net: 'O aplicativo só baixa os próprios arquivos do site em que está hospedado, para que depois possa ser jogado sem internet. Como qualquer servidor web, o servidor pode registrar por pouco tempo dados técnicos, como o endereço IP. O aplicativo em si não envia nada.',
-      askTitle: 'Dúvidas',
-      ask: 'Dúvidas sobre esta política? Use os dados de contato do desenvolvedor na página do aplicativo no Google Play.'
-    },
-    id: {
-      name: 'Bahasa Indonesia', back: 'Kembali ke permainan', title: 'Kebijakan privasi', updated: 'terakhir diperbarui',
-      intro: 'Aplikasi ini dibuat untuk anak-anak. Aplikasi ini dirancang agar <strong>tidak ada data yang dikumpulkan</strong>.',
-      notTitle: 'Yang tidak dilakukan aplikasi',
-      not: ['Tanpa akun, tanpa login, tanpa alamat email.', 'Tanpa iklan.', 'Tanpa pelacakan, tanpa analitik, tanpa cookie pihak ketiga.', 'Tanpa pembelian dalam aplikasi.',
-            'Tanpa akses ke kamera, mikrofon, lokasi, kontak, atau file.', 'Tanpa notifikasi push dan tanpa tautan ke situs web lain atau media sosial.'],
-      storedTitle: 'Yang disimpan di perangkat',
-      stored: 'Aplikasi hanya menyimpan di perangkat itu sendiri: bintang dan waktu tiap level, teka-teki mana yang sudah dimainkan (riwayat paling banyak 500 teka-teki terakhir), lencana yang didapat, pemberitahuan di dalam aplikasi, permainan yang sedang berlangsung, dan pengaturan (suara, musik, bahasa, tampilan, ukuran). Kamu dapat membuat hingga enam profil dengan gambar hewan dan, jika mau, nama atau nama panggilan. Nama tidak wajib dan juga hanya tersimpan di perangkat. Data ini tidak pernah keluar dari perangkat dan tidak dibagikan kepada siapa pun. Data dapat dihapus lewat <em>Pengaturan → Hapus semua kemajuan</em>, dengan menghapus profil, atau dengan mencopot aplikasi.',
-      netTitle: 'Internet',
-      net: 'Aplikasi hanya mengunduh file miliknya sendiri dari situs web tempatnya berada, agar setelah itu dapat dimainkan tanpa internet. Seperti server web lainnya, server dapat mencatat sebentar data teknis seperti alamat IP. Aplikasi itu sendiri tidak mengirim apa pun.',
-      askTitle: 'Pertanyaan',
-      ask: 'Ada pertanyaan tentang kebijakan ini? Gunakan kontak pengembang di halaman aplikasi di Google Play.'
-    }
-  };
+  var MAIL = 'support@studiosedillo.com';
   var ORDER = ['en', 'nl', 'es', 'pt', 'id'];
+  var NAMES = { en: 'English', nl: 'Nederlands', es: 'Español', pt: 'Português', id: 'Bahasa Indonesia' };
+  var BACK = { en: 'Back to the game', nl: 'Terug naar het spel', es: 'Volver al juego', pt: 'Voltar ao jogo', id: 'Kembali ke permainan' };
+  // Every language: a title, a line under it, and sections [heading, html].
+  var TEXT = {
+ "en": {
+  "title": "Privacy policy",
+  "sub": "Sudoku Kids &amp; Crazy Grids – last updated 11 October 2026",
+  "sections": [
+   [
+    "Who is responsible",
+    "<p>Sudoku Kids &amp; Crazy Grids is made and published by <strong>Studio Sedillo<\/strong>. For anything about privacy you can reach us at {mail}.<\/p>"
+   ],
+   [
+    "In short",
+    "<p>This app is made for children. It is built so that <strong>we receive no personal data at all<\/strong>. Everything the app remembers stays on your own device.<\/p>"
+   ],
+   [
+    "What is stored, and where",
+    "<p>Only on the device itself (in the storage of the app or browser):<\/p><ul><li>stars and times per level;<\/li><li>which puzzles have been played, and a history of at most the last 500 puzzles (level, date, time, mistakes, hints, stars);<\/li><li>badges earned and the counters needed for them (for example how often the eraser was used and on how many days was played);<\/li><li>notifications inside the app;<\/li><li>the game in progress;<\/li><li>settings: sound, music, click sound, language, numbers or animals, size;<\/li><li>up to six profiles with an animal picture and, only if you type one, a name or nickname.<\/li><\/ul><p>None of this is sent to us or to anyone else.<\/p>"
+   ],
+   [
+    "What the app does not do",
+    "<ul><li>No accounts, no sign-in, no e-mail addresses.<\/li><li>No advertising.<\/li><li>No tracking, no analytics, no cookies from other parties.<\/li><li>No in-app purchases.<\/li><li>No access to camera, microphone, location, contacts or files.<\/li><li>No push notifications and no links to other websites or social media.<\/li><\/ul>"
+   ],
+   [
+    "Sharing with others",
+    "<p>We share nothing with third parties, because we have nothing. The app downloads only its own files from the website it is hosted on, so that it can be played offline afterwards. That website is hosted by GitHub Pages (GitHub, Inc.). Like any web server it may briefly log technical data such as the IP address when the files are downloaded; we have no access to data that identifies you.<\/p>"
+   ],
+   [
+    "How long data is kept",
+    "<p>The data stays on the device until you delete it, delete a profile, or remove the app. The history never holds more than the last 500 puzzles per profile. We keep nothing ourselves, so there is no retention period on our side.<\/p>"
+   ],
+   [
+    "How to delete data",
+    "<ul><li>One profile: open the profile, tap the pencil and choose <em>Delete profile<\/em>.<\/li><li>Everything: <em>Settings → Delete all data of this app<\/em>. This removes all profiles, progress, history, notifications and the files kept for offline play.<\/li><li>Or uninstall the app (or clear the site data in your browser).<\/li><\/ul><p>Both buttons are behind the parent lock. More explanation: <a href=\"verwijderen.html\">Deleting data<\/a>.<\/p>"
+   ],
+   [
+    "Your rights (GDPR)",
+    "<p>Under the GDPR you have the right to access, correct and delete your data, to restrict or object to its use, to take your data with you, and to complain to your data protection authority (in the Netherlands: the Autoriteit Persoonsgegevens). Because all data is only on your own device, you can see, change and delete it there yourself; with <em>Move progress<\/em> you can take it with you as a code or file. If you e-mail us, we use your e-mail address only to answer you.<\/p>"
+   ],
+   [
+    "Children and parents",
+    "<p>The app is intended for children, together with their parents. We ask children for no personal information. A name for a profile is optional and never leaves the device; a nickname is fine. Deleting data and moving progress are behind a parent lock. Parents with questions can e-mail {mail}.<\/p>"
+   ],
+   [
+    "Changes",
+    "<p>If the app changes in a way that matters for privacy, we update this policy and the date at the top before the change is released.<\/p>"
+   ]
+  ]
+ },
+ "nl": {
+  "title": "Privacyverklaring",
+  "sub": "Sudoku Kids &amp; Crazy Grids – laatst bijgewerkt op 11 oktober 2026",
+  "sections": [
+   [
+    "Wie is verantwoordelijk",
+    "<p>Sudoku Kids &amp; Crazy Grids wordt gemaakt en uitgegeven door <strong>Studio Sedillo<\/strong>. Voor alles over privacy kun je ons bereiken via {mail}.<\/p>"
+   ],
+   [
+    "In het kort",
+    "<p>Deze app is gemaakt voor kinderen. Hij is zo gebouwd dat <strong>wij helemaal geen persoonsgegevens ontvangen<\/strong>. Alles wat de app onthoudt, blijft op je eigen toestel.<\/p>"
+   ],
+   [
+    "Wat er wordt bewaard, en waar",
+    "<p>Alleen op het toestel zelf (in de opslag van de app of browser):<\/p><ul><li>sterren en tijden per level;<\/li><li>welke puzzels gespeeld zijn, en een geschiedenis van hoogstens de laatste 500 puzzels (level, datum, tijd, fouten, hints, sterren);<\/li><li>behaalde badges en de tellers die daarvoor nodig zijn (bijvoorbeeld hoe vaak de gum is gebruikt en op hoeveel dagen er is gespeeld);<\/li><li>meldingen in de app;<\/li><li>het spel waar je mee bezig bent;<\/li><li>instellingen: geluid, muziek, klikgeluid, taal, cijfers of dieren, grootte;<\/li><li>maximaal zes profielen met een dierenplaatje en, alleen als je die intypt, een naam of bijnaam.<\/li><\/ul><p>Niets hiervan wordt naar ons of naar iemand anders gestuurd.<\/p>"
+   ],
+   [
+    "Wat de app niet doet",
+    "<ul><li>Geen accounts, geen inloggen, geen e-mailadressen.<\/li><li>Geen advertenties.<\/li><li>Geen tracking, geen statistieken, geen cookies van anderen.<\/li><li>Geen aankopen in de app.<\/li><li>Geen toegang tot camera, microfoon, locatie, contacten of bestanden.<\/li><li>Geen pushmeldingen en geen links naar andere websites of sociale media.<\/li><\/ul>"
+   ],
+   [
+    "Delen met anderen",
+    "<p>Wij delen niets met derden, want wij hebben niets. De app haalt alleen zijn eigen bestanden op bij de website waar hij staat, zodat je daarna ook zonder internet kunt spelen. Die website wordt gehost door GitHub Pages (GitHub, Inc.). Zoals elke webserver kan die bij het ophalen van de bestanden kort technische gegevens zoals het IP-adres vastleggen; wij hebben geen toegang tot gegevens waarmee jij te herkennen bent.<\/p>"
+   ],
+   [
+    "Hoe lang gegevens bewaard blijven",
+    "<p>De gegevens blijven op het toestel staan tot je ze wist, een profiel verwijdert of de app verwijdert. De geschiedenis bevat nooit meer dan de laatste 500 puzzels per profiel. Wij bewaren zelf niets, dus er is aan onze kant geen bewaartermijn.<\/p>"
+   ],
+   [
+    "Hoe je gegevens verwijdert",
+    "<ul><li>Eén profiel: open het profiel, tik op het potlood en kies <em>Profiel verwijderen<\/em>.<\/li><li>Alles: <em>Instellingen → Alle gegevens van deze app verwijderen<\/em>. Dat wist alle profielen, voortgang, geschiedenis, meldingen en de bestanden voor offline spelen.<\/li><li>Of verwijder de app (of wis de sitegegevens in je browser).<\/li><\/ul><p>Beide knoppen zitten achter het ouderslot. Meer uitleg: <a href=\"verwijderen.html\">Gegevens verwijderen<\/a>.<\/p>"
+   ],
+   [
+    "Je rechten (AVG)",
+    "<p>Volgens de AVG heb je recht op inzage, correctie en verwijdering van je gegevens, op beperking van en bezwaar tegen het gebruik ervan, op het meenemen van je gegevens, en op het indienen van een klacht bij de toezichthouder (in Nederland: de Autoriteit Persoonsgegevens). Omdat alle gegevens alleen op je eigen toestel staan, kun je ze daar zelf bekijken, aanpassen en wissen; met <em>Voortgang overzetten<\/em> neem je ze mee als code of bestand. Als je ons mailt, gebruiken we je e-mailadres alleen om je te antwoorden.<\/p>"
+   ],
+   [
+    "Kinderen en ouders",
+    "<p>De app is bedoeld voor kinderen, samen met hun ouders. Wij vragen kinderen niet om persoonlijke informatie. Een naam bij een profiel is niet verplicht en verlaat het toestel nooit; een bijnaam is prima. Gegevens verwijderen en voortgang overzetten zitten achter een ouderslot. Ouders met vragen kunnen mailen naar {mail}.<\/p>"
+   ],
+   [
+    "Wijzigingen",
+    "<p>Als de app verandert op een manier die voor privacy van belang is, passen we deze verklaring en de datum bovenaan aan voordat de wijziging uitkomt.<\/p>"
+   ]
+  ]
+ },
+ "es": {
+  "title": "Política de privacidad",
+  "sub": "Sudoku Kids &amp; Crazy Grids – última actualización: 11 de octubre de 2026",
+  "sections": [
+   [
+    "Quién es el responsable",
+    "<p>Sudoku Kids &amp; Crazy Grids está hecho y publicado por <strong>Studio Sedillo<\/strong>. Para cualquier cuestión de privacidad puedes escribirnos a {mail}.<\/p>"
+   ],
+   [
+    "En resumen",
+    "<p>Esta aplicación está hecha para niños. Está diseñada para que <strong>no recibamos ningún dato personal<\/strong>. Todo lo que la aplicación recuerda se queda en tu propio dispositivo.<\/p>"
+   ],
+   [
+    "Qué se guarda y dónde",
+    "<p>Solo en el propio dispositivo (en el almacenamiento de la aplicación o del navegador):<\/p><ul><li>las estrellas y los tiempos de cada nivel;<\/li><li>qué puzles se han jugado y un historial de, como máximo, los últimos 500 puzles (nivel, fecha, tiempo, errores, pistas, estrellas);<\/li><li>las insignias conseguidas y los contadores necesarios para ellas (por ejemplo, cuántas veces se usó la goma y cuántos días se jugó);<\/li><li>los avisos dentro de la aplicación;<\/li><li>la partida en curso;<\/li><li>los ajustes: sonido, música, sonido de botones, idioma, números o animales, tamaño;<\/li><li>hasta seis perfiles con un dibujo de un animal y, solo si lo escribes, un nombre o apodo.<\/li><\/ul><p>Nada de esto se nos envía a nosotros ni a nadie más.<\/p>"
+   ],
+   [
+    "Lo que la aplicación no hace",
+    "<ul><li>Sin cuentas, sin inicio de sesión, sin direcciones de correo electrónico.<\/li><li>Sin publicidad.<\/li><li>Sin rastreo, sin estadísticas, sin cookies de terceros.<\/li><li>Sin compras dentro de la aplicación.<\/li><li>Sin acceso a la cámara, el micrófono, la ubicación, los contactos ni los archivos.<\/li><li>Sin notificaciones push y sin enlaces a otros sitios web o redes sociales.<\/li><\/ul>"
+   ],
+   [
+    "Compartir con terceros",
+    "<p>No compartimos nada con terceros, porque no tenemos nada. La aplicación solo descarga sus propios archivos del sitio web donde está alojada, para que después se pueda jugar sin conexión. Ese sitio está alojado en GitHub Pages (GitHub, Inc.). Como cualquier servidor web, puede registrar brevemente datos técnicos como la dirección IP al descargar los archivos; nosotros no tenemos acceso a datos que te identifiquen.<\/p>"
+   ],
+   [
+    "Cuánto tiempo se conservan los datos",
+    "<p>Los datos permanecen en el dispositivo hasta que los borres, elimines un perfil o desinstales la aplicación. El historial nunca contiene más de los últimos 500 puzles por perfil. Nosotros no conservamos nada, así que por nuestra parte no hay plazo de conservación.<\/p>"
+   ],
+   [
+    "Cómo eliminar los datos",
+    "<ul><li>Un perfil: abre el perfil, toca el lápiz y elige <em>Eliminar perfil<\/em>.<\/li><li>Todo: <em>Ajustes → Eliminar todos los datos de esta aplicación<\/em>. Esto borra todos los perfiles, el progreso, el historial, los avisos y los archivos guardados para jugar sin conexión.<\/li><li>O desinstala la aplicación (o borra los datos del sitio en tu navegador).<\/li><\/ul><p>Los dos botones están detrás del bloqueo para padres. Más información: <a href=\"verwijderen.html\">Eliminar datos<\/a>.<\/p>"
+   ],
+   [
+    "Tus derechos (RGPD)",
+    "<p>Según el RGPD tienes derecho a acceder a tus datos, corregirlos y eliminarlos, a limitar su uso u oponerte a él, a llevártelos contigo y a presentar una reclamación ante tu autoridad de protección de datos. Como todos los datos están solo en tu propio dispositivo, puedes verlos, cambiarlos y borrarlos ahí mismo; con <em>Trasladar el progreso<\/em> puedes llevártelos como código o archivo. Si nos escribes, usamos tu dirección de correo solo para responderte.<\/p>"
+   ],
+   [
+    "Niños y padres",
+    "<p>La aplicación está pensada para niños, junto con sus padres. No pedimos a los niños ninguna información personal. El nombre de un perfil es opcional y nunca sale del dispositivo; un apodo es suficiente. Eliminar datos y trasladar el progreso están detrás de un bloqueo para padres. Los padres con preguntas pueden escribir a {mail}.<\/p>"
+   ],
+   [
+    "Cambios",
+    "<p>Si la aplicación cambia de una manera que afecte a la privacidad, actualizaremos esta política y la fecha de arriba antes de publicar el cambio.<\/p>"
+   ]
+  ]
+ },
+ "pt": {
+  "title": "Política de privacidade",
+  "sub": "Sudoku Kids &amp; Crazy Grids – última atualização: 11 de outubro de 2026",
+  "sections": [
+   [
+    "Quem é o responsável",
+    "<p>Sudoku Kids &amp; Crazy Grids é feito e publicado pelo <strong>Studio Sedillo<\/strong>. Para qualquer assunto de privacidade, escreva para {mail}.<\/p>"
+   ],
+   [
+    "Em resumo",
+    "<p>Este aplicativo foi feito para crianças. Ele foi construído para que <strong>não recebamos nenhum dado pessoal<\/strong>. Tudo o que o aplicativo guarda fica no seu próprio aparelho.<\/p>"
+   ],
+   [
+    "O que fica guardado e onde",
+    "<p>Somente no próprio aparelho (no armazenamento do aplicativo ou do navegador):<\/p><ul><li>as estrelas e os tempos de cada nível;<\/li><li>quais quebra-cabeças já foram jogados e um histórico de no máximo os últimos 500 (nível, data, tempo, erros, dicas, estrelas);<\/li><li>as medalhas conquistadas e os contadores necessários para elas (por exemplo, quantas vezes a borracha foi usada e em quantos dias se jogou);<\/li><li>os avisos dentro do aplicativo;<\/li><li>o jogo em andamento;<\/li><li>as configurações: som, música, som dos botões, idioma, números ou animais, tamanho;<\/li><li>até seis perfis com a imagem de um animal e, somente se você digitar, um nome ou apelido.<\/li><\/ul><p>Nada disso é enviado para nós nem para ninguém.<\/p>"
+   ],
+   [
+    "O que o aplicativo não faz",
+    "<ul><li>Sem contas, sem login, sem endereços de e-mail.<\/li><li>Sem publicidade.<\/li><li>Sem rastreamento, sem estatísticas, sem cookies de terceiros.<\/li><li>Sem compras no aplicativo.<\/li><li>Sem acesso à câmera, ao microfone, à localização, aos contatos ou aos arquivos.<\/li><li>Sem notificações push e sem links para outros sites ou redes sociais.<\/li><\/ul>"
+   ],
+   [
+    "Compartilhamento com terceiros",
+    "<p>Não compartilhamos nada com terceiros, porque não temos nada. O aplicativo só baixa os próprios arquivos do site em que está hospedado, para que depois possa ser jogado sem internet. Esse site é hospedado pelo GitHub Pages (GitHub, Inc.). Como qualquer servidor web, ele pode registrar por pouco tempo dados técnicos, como o endereço IP, quando os arquivos são baixados; nós não temos acesso a dados que identifiquem você.<\/p>"
+   ],
+   [
+    "Por quanto tempo os dados ficam guardados",
+    "<p>Os dados ficam no aparelho até você apagá-los, excluir um perfil ou desinstalar o aplicativo. O histórico nunca tem mais do que os últimos 500 quebra-cabeças por perfil. Nós não guardamos nada, portanto não há prazo de retenção do nosso lado.<\/p>"
+   ],
+   [
+    "Como excluir os dados",
+    "<ul><li>Um perfil: abra o perfil, toque no lápis e escolha <em>Excluir perfil<\/em>.<\/li><li>Tudo: <em>Configurações → Excluir todos os dados deste aplicativo<\/em>. Isso apaga todos os perfis, o progresso, o histórico, os avisos e os arquivos guardados para jogar sem internet.<\/li><li>Ou desinstale o aplicativo (ou limpe os dados do site no navegador).<\/li><\/ul><p>Os dois botões ficam atrás do bloqueio para os pais. Mais explicações: <a href=\"verwijderen.html\">Excluir dados<\/a>.<\/p>"
+   ],
+   [
+    "Seus direitos (LGPD e RGPD)",
+    "<p>Você tem o direito de acessar, corrigir e excluir seus dados, de limitar o uso deles ou se opor a ele, de levá-los com você e de reclamar à autoridade de proteção de dados. Como todos os dados ficam apenas no seu aparelho, você mesmo pode vê-los, alterá-los e apagá-los ali; com <em>Transferir o progresso<\/em> você os leva como código ou arquivo. Se você nos escrever, usamos seu e-mail apenas para responder.<\/p>"
+   ],
+   [
+    "Crianças e pais",
+    "<p>O aplicativo é destinado a crianças, junto com os pais. Não pedimos nenhuma informação pessoal às crianças. O nome de um perfil é opcional e nunca sai do aparelho; um apelido basta. Excluir dados e transferir o progresso ficam atrás de um bloqueio para os pais. Pais com dúvidas podem escrever para {mail}.<\/p>"
+   ],
+   [
+    "Alterações",
+    "<p>Se o aplicativo mudar de um jeito que importe para a privacidade, atualizaremos esta política e a data acima antes de a mudança ser publicada.<\/p>"
+   ]
+  ]
+ },
+ "id": {
+  "title": "Kebijakan privasi",
+  "sub": "Sudoku Kids &amp; Crazy Grids – terakhir diperbarui 11 Oktober 2026",
+  "sections": [
+   [
+    "Siapa yang bertanggung jawab",
+    "<p>Sudoku Kids &amp; Crazy Grids dibuat dan diterbitkan oleh <strong>Studio Sedillo<\/strong>. Untuk hal apa pun tentang privasi, hubungi kami di {mail}.<\/p>"
+   ],
+   [
+    "Singkatnya",
+    "<p>Aplikasi ini dibuat untuk anak-anak. Aplikasi ini dirancang agar <strong>kami sama sekali tidak menerima data pribadi<\/strong>. Semua yang diingat aplikasi tetap berada di perangkatmu sendiri.<\/p>"
+   ],
+   [
+    "Apa yang disimpan, dan di mana",
+    "<p>Hanya di perangkat itu sendiri (di penyimpanan aplikasi atau browser):<\/p><ul><li>bintang dan waktu tiap level;<\/li><li>teka-teki mana yang sudah dimainkan, dan riwayat paling banyak 500 teka-teki terakhir (level, tanggal, waktu, kesalahan, petunjuk, bintang);<\/li><li>lencana yang didapat dan penghitung yang diperlukan untuk itu (misalnya berapa kali penghapus dipakai dan berapa hari bermain);<\/li><li>pemberitahuan di dalam aplikasi;<\/li><li>permainan yang sedang berlangsung;<\/li><li>pengaturan: suara, musik, suara tombol, bahasa, angka atau hewan, ukuran;<\/li><li>hingga enam profil dengan gambar hewan dan, hanya jika kamu mengetiknya, nama atau nama panggilan.<\/li><\/ul><p>Tidak ada satu pun yang dikirim kepada kami atau siapa pun.<\/p>"
+   ],
+   [
+    "Yang tidak dilakukan aplikasi",
+    "<ul><li>Tanpa akun, tanpa login, tanpa alamat email.<\/li><li>Tanpa iklan.<\/li><li>Tanpa pelacakan, tanpa analitik, tanpa cookie pihak lain.<\/li><li>Tanpa pembelian dalam aplikasi.<\/li><li>Tanpa akses ke kamera, mikrofon, lokasi, kontak, atau file.<\/li><li>Tanpa notifikasi push dan tanpa tautan ke situs web lain atau media sosial.<\/li><\/ul>"
+   ],
+   [
+    "Berbagi dengan pihak lain",
+    "<p>Kami tidak membagikan apa pun kepada pihak ketiga, karena kami tidak memiliki apa pun. Aplikasi hanya mengunduh file miliknya sendiri dari situs web tempatnya berada, agar setelah itu dapat dimainkan tanpa internet. Situs web itu dihosting oleh GitHub Pages (GitHub, Inc.). Seperti server web lainnya, server dapat mencatat sebentar data teknis seperti alamat IP ketika file diunduh; kami tidak memiliki akses ke data yang mengenali dirimu.<\/p>"
+   ],
+   [
+    "Berapa lama data disimpan",
+    "<p>Data tetap berada di perangkat sampai kamu menghapusnya, menghapus profil, atau mencopot aplikasi. Riwayat tidak pernah berisi lebih dari 500 teka-teki terakhir per profil. Kami sendiri tidak menyimpan apa pun, jadi tidak ada masa penyimpanan di pihak kami.<\/p>"
+   ],
+   [
+    "Cara menghapus data",
+    "<ul><li>Satu profil: buka profil, ketuk pensil, lalu pilih <em>Hapus profil<\/em>.<\/li><li>Semuanya: <em>Pengaturan → Hapus semua data aplikasi ini<\/em>. Ini menghapus semua profil, kemajuan, riwayat, pemberitahuan, dan file yang disimpan untuk bermain tanpa internet.<\/li><li>Atau copot aplikasi (atau hapus data situs di browser).<\/li><\/ul><p>Kedua tombol berada di balik kunci orang tua. Penjelasan lebih lanjut: <a href=\"verwijderen.html\">Menghapus data<\/a>.<\/p>"
+   ],
+   [
+    "Hak-hakmu",
+    "<p>Kamu berhak melihat, memperbaiki, dan menghapus datamu, membatasi atau menolak penggunaannya, membawa datamu, dan mengajukan keluhan kepada otoritas perlindungan data (di Uni Eropa berdasarkan GDPR). Karena semua data hanya ada di perangkatmu sendiri, kamu dapat melihat, mengubah, dan menghapusnya sendiri di sana; dengan <em>Pindahkan kemajuan<\/em> kamu dapat membawanya sebagai kode atau file. Jika kamu mengirim email kepada kami, alamat emailmu hanya kami gunakan untuk membalas.<\/p>"
+   ],
+   [
+    "Anak-anak dan orang tua",
+    "<p>Aplikasi ini ditujukan untuk anak-anak, bersama orang tua mereka. Kami tidak meminta informasi pribadi apa pun dari anak-anak. Nama profil tidak wajib dan tidak pernah keluar dari perangkat; nama panggilan sudah cukup. Menghapus data dan memindahkan kemajuan berada di balik kunci orang tua. Orang tua yang punya pertanyaan dapat mengirim email ke {mail}.<\/p>"
+   ],
+   [
+    "Perubahan",
+    "<p>Jika aplikasi berubah dengan cara yang penting bagi privasi, kami memperbarui kebijakan ini dan tanggal di atas sebelum perubahan itu dirilis.<\/p>"
+   ]
+  ]
+ }
+};
 
-  // Start in the language of the app (the active profile), otherwise English.
+  // Start in the language of the app (the saved language of the player, or else the device), otherwise English.
   function appLanguage() {
     try {
       var asked = new URLSearchParams(location.search).get('lang');
       if (TEXT[asked]) return asked;
-      // the app uses the saved language of the player, or else the language of the device
       var settings = window.SudokuStorage.read(window.SudokuStorage.activeId(), 'settings');
       var app = settings && settings.language ? settings.language : String(navigator.language || 'en').slice(0, 2).toLowerCase();
       if (TEXT[app]) return app;
     } catch (e) { /* storage blocked */ }
     return 'en';
   }
-
   function show(lang) {
     var T = TEXT[lang];
+    var mail = '<a href="mailto:' + MAIL + '">' + MAIL + '</a>';
     document.documentElement.lang = lang;
     document.title = T.title + ' – Sudoku Kids & Crazy Grids';
     document.getElementById('policy').innerHTML =
-      '<h1>' + T.title + '</h1><p class="updated">Sudoku Kids &amp; Crazy Grids – ' + T.updated + ' ' + UPDATED[lang] + '</p>' +
-      '<p>' + T.intro + '</p>' +
-      '<h2>' + T.notTitle + '</h2><ul>' + T.not.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
-      '<h2>' + T.storedTitle + '</h2><p>' + T.stored + '</p>' +
-      '<h2>' + T.netTitle + '</h2><p>' + T.net + '</p>' +
-      '<h2>' + T.askTitle + '</h2><p>' + T.ask + '</p>';
-    document.querySelectorAll('[data-text="back"]').forEach(function (el) { el.textContent = T.back; });
+      '<h1>' + T.title + '</h1><p class="updated">' + T.sub + '</p>' +
+      T.sections.map(function (s) { return '<h2>' + s[0] + '</h2>' + s[1].split('{mail}').join(mail); }).join('');
+    document.querySelectorAll('[data-text="back"]').forEach(function (el) { el.textContent = BACK[lang]; });
     document.querySelectorAll('#langs button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
   }
-
   document.querySelectorAll('[data-icon]').forEach(function (el) { el.innerHTML = window.KawaiiIcons.svg(el.dataset.icon); });
   var langs = document.getElementById('langs');
   ORDER.forEach(function (code) {
     var b = document.createElement('button');
-    b.type = 'button';
-    b.dataset.lang = code;
-    b.lang = code;
-    b.textContent = TEXT[code].name;
+    b.type = 'button'; b.dataset.lang = code; b.lang = code; b.textContent = NAMES[code];
     b.addEventListener('click', function () { show(code); });
     langs.appendChild(b);
   });

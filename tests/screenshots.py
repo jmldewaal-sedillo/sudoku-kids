@@ -76,7 +76,7 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
     def translate_path(self, path):
-        for prefix in ('/sudoku-kids-test/', '/sudoku-kids/'):
+        for prefix in ('/sudoku-kids-test/', '/sudoku-kids/', '/nieuw/', '/spelen/'):
             if path.startswith(prefix):
                 path = path[len(prefix) - 1:]
                 break
@@ -113,6 +113,7 @@ def run():
             errors = []
             page.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
             page.on('pageerror', lambda e: errors.append(str(e)))
+            page.add_init_script('window.__noAutoRules = true;')
             page.add_init_script(
                 'try { if (!localStorage.getItem("sudokuKids_progress")) '
                 'localStorage.setItem("sudokuKids_progress", %s); } catch (e) {}' % json.dumps(json.dumps(PROGRESS)))

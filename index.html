@@ -75,7 +75,10 @@
         <span class="game-level-label" id="game-level-label">Level 1</span>
         <span class="game-type-badge" id="game-type-badge">Standaard</span>
       </div>
-      <div class="game-timer-box"><span class="ki" data-icon="clock"></span><span id="game-timer">0:00</span></div>
+      <div class="header-right">
+        <div class="game-timer-box"><span class="ki" data-icon="clock"></span><span id="game-timer">0:00</span></div>
+        <button class="btn-icon" id="btn-rules" data-i18n-aria="rules" aria-label="Spelregels"><span class="ki" data-icon="help"></span></button>
+      </div>
     </div>
 
     <div class="game-stats-bar">
@@ -150,12 +153,20 @@
         <div class="size-preview" id="size-preview" aria-hidden="true"></div>
       </div>
 
+      <div class="settings-section">
+        <button class="settings-row settings-btn" id="btn-settings-rules"><span class="row-label"><span class="ki" data-icon="help"></span><span data-i18n="rules">Spelregels</span></span><span class="ki" data-icon="next"></span></button>
+        <button class="settings-row settings-btn" id="btn-credits"><span class="row-label"><span class="ki" data-icon="heart"></span><span data-i18n="credits">Credits</span></span><span class="ki" data-icon="next"></span></button>
+      </div>
+
       <div class="settings-section danger-zone">
         <h3 class="settings-section-title"><span class="ki" data-icon="warning"></span><span data-i18n="secProgress">Voortgang</span></h3>
+        <!-- both behind the parent lock, both with a confirmation -->
         <button class="btn-danger" id="btn-reset-progress"><span class="ki" data-icon="trash"></span><span data-i18n="resetBtn">Reset alle voortgang</span></button>
+        <button class="btn-danger btn-danger-dark" id="btn-wipe-all"><span class="ki" data-icon="trash"></span><span data-i18n="wipeBtn">Alle gegevens van deze app verwijderen</span></button>
       </div>
 
       <a class="settings-link" href="privacy.html" data-i18n="privacy">Privacy (voor ouders)</a>
+      <a class="settings-link" href="verwijderen.html" data-i18n="deleteData">Gegevens verwijderen (uitleg)</a>
     </div>
   </div>
 
@@ -169,7 +180,7 @@
     <div class="profiles-container">
       <div class="profiles-list" id="profiles-list"></div>
       <button class="profile-add" id="btn-profile-add"><span class="ki" data-icon="plus"></span><span data-i18n="addProfile">Nieuw profiel</span></button>
-      <button class="btn-link-account" id="btn-link-account" data-i18n="linkAccount">Account koppelen (voor ouders)</button>
+      <button class="btn-link-account" id="btn-transfer" data-i18n="transfer">Voortgang overzetten (voor ouders)</button>
     </div>
   </div>
 
@@ -336,6 +347,87 @@
       <p class="badge-state" id="badge-state"></p>
       <div class="win-buttons">
         <button class="btn-win-home" id="btn-badge-ok" data-i18n="ok">Oké</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RULES (pictures per kind of sudoku) ===== -->
+  <div id="modal-rules" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal rules-modal">
+      <h2 id="rules-title" data-i18n="rules">Spelregels</h2>
+      <div class="rules-list" id="rules-list"></div>
+      <div class="win-buttons">
+        <button class="btn-win-next" id="btn-rules-ok"><span class="ki" data-icon="check"></span><span data-i18n="ok">Oké</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CREDITS ===== -->
+  <div id="modal-credits" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="credits-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <div class="modal-icon ki" data-icon="cat-love" aria-hidden="true"></div>
+      <h2 id="credits-title">Sudoku Kids &amp; Crazy Grids</h2>
+      <p class="credits-by" data-i18n="madeBy">Gemaakt door Studio Sedillo</p>
+      <p data-i18n="ownWork">Iconen, muziek en puzzels zijn eigen werk van Studio Sedillo.</p>
+      <p><b data-i18n="contact">Contact</b><br /><span class="selectable">support@studiosedillo.com</span></p>
+      <p class="credits-version" id="credits-version"></p>
+      <div class="win-buttons">
+        <button class="btn-win-home" id="btn-credits-ok" data-i18n="ok">Oké</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DELETE ALL DATA ===== -->
+  <div id="modal-wipe" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="wipe-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <div class="modal-icon ki" data-icon="warning" aria-hidden="true"></div>
+      <h2 id="wipe-title" data-i18n="wipeTitle">Alles verwijderen?</h2>
+      <p data-i18n="wipeText">Alle profielen, sterren, badges, geschiedenis en meldingen op dit toestel worden gewist.</p>
+      <div class="win-buttons">
+        <button class="btn-danger btn-round" id="btn-wipe-yes" data-i18n="wipeYes">Ja, verwijder alles</button>
+        <button class="btn-win-home" id="btn-wipe-no" data-i18n="confirmNo">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MOVE PROGRESS (export / import) ===== -->
+  <div id="modal-transfer" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="transfer-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal transfer-modal">
+      <h2 id="transfer-title" data-i18n="transferTitle">Voortgang overzetten</h2>
+      <p data-i18n="exportHelp">Maak een code met alle profielen.</p>
+      <button class="btn-win-replay" id="btn-export"><span class="ki" data-icon="next"></span><span data-i18n="exportBtn">Maak code</span></button>
+      <textarea class="transfer-box" id="transfer-code" readonly rows="3" data-i18n-aria="exportBtn" aria-label="Code"></textarea>
+      <div class="transfer-row">
+        <button class="btn-win-home" id="btn-copy" data-i18n="copyBtn">Kopieer</button>
+        <button class="btn-win-home" id="btn-file" data-i18n="fileBtn">Bewaar als bestand</button>
+      </div>
+      <hr />
+      <p data-i18n="importHelp">Plak hier een code, of kies een bestand.</p>
+      <textarea class="transfer-box" id="transfer-input" rows="3" data-i18n-aria="importHelp" aria-label="Code"></textarea>
+      <input class="transfer-file" id="transfer-file" type="file" accept=".txt,text/plain" data-i18n-aria="importHelp" aria-label="Bestand" />
+      <button class="btn-win-next" id="btn-import"><span class="ki" data-icon="check"></span><span data-i18n="importBtn">Importeer</span></button>
+      <p class="transfer-msg" id="transfer-msg" aria-live="polite"></p>
+      <div class="win-buttons">
+        <button class="btn-win-home" id="btn-transfer-ok" data-i18n="ok">Oké</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== WE HAVE MOVED (only shown on the old address once the new one exists) ===== -->
+  <div id="modal-move" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="move-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <div class="modal-icon ki" data-icon="home" aria-hidden="true"></div>
+      <h2 id="move-title" data-i18n="moveTitle">We zijn verhuisd!</h2>
+      <p data-i18n="moveText">Sudoku Kids staat op een nieuw adres.</p>
+      <p class="move-url" id="move-url"></p>
+      <div class="win-buttons">
+        <button class="btn-win-next" id="btn-move-go"><span data-i18n="moveBtn">Verhuis met mijn voortgang</span><span class="ki" data-icon="next"></span></button>
+        <button class="btn-win-home" id="btn-move-later" data-i18n="later">Later</button>
       </div>
     </div>
   </div>

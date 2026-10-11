@@ -4,13 +4,13 @@
 // (e.g. https://example.com/sudoku/ or GitHub Pages).
 // Bump CACHE_VERSION on every release so players get the update.
 // ============================================================
-const CACHE_VERSION = 'sudoku-kids-v6';
+const CACHE_VERSION = 'sudoku-kids-v7';
 
 // Test copy (folder "test" or "…-test"): its own cache name, so the test and
 // the live version never share or delete each other's files. TEST_BUILD is
 // filled in by the test deploy (commit id), so every test push is a new version.
 const TEST_BUILD = '';
-const IS_TEST = /(^|\/)(test|[^/]+-test)(\/|$)/.test(self.location.pathname);
+const IS_TEST = /^test[-.]/.test(self.location.hostname) || /(^|\/)(test|[^/]+-test)(\/|$)/.test(self.location.pathname);
 const CACHE_FAMILY = IS_TEST ? 'sudoku-kids-test-' : 'sudoku-kids-v';
 const CACHE_NAME = IS_TEST ? CACHE_VERSION.replace('sudoku-kids-', CACHE_FAMILY) + (TEST_BUILD ? '-' + TEST_BUILD : '') : CACHE_VERSION;
 const ASSETS = [
@@ -27,6 +27,7 @@ const ASSETS = [
   './script.js',
   './manifest.json',
   './privacy.html',
+  './verwijderen.html',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',

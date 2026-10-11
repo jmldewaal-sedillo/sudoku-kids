@@ -20,10 +20,12 @@
 (function (root) {
   'use strict';
 
-  // Test copy: the app runs from a folder called "test" or ending in "-test"
-  // (e.g. …/sudoku-kids-test/). It then uses its own storage, so testing can
-  // never touch the stars of the live version.
-  const IS_TEST = /(^|\/)(test|[^/]+-test)(\/|$)/.test(root.location ? root.location.pathname : '');
+  // Test copy: the app runs on a host that starts with "test-" or "test."
+  // (test-sudokukids.studiosedillo.com) or from a folder called "test" or
+  // ending in "-test" (…/sudoku-kids-test/). It then uses its own storage, so
+  // testing can never touch the stars of the live version.
+  const loc = root.location || { pathname: '', hostname: '' };
+  const IS_TEST = /^test[-.]/.test(loc.hostname || '') || /(^|\/)(test|[^/]+-test)(\/|$)/.test(loc.pathname || '');
   const PREFIX = (IS_TEST ? 'test_' : '') + 'sudokuKids_';
 
   const PARTS = ['progress', 'settings', 'current', 'played', 'stats', 'history', 'inbox'];
@@ -132,7 +134,111 @@
 
     // Linking an account (for parents): not available until a cloud provider exists.
     canLinkAccount() { return typeof provider.linkAccount === 'function'; },
+
+    // ---------- moving progress to another device or address ----------
+    // Everything of every profile as one text ("code"). Nothing is sent
+    // anywhere: the parent copies the code or saves it as a file.
+    exportCode() {
+      const data = {
+        app: 'sudoku-kids', v: 1, when: Date.now(),
+        profiles: this.profiles().map(p => {
+          const parts = {};
+          TRANSFER_PARTS.forEach(part => { const v = provider.read(p.id, part); if (v !== null) parts[part] = v; });
+          return { name: p.name, avatar: p.avatar, parts };
+        }),
+      };
+      return CODE_PREFIX + toBase64(JSON.stringify(data));
+    },
+    // Reads a code. Returns the checked data, or null if it is not a valid code.
+    readCode(code) {
+      try {
+        const text = String(code || '').trim().replace(/\s+/g, '');
+        if (!text.startsWith(CODE_PREFIX) || text.length > 2000000) return null;
+        const data = JSON.parse(fromBase64(text.slice(CODE_PREFIX.length)));
+        if (!isPlainObject(data) || data.app !== 'sudoku-kids' || !Array.isArray(data.profiles) || !data.profiles.length) return null;
+        const profiles = data.profiles.slice(0, MAX_PROFILES).filter(isPlainObject).map(cleanProfile);
+        return profiles.length ? { profiles } : null;
+      } catch (e) { return null; }
+    },
+    // Adds the profiles of a code. Nothing that exists is overwritten: an
+    // untouched first profile is filled, every other profile is added.
+    // Returns how many were added, or -1 if there is no room for all of them.
+    importCode(code) {
+      const data = this.readCode(code);
+      if (!data) return 0;
+      const list = this.profiles();
+      const fillFirst = list.length === 1 && !list[0].name && PARTS.every(part => {
+        const v = provider.read(list[0].id, part);
+        return v === null || part === 'settings' || part === 'inbox' || part === 'stats' || (isPlainObject(v) && !Object.keys(v).length) || (Array.isArray(v) && !v.length);
+      });
+      if (list.length - (fillFirst ? 1 : 0) + data.profiles.length > MAX_PROFILES) return -1;
+      data.profiles.forEach((p, n) => {
+        let target;
+        if (fillFirst && n === 0) { target = list[0]; this.updateProfile(target.id, { name: p.name, avatar: p.avatar }); PARTS.forEach(part => provider.remove(target.id, part)); }
+        else target = this.createProfile(p.name, p.avatar);
+        Object.keys(p.parts).forEach(part => provider.write(target.id, part, p.parts[part]));
+      });
+      return data.profiles.length;
+    },
+
+    // ---------- deleting everything ----------
+    // Every key this app has written on this device (all profiles, the list of
+    // profiles, and – on the test copy – the chosen preview size).
+    keys() {
+      const out = [];
+      try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(PREFIX)) out.push(k); } } catch (e) { /* ignore */ }
+      return out.sort();
+    },
+    wipeAll() {
+      this.keys().forEach(k => { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } });
+      index = null;
+    },
   };
+
+  // What goes into a transfer code: everything except the unfinished game and the notifications.
+  const TRANSFER_PARTS = ['progress', 'settings', 'played', 'stats', 'history'];
+  const CODE_PREFIX = 'SK1.';
+  function toBase64(text) {
+    const bytes = new TextEncoder().encode(text);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function fromBase64(text) {
+    const bin = atob(text.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  // Only keeps what the app itself could have written (a code can come from anywhere).
+  function cleanProfile(p) {
+    const parts = isPlainObject(p.parts) ? p.parts : {};
+    const out = {};
+    const whole = v => Number.isInteger(v) && v >= 0;
+    if (isPlainObject(parts.progress)) {
+      out.progress = {};
+      Object.keys(parts.progress).slice(0, 5000).forEach(k => {
+        const e = parts.progress[k];
+        if (/^w\d{1,2}_l\d{1,4}$/.test(k) && isPlainObject(e) && [1, 2, 3].includes(e.stars)) out.progress[k] = { stars: e.stars, time: whole(e.time) ? e.time : 0 };
+      });
+    }
+    if (isPlainObject(parts.settings)) {
+      out.settings = {};
+      ['sound', 'music', 'click', 'highlightErrors'].forEach(k => { if (typeof parts.settings[k] === 'boolean') out.settings[k] = parts.settings[k]; });
+      ['language', 'displayMode', 'size'].forEach(k => { if (typeof parts.settings[k] === 'string' && /^[a-z]{2,10}$/.test(parts.settings[k])) out.settings[k] = parts.settings[k]; });
+    }
+    if (isPlainObject(parts.played)) {
+      out.played = {};
+      Object.keys(parts.played).slice(0, 200).forEach(k => {
+        if (Array.isArray(parts.played[k])) out.played[k.slice(0, 40)] = parts.played[k].filter(x => typeof x === 'string' && x.length < 40).slice(0, 2000);
+      });
+    }
+    if (isPlainObject(parts.stats) && JSON.stringify(parts.stats).length < 50000) out.stats = parts.stats;
+    if (Array.isArray(parts.history)) {
+      out.history = parts.history.filter(e => Array.isArray(e) && e.length === 6 && e.every(v => Number.isInteger(v))).slice(-500);
+    }
+    return { name: typeof p.name === 'string' ? p.name.slice(0, 12) : '', avatar: OLD_AVATARS[p.avatar] || (AVATARS.includes(p.avatar) ? p.avatar : AVATARS[0]), parts: out };
+  }
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SudokuStorage = api;

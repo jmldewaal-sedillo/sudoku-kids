@@ -11,6 +11,11 @@ const Store = window.SudokuStorage;       // profiles + their data (see storage.
 const Badges = window.SudokuBadges;       // the 100 badges (see badges.js)
 const IS_TEST = Store.IS_TEST;            // true on the test copy (…-test folder)
 const TEST_BUILD = '';   // filled in by the test deploy (commit id), shown in the TEST label
+const APP_VERSION = '1.0';
+// The address the app has moved to. Stays empty until that address really
+// exists; from then on the old address (github.io) offers to move there
+// together with the player's progress.
+const NEW_HOME = '';
 
 const ANIMALS = ['dog', 'cat', 'frog', 'bear', 'fox', 'koala', 'tiger', 'penguin', 'lion'];
 const FRUITS  = ['apple', 'banana', 'grapes', 'strawberry', 'orange', 'lemon', 'watermelon', 'peach', 'cherry'];
@@ -521,7 +526,7 @@ function buildLevelsGrid(w) {
       const mark = lv.type === 'shapes' ? K.svg('strawberry') : lv.type === 'xsudoku' ? '<b>X</b>' : '';
       btn.innerHTML = `<span class="level-type-mark">${mark}</span><span class="level-number">${pos + 1}</span>` +
         `<span class="level-stars-small" data-stars="${stars}">${stars > 0 ? icon('star').repeat(stars) : ''}</span>`;
-      btn.addEventListener('click', () => startLevel(lv.globalIndex));
+      btn.addEventListener('click', () => { startLevel(lv.globalIndex); firstTimeRules(); });
     }
     grid.appendChild(btn);
   });
@@ -1648,11 +1653,119 @@ function deleteViewedProfile() {
   goToProfiles();
 }
 
-function linkAccount() {
-  // No cloud provider yet (see docs/account-koppelen.md): only tell it is coming.
-  $('info-title').textContent = t('linkAccount');
-  $('info-text').textContent = t('linkSoon');
-  showModal('info');
+// ============================================================
+// RULES – a few small pictures, no reading needed
+// ============================================================
+const RULE_GRID = [1, 2, 3, 4, 3, 4, 1, 2, 4, 3, 2, 1, 2, 1, 4, 3];     // a solved 4×4 (also right on the diagonals)
+const RULES = [   // text, highlighted cells, cell shown empty, pictures instead of numbers
+  ['rule1', [5], 5, null],
+  ['rule2', [4, 5, 6, 7], 5, null],
+  ['rule3', [1, 5, 9, 13], 5, null],
+  ['rule4', [0, 1, 4, 5], 5, null],
+  ['rule5', [0, 5, 10, 15, 3, 6, 9, 12], 5, null],
+  ['rule6', [4, 5, 6, 7], 5, FRUITS],
+];
+function showRules() {
+  $('rules-list').innerHTML = RULES.map(([key, lit, empty, pics], n) =>
+    `<div class="rule-card" data-rule="${n + 1}"><div class="rule-grid" aria-hidden="true">` + RULE_GRID.map((v, i) => {
+      const inside = i === empty ? (n === 0 ? K.svg('hand') : '?') : pics ? K.svg(pics[v - 1]) : v;
+      return `<i class="${lit.includes(i) ? 'hl' : n ? 'dim' : ''}">${inside}</i>`;
+    }).join('') + `</div><p>${t(key)}</p></div>`).join('');
+  showModal('rules');
+}
+// The very first time a child opens a level, the rules come by themselves.
+function firstTimeRules() {
+  if (stats.seen.rules || window.__noAutoRules || getTotalStars() > 0) return;
+  stats.seen.rules = 1;
+  saveStats();
+  showRules();
+}
+
+function showCredits() {
+  $('credits-version').textContent = `v${APP_VERSION}` + (IS_TEST ? ` · TEST ${TEST_BUILD}` : '');
+  showModal('credits');
+}
+
+// ============================================================
+// MOVING PROGRESS (for parents) – as a code or a file. Nothing is sent
+// anywhere; the parent carries it to another device or address.
+// ============================================================
+function openTransfer() {
+  $('transfer-code').value = '';
+  $('transfer-input').value = '';
+  $('transfer-file').value = '';
+  $('transfer-msg').textContent = '';
+  showModal('transfer');
+}
+function exportToBox() {
+  saveCurrent();
+  $('transfer-code').value = Store.exportCode();
+  return $('transfer-code').value;
+}
+function copyCode() {
+  const code = $('transfer-code').value || exportToBox();
+  const done = () => { $('transfer-msg').textContent = t('copied'); };
+  const fallback = () => { $('transfer-code').select(); try { document.execCommand('copy'); } catch (e) { /* ignore */ } done(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, fallback); else fallback();
+}
+function saveCodeFile() {
+  const code = $('transfer-code').value || exportToBox();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+  a.download = 'sudoku-kids-voortgang.txt';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+// Adds the profiles of a code. Returns the message that tells how it went.
+function importCode(code) {
+  const added = Store.importCode(code);
+  if (added > 0) {                       // the playing profile may have been filled: read it again
+    gameState = null;
+    loadProfile(Store.activeId());
+    applyTranslations();
+    updateBottomBar();
+    if (currentScreen === 'profiles') buildProfiles();
+  }
+  return added > 0 ? t('importOk').replace('{n}', added) : added < 0 ? t('importFull') : t('importBad');
+}
+// The old address hands the progress over in the part of the link after '#'
+// (that part is never sent to a server).
+function importFromLink() {
+  const m = /^#import=(.+)$/.exec(location.hash);
+  if (!m) return null;
+  let code = m[1];
+  try { code = decodeURIComponent(code); } catch (e) { /* use as is */ }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ }
+  const added = Store.importCode(code);
+  return added > 0 ? 'importOk:' + added : added < 0 ? 'importFull' : 'importBad';
+}
+function newHome() {
+  if (typeof window.__newHome === 'string') return window.__newHome;          // tests
+  return NEW_HOME && /(^|\.)github\.io$/.test(location.hostname) ? NEW_HOME : '';
+}
+
+// ============================================================
+// DELETE ALL DATA OF THIS APP – every profile, everything they saved, and
+// the files kept for playing offline. After that the app starts clean.
+// ============================================================
+async function wipeAllData() {
+  stopTimer();
+  gameState = null;
+  settings.music = false;
+  syncMusic();
+  Store.wipeAll();
+  try {
+    const family = IS_TEST ? 'sudoku-kids-test-' : 'sudoku-kids-v';
+    const names = await caches.keys();
+    await Promise.all(names.filter(n => n.startsWith(family)).map(n => caches.delete(n)));
+  } catch (e) { /* no caches */ }
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) await reg.unregister();
+  } catch (e) { /* no service worker */ }
+  if (!window.__noReload) location.reload();
 }
 
 // ============================================================
@@ -1723,7 +1836,27 @@ function initEventListeners() {
   });
   on('btn-delete-yes', 'click', () => { hideModals(); deleteViewedProfile(); });
   on('btn-delete-no', 'click', hideModals);
-  on('btn-link-account', 'click', () => askParent(linkAccount));
+  on('btn-transfer', 'click', () => askParent(openTransfer));
+  on('btn-export', 'click', exportToBox);
+  on('btn-copy', 'click', copyCode);
+  on('btn-file', 'click', saveCodeFile);
+  on('btn-import', 'click', () => { $('transfer-msg').textContent = importCode($('transfer-input').value); });
+  on('transfer-file', 'change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    file.text().then(text => { $('transfer-input').value = text.trim(); $('transfer-msg').textContent = importCode(text); });
+  });
+  on('btn-transfer-ok', 'click', hideModals);
+  on('btn-rules', 'click', showRules);
+  on('btn-settings-rules', 'click', showRules);
+  on('btn-rules-ok', 'click', hideModals);
+  on('btn-credits', 'click', showCredits);
+  on('btn-credits-ok', 'click', hideModals);
+  on('btn-wipe-all', 'click', () => askParent(() => showModal('wipe')));
+  on('btn-wipe-yes', 'click', () => { hideModals(); wipeAllData(); });
+  on('btn-wipe-no', 'click', hideModals);
+  on('btn-move-go', 'click', () => { location.href = newHome() + '#import=' + encodeURIComponent(Store.exportCode()); });
+  on('btn-move-later', 'click', hideModals);
   on('btn-info-ok', 'click', hideModals);
 
   // Parent lock: no context menu, no text selection, no scrolling while holding.
@@ -1852,6 +1985,7 @@ function init() {
     return;
   }
   if (IS_TEST) showTestLabel();
+  const imported = importFromLink();       // arriving from the old address with the progress in the link
   applyIcons();
   $('setting-language').innerHTML = LANGUAGES.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
   buildWorlds();
@@ -1860,6 +1994,15 @@ function init() {
   initEventListeners();
   registerSW();
   showScreen('splash');
+  if (imported) {
+    const [key, n] = imported.split(':');
+    $('info-title').textContent = t('transferTitle');
+    $('info-text').textContent = t(key).replace('{n}', n || '');
+    showModal('info');
+  } else if (newHome()) {
+    $('move-url').textContent = newHome().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    showModal('move');
+  }
   setInterval(() => {
     if (currentScreen === 'worlds' && !document.hidden) showMascotMessage(pick('mIdle'));
   }, 9000);

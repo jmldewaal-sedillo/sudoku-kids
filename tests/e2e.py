@@ -34,7 +34,7 @@ def section(title):
 class Game:
     """Kleine hulpjes rond één pagina."""
 
-    def __init__(self, browser, url, w=360, h=640, locale='nl-NL', progress=None, **ctx_args):
+    def __init__(self, browser, url, w=360, h=640, locale='nl-NL', progress=None, rules=False, **ctx_args):
         self.url = url
         self.ctx = browser.new_context(viewport={'width': w, 'height': h}, has_touch=True, locale=locale, **ctx_args)
         self.page = self.ctx.new_page()
@@ -42,6 +42,8 @@ class Game:
         self.page.on('console', lambda m: self.errors.append(m.text) if m.type == 'error' else None)
         self.page.on('pageerror', lambda e: self.errors.append(str(e)))
         self.page.on('request', lambda r: self.requests.append(r.url))
+        if rules is False:        # the rules pop up at a child's very first level; most tests do not want that
+            self.page.add_init_script('window.__noAutoRules = true;')
         if progress is not None:
             self.page.add_init_script(
                 'try { if (!localStorage.getItem("sudokuKids_progress")) '
@@ -655,16 +657,16 @@ def run():
         check('het laatste profiel kan niet verwijderd worden', g.js('document.getElementById("btn-profile-delete").classList.contains("hidden")'))
         g.page.click('#btn-profile-cancel')
         g.page.click('#btn-profile-back')
-        g.page.click('#btn-link-account')
-        check('"Account koppelen" zit achter het ouderslot', g.modal() == 'modal-parent')
+        g.page.click('#btn-transfer')
+        check('"Voortgang overzetten" zit achter het ouderslot', g.modal() == 'modal-parent')
         g.page.click('#btn-parent-hold', delay=1700)
         g.page.wait_for_timeout(5300)
         check('ouderslot: wie na de eerste keer langer dan 5 s wacht, begint opnieuw',
               g.modal() == 'modal-parent' and g.js('document.getElementById("btn-parent-hold").dataset.holds') == '0')
         g.parent_hold()
-        check('en toont "Binnenkort beschikbaar" (Duits: Bald verfügbar)',
-              g.modal() == 'modal-info' and 'Bald verfügbar' in g.js('document.getElementById("info-text").textContent'))
-        g.page.click('#btn-info-ok')
+        check('en opent dan het venster (Duits: Fortschritt übertragen)',
+              g.modal() == 'modal-transfer' and g.js('document.getElementById("transfer-title").textContent') == 'Fortschritt übertragen')
+        g.page.click('#btn-transfer-ok')
         check('opslag is een uitwisselbare laag (lokale provider)', g.js('SudokuStorage.providerName') == 'local' and g.js('SudokuStorage.canLinkAccount()') is False)
         swapped = g.js('''() => { const mem = {};
             SudokuStorage.setProvider({ name: 'mem', readIndex: () => mem.index || null, writeIndex: v => { mem.index = v; },
@@ -1263,7 +1265,7 @@ def run():
             shape[code] = [g.js('document.querySelector("h1").textContent') == title, g.js('document.querySelectorAll("#policy li").length'),
                            g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelector(\'#langs button[aria-pressed="true"]\').dataset.lang') == code,
                            g.js('document.querySelector(".back").textContent.length > 5'), g.js(emoji_js) == '']
-        check('alle 5 talen compleet: titel, 6 punten, 4 kopjes, terugknop', all(v == [True, 6, 4, True, True, True] for v in shape.values()), shape)
+        check('alle 5 talen compleet: titel, 16 punten, 10 kopjes, terugknop', all(v == [True, 16, 10, True, True, True] for v in shape.values()), shape)
         g.js('const s = JSON.parse(localStorage.getItem("sudokuKids_settings") || "{}"); s.language = "de"; localStorage.setItem("sudokuKids_settings", JSON.stringify(s))')
         g.page.reload()
         check('app in een taal zonder vertaling (Duits): de verklaring start in het Engels', g.js('document.documentElement.lang') == 'en')
@@ -1283,6 +1285,253 @@ def run():
             if found:
                 hits[path.name] = found
         check('zoekactie: geen emoji in index.html, privacy.html, docs/, manifest, css, js en de icoon-SVG\'s', hits == {}, hits)
+
+        # ------------------------------------------------------------
+        section('28. Gegevens verwijderen (publiceren 3)')
+        g = Game(browser, url)
+        g.js('localStorage.setItem("sudokuKids_progress", JSON.stringify(%s))' % json.dumps(progress_for(0, 12)))
+        g.page.reload()
+        g.page.wait_for_function('navigator.serviceWorker.controller !== null', timeout=15000)
+        g.start()
+        g.js('SudokuStorage.createProfile("Sam", "dog"); switchProfile("p2"); startLevel(0, true)')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        g.js('hideModals(); switchProfile("p1"); goToSettings()')
+        before = g.js('[SudokuStorage.keys().length, Object.keys(localStorage).filter(k => k.includes("sudokuKids")).length]')
+        check('vooraf: sleutels van twee profielen en een cache', before[0] >= 10 and before[0] == before[1] and len(g.js('caches.keys()')) == 1, before)
+        check('twee knoppen in Instellingen: voortgang resetten en alle gegevens verwijderen',
+              g.js('["btn-reset-progress", "btn-wipe-all"].every(id => document.getElementById(id).offsetHeight >= 48)'))
+        g.js('window.__noReload = true')
+        g.page.click('#btn-wipe-all')
+        check('"Alle gegevens verwijderen" vraagt eerst het dubbele ouderslot', g.modal() == 'modal-parent')
+        g.parent_hold()
+        check('daarna een bevestiging', g.modal() == 'modal-wipe' and 'Alle profielen' in g.js('document.querySelector("#modal-wipe p").textContent'))
+        g.page.click('#btn-wipe-no')
+        check('annuleren wist niets', g.js('SudokuStorage.keys().length') == before[0])
+        g.page.click('#btn-wipe-all')
+        g.parent_hold()
+        g.page.click('#btn-wipe-yes')
+        g.page.wait_for_function('caches.keys().then(k => k.length === 0)', timeout=10000)
+        left = g.js('Object.keys(localStorage).filter(k => /sudokuKids/i.test(k))')
+        check('daarna staat er geen enkele sudokuKids-sleutel meer', left == [], left)
+        check('en geen cache en geen service worker meer', g.js('caches.keys()') == [] and g.js('navigator.serviceWorker.getRegistrations().then(r => r.length)') == 0)
+        g.page.reload()
+        check('de app start schoon: één leeg profiel, 0 sterren, taal van het toestel',
+              g.js('SudokuStorage.profiles().length') == 1 and g.js('getTotalStars()') == 0 and g.js('settings.language') == 'nl' and g.js('playLog.length') == 0)
+        g.page.wait_for_function('navigator.serviceWorker.controller !== null', timeout=15000)
+        check('en is daarna weer gewoon te spelen (ook offline: de cache is opnieuw gevuld)', len(g.js('caches.keys()')) == 1)
+        # één profiel verwijderen: alles van dat profiel weg, de rest blijft
+        g.start()
+        g.js('SudokuStorage.createProfile("Weg", "frog"); switchProfile("p2"); startLevel(0, true)')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        g.js('hideModals(); switchProfile("p1"); openProfile("p2", "profiles")')
+        g.page.click('#btn-profile-edit')
+        g.page.click('#btn-profile-delete')
+        g.parent_hold()
+        g.page.click('#btn-delete-yes')
+        check('"Profiel verwijderen": alle 7 soorten gegevens van dat profiel zijn weg, profiel 1 staat er nog',
+              g.js('Object.keys(localStorage).filter(k => k.includes("_p2_")).length') == 0 and g.js('SudokuStorage.profiles().map(p => p.id).join()') == 'p1')
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('29. Voortgang overzetten: exporteren en importeren (publiceren 3)')
+        g = Game(browser, url, progress=progress_for(0, 20), accept_downloads=True)
+        g.start()
+        g.js('settings.language = "nl"; settings.size = "small"; saveSettings(); SudokuStorage.updateProfile("p1", { name: "Jenn", avatar: "fox" })')
+        g.js('SudokuStorage.createProfile("Sam", "dog"); switchProfile("p2"); startLevel(0, true)')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        g.js('hideModals(); switchProfile("p1"); goToProfiles()')
+        snapshot = g.js('''() => JSON.stringify(SudokuStorage.profiles().map(p => [p.name, p.avatar,
+            ['progress', 'played', 'stats', 'history'].map(part => JSON.stringify(SudokuStorage.read(p.id, part)))]))''')
+        g.page.click('#btn-transfer')
+        check('"Voortgang overzetten" zit achter het ouderslot', g.modal() == 'modal-parent')
+        g.parent_hold()
+        check('venster met exporteren en importeren', g.modal() == 'modal-transfer')
+        g.page.click('#btn-export')
+        code = g.js('document.getElementById("transfer-code").value')
+        check('exporteren geeft een code (begint met SK1.)', code.startswith('SK1.') and len(code) > 500)
+        print(f'     code voor 2 profielen: {len(code) / 1024:.1f} kB')
+        with g.page.expect_download() as dl:
+            g.page.click('#btn-file')
+        saved = pathlib.Path(dl.value.path()).read_text()
+        check('"Bewaar als bestand" levert een bestand met dezelfde code', saved == code and dl.value.suggested_filename == 'sudoku-kids-voortgang.txt')
+        g.ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
+        g.page.click('#btn-copy')
+        g.page.wait_for_timeout(300)
+        check('"Kopieer" zet de code op het klembord', g.js('navigator.clipboard.readText()') == code and g.js('document.getElementById("transfer-msg").textContent') == 'Gekopieerd!')
+        g.close()
+
+        # importeren op een "nieuw toestel" (lege opslag)
+        g = Game(browser, url)
+        g.start()
+        g.page.click('#btn-switch')
+        g.page.click('#btn-transfer')
+        g.parent_hold()
+        g.page.fill('#transfer-input', 'SK1.dit-is-geen-geldige-code')
+        g.page.click('#btn-import')
+        check('een verkeerde code wordt geweigerd en verandert niets',
+              g.js('document.getElementById("transfer-msg").textContent') == 'Deze code klopt niet.' and g.js('SudokuStorage.profiles().length') == 1 and g.js('getTotalStars()') == 0)
+        g.page.fill('#transfer-input', code)
+        g.page.click('#btn-import')
+        check('importeren via plakken: "Gelukt! Profielen toegevoegd: 2"', g.js('document.getElementById("transfer-msg").textContent') == 'Gelukt! Profielen toegevoegd: 2')
+        after = g.js('''() => JSON.stringify(SudokuStorage.profiles().map(p => [p.name, p.avatar,
+            ['progress', 'played', 'stats', 'history'].map(part => JSON.stringify(SudokuStorage.read(p.id, part)))]))''')
+        check('alles is exact overgekomen: namen, plaatjes, sterren, gespeelde puzzels, badges en geschiedenis van beide profielen', after == snapshot)
+        check('het lege beginprofiel is gevuld (geen leeg profiel erbij) en instellingen zijn mee', g.js('SudokuStorage.profiles().length') == 2 and g.js('settings.size') == 'small' and g.js('getTotalStars()') == 60)
+        g.page.click('#btn-transfer-ok')
+        # nog eens importeren: er wordt niets overschreven, de profielen komen erbij
+        g.js('progress.w0_l25 = { stars: 1, time: 9 }; saveProgress()')
+        check('nog eens importeren overschrijft niets: de profielen komen erbij', g.js('c => importCode(c)', code) == 'Gelukt! Profielen toegevoegd: 2' and
+              g.js('SudokuStorage.profiles().length') == 4 and g.js('"w0_l25" in SudokuStorage.read("p1", "progress")'))
+        g.js('c => importCode(c)', code)
+        check('geen plek meer (maximaal 6): nette melding en niets half geïmporteerd', g.js('c => importCode(c)', code) == 'Er is geen plek: maximaal 6 profielen.' and g.js('SudokuStorage.profiles().length') == 6)
+        # via een bestand
+        g.js('SudokuStorage.wipeAll(); loadProfile(SudokuStorage.activeId()); goToProfiles()')
+        g.page.click('#btn-transfer')
+        g.parent_hold()
+        g.page.set_input_files('#transfer-file', {'name': 'sudoku-kids-voortgang.txt', 'mimeType': 'text/plain', 'buffer': code.encode()})
+        g.page.wait_for_function('document.getElementById("transfer-msg").textContent !== ""')
+        check('importeren via een bestand', g.js('document.getElementById("transfer-msg").textContent') == 'Gelukt! Profielen toegevoegd: 2' and g.js('getTotalStars()') == 60)
+        evil = g.js('''() => { const bad = { app: 'sudoku-kids', v: 1, profiles: [{ name: '<img src=x onerror=alert(1)>AAAAAAAAAAAA', avatar: 'hacker',
+              parts: { progress: { w0_l0: { stars: 99 }, evil: { stars: 3 }, w0_l1: { stars: 2, time: 5 } }, settings: { language: '<b>', sound: 'ja', size: 'small' }, history: [[1, 2, 3], 'x'], played: { a: ['ok', 5] } } }] };
+            const code = 'SK1.' + btoa(JSON.stringify(bad)).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+            const data = SudokuStorage.readCode(code); const p = data.profiles[0];
+            return [p.name.length, p.avatar, Object.keys(p.parts.progress).join(), JSON.stringify(p.parts.settings), p.parts.history.length, JSON.stringify(p.parts.played)]; }''')
+        check('een geknutselde code wordt opgeschoond (naam ingekort, onbekende waarden weg)', evil == [12, 'cat', 'w0_l1', '{"size":"small"}', 0, '{"a":["ok"]}'], evil)
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # verhuizen van het oude adres naar het nieuwe: voortgang reist mee in de link
+        g = Game(browser, live_url, progress=progress_for(0, 9))
+        check('zolang het nieuwe adres niet bestaat (NEW_HOME leeg) verschijnt er geen verhuismelding', g.js('NEW_HOME') == '' and g.modal() is None)
+        g.close()
+        new_url = url.replace('127.0.0.1', 'localhost') + 'nieuw/'          # ander "domein" (andere origin) als nieuw adres
+        g = Game(browser, live_url, progress=progress_for(0, 9))
+        g.page.add_init_script(f'window.__newHome = "{new_url}";')
+        g.page.reload()
+        check('oude adres: melding "We zijn verhuisd!" met het nieuwe adres', g.modal() == 'modal-move' and 'localhost' in g.js('document.getElementById("move-url").textContent'))
+        g.page.click('#btn-move-go')
+        g.page.wait_for_url(new_url + '**')
+        g.page.wait_for_selector('#modal-info:not(.hidden)')
+        check('nieuwe adres: de voortgang is vanzelf geïmporteerd (9 levels, 27 sterren) en de code staat niet meer in de adresbalk',
+              g.js('getTotalStars()') == 27 and g.js('location.hash') == '' and g.js('document.getElementById("info-text").textContent') == 'Gelukt! Profielen toegevoegd: 1' and
+              g.js('location.origin') != live_url.rstrip('/').rsplit('/', 1)[0])
+        check('de code is niet naar de server gestuurd (staat alleen achter het #)', not [r for r in g.requests if 'SK1.' in r.split('#')[0]])
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('30. Spelregels, credits, privacy- en verwijderpagina (publiceren 2, 3, 5)')
+        g = Game(browser, url, rules=True)
+        g.start()
+        g.page.click('#world-card-0')
+        g.page.click('.level-btn[data-level="0"]')
+        check('allereerste level: de spelregels verschijnen vanzelf', g.modal() == 'modal-rules')
+        cards = g.js('[...document.querySelectorAll(".rule-card")].map(c => [c.querySelectorAll(".rule-grid i").length, c.querySelectorAll(".rule-grid i.hl").length, c.querySelector("p").textContent.length > 8, c.querySelectorAll("svg").length])')
+        check('zes plaatjes: tikken, rij, kolom, blok, X-diagonalen en fruit',
+              [c[:3] for c in cards] == [[16, 1, True], [16, 4, True], [16, 4, True], [16, 4, True], [16, 8, True], [16, 4, True]] and cards[0][3] == 1 and cards[5][3] == 15, cards)
+        g.page.click('#btn-rules-ok')
+        g.js('leaveGame()')
+        g.page.click('.level-btn[data-level="0"]')
+        check('daarna niet meer vanzelf', g.modal() is None)
+        g.page.click('#btn-rules')
+        check('?-knop in het spel opent de spelregels', g.modal() == 'modal-rules')
+        g.page.click('#btn-rules-ok')
+        g.js('leaveGame(); goToSettings()')
+        g.page.click('#btn-settings-rules')
+        check('ook via Instellingen', g.modal() == 'modal-rules')
+        g.page.click('#btn-rules-ok')
+        g.page.click('#btn-credits')
+        check('creditspagina via Instellingen: "Gemaakt door Studio Sedillo" met contactadres',
+              g.modal() == 'modal-credits' and g.js('document.querySelector(".credits-by").textContent') == 'Gemaakt door Studio Sedillo' and
+              'support@studiosedillo.com' in g.js('document.getElementById("modal-credits").textContent'))
+        g.page.click('#btn-credits-ok')
+        check('links naar privacy en "gegevens verwijderen" in Instellingen',
+              g.js('[...document.querySelectorAll(".settings-link")].map(a => a.getAttribute("href")).join()') == 'privacy.html,verwijderen.html')
+        for page_name, min_sections in (('privacy.html', 10), ('verwijderen.html', 5)):
+            g.page.goto(url + page_name)
+            shape = {}
+            for code in ('en', 'nl', 'es', 'pt', 'id'):
+                g.page.click(f'#langs button[data-lang="{code}"]')
+                shape[code] = [g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelectorAll("#policy li").length'),
+                               g.js('document.querySelectorAll(\'#policy a[href="mailto:support@studiosedillo.com"]\').length') >= 1,
+                               'Studio Sedillo' in g.js('document.getElementById("policy").textContent')]
+            check(f'{page_name} in 5 talen: zelfde opbouw ({min_sections} onderdelen), Studio Sedillo en het contactadres',
+                  len({json.dumps(v) for v in shape.values()}) == 1 and shape['en'][0] == min_sections and shape['en'][2] and shape['en'][3], shape)
+        g.page.goto(url + 'privacy.html?lang=nl')
+        heads = g.js('[...document.querySelectorAll("#policy h2")].map(h => h.textContent)')
+        check('privacyverklaring bevat de verplichte onderdelen',
+              heads == ['Wie is verantwoordelijk', 'In het kort', 'Wat er wordt bewaard, en waar', 'Wat de app niet doet', 'Delen met anderen',
+                        'Hoe lang gegevens bewaard blijven', 'Hoe je gegevens verwijdert', 'Je rechten (AVG)', 'Kinderen en ouders', 'Wijzigingen'] and
+              '11 oktober 2026' in g.js('document.querySelector(".updated").textContent'), heads)
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+
+        # ------------------------------------------------------------
+        section('31. Netwerktest: geen enkel verzoek naar een ander domein (publiceren 2)')
+        g = Game(browser, url, rules=True)
+        g.page.wait_for_function('navigator.serviceWorker.controller !== null', timeout=15000)
+        g.start()
+        g.page.click('#world-card-0')
+        g.page.click('.level-btn[data-level="0"]')
+        g.page.click('#btn-rules-ok')
+        g.page.click('#btn-hint')
+        g.solve()
+        g.page.wait_for_selector('#modal-win:not(.hidden)')
+        g.page.click('#btn-win-home')
+        g.page.click('#btn-levels-back')
+        g.page.click('#btn-bell')
+        g.page.click('#btn-inbox-back')
+        g.page.click('#btn-score')
+        for tab in ('worlds', 'history', 'badges'):
+            g.page.click(f'#tab-{tab}')
+        g.page.click('#btn-profile-back')
+        g.page.click('#btn-switch')
+        g.page.click('#btn-transfer')
+        g.parent_hold()
+        g.page.click('#btn-export')
+        g.page.click('#btn-transfer-ok')
+        g.js('goToSettings()')
+        g.page.click('#btn-credits')
+        g.page.click('#btn-credits-ok')
+        for page_name in ('privacy.html', 'verwijderen.html', ''):
+            g.page.goto(url + page_name)
+        g.page.wait_for_timeout(1500)
+        hosts = sorted({re.sub(r'^https?://([^/]+)/.*$', r'\1', r) for r in g.requests})
+        files = sorted({r.split('?')[0].split('#')[0].replace(url, '/') for r in g.requests})
+        check(f'{len(g.requests)} verzoeken tijdens een hele speelronde, allemaal naar het eigen adres', hosts == [url.split('//')[1].rstrip('/')], hosts)
+        check('alleen eigen bestanden, geen POST of andere verzending',
+              all(f == '/' or re.fullmatch(r'/[\w.-]+\.(html|js|css|json|png|svg)', f) or f.startswith('/icons/') for f in files), files)
+        storage = g.js('Object.fromEntries(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k).length]))')
+        check('lokale opslag: alleen sudokuKids-sleutels', all(k.startswith('sudokuKids_') for k in storage) and len(storage) >= 5, storage)
+        check('geen cookies, geen sessionStorage, geen IndexedDB',
+              g.js('document.cookie') == '' and g.js('sessionStorage.length') == 0 and g.js('indexedDB.databases ? indexedDB.databases().then(d => d.length) : 0') == 0)
+        check('geen toestemmingen gevraagd (camera, microfoon, locatie, meldingen)', g.js('''() => Promise.all(['camera', 'microphone', 'geolocation', 'notifications'].map(n =>
+            navigator.permissions.query({ name: n }).then(s => s.state, () => 'n/a'))).then(s => s.every(x => x !== 'granted'))'''))
+        audit = {'requests': len(g.requests), 'hosts': hosts, 'files': files, 'storage': storage, 'caches': g.js('caches.keys()'),
+                 'cache_files': g.js('caches.keys().then(async ks => (await (await caches.open(ks[0])).keys()).length)')}
+        (ROOT / 'tests' / 'out').mkdir(exist_ok=True)
+        (ROOT / 'tests' / 'out' / 'privacy-audit.json').write_text(json.dumps(audit, indent=1))
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+        # testversie op een eigen subdomein (test-….localhost): herkend aan de hostnaam
+        sub = url.replace('127.0.0.1', 'test-sudokukids.localhost')
+        g = Game(browser, sub)
+        check('testversie op een subdomein (test-sudokukids.…): TEST-strook en eigen opslag, herkend aan de hostnaam',
+              g.js('SudokuStorage.IS_TEST') is True and g.js('SudokuStorage.PREFIX') == 'test_sudokuKids_' and g.js('!!document.querySelector(".test-badge")'))
+        g.close()
+        g = Game(browser, url.replace('127.0.0.1', 'sudokukids.localhost'))
+        check('live op een subdomein (sudokukids.…): geen TEST-strook, gewone sleutels',
+              g.js('SudokuStorage.IS_TEST') is False and g.js('SudokuStorage.PREFIX') == 'sudokuKids_' and g.js('document.querySelector(".test-badge")') is None)
+        g.close()
+        g = Game(browser, url.replace('127.0.0.1', 'sudokukids.localhost'), progress=progress_for(0, 5))
+        g.page.goto(url.replace('127.0.0.1', 'sudokukids.localhost') + 'spelen/')
+        check('verhuizen naar een submap op hetzelfde subdomein (/ → /spelen/): voortgang blijft, want de opslag hangt aan het domein',
+              g.js('getTotalStars()') == 15 and g.js('location.pathname') == '/spelen/')
+        g.close()
         browser.close()
 
     failed = results.count(False)

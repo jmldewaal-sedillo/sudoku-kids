@@ -245,6 +245,9 @@
     calendar: () =>
       rect(8, 12, 48, 44, 8, '#fff') + path('M8 26 V20 a8 8 0 0 1 8 -8 H48 a8 8 0 0 1 8 8 V26 Z', '#FF8FB1') +
       el('path', 'd="M20 6 v10 M44 6 v10"', `stroke="${INK}" stroke-width="4" stroke-linecap="round"`) + face(32, 39, 0.7),
+    help: () =>
+      circle(32, 32, 25, '#7CC4FF') +
+      el('path', 'd="M24 25 a8 8 0 1 1 12 7 c-3 2 -4 3 -4 6"', `stroke="${INK}" stroke-width="5.5" stroke-linecap="round" fill="none"`) + circle(32, 46.5, 3.2, INK, ''),
     lockpad: () => ICONS.lock(),
   };
 
