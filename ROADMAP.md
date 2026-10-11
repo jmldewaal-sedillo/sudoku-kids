@@ -53,7 +53,13 @@ Vooraf gevraagd: advertenties → **geen** (later eventueel verwijzingen naar ei
 
 **Ook gevonden:** het bestaande icoon heeft afgeronde, doorzichtige hoeken; Google wil een vol vierkant → eigen variant voor de store. `verwijderen.html` ontbrak in de bestandenlijst van de testdeploy → toegevoegd, en onderdeel 32 controleert nu dat beide workflows alles uit de cache-lijst kopiëren.
 
-**Bewijs:** zie het rapport van deze sessie; commando's en uitkomsten: BEWIJS_HIER
+**Bewijs (alles twee keer achter elkaar gedraaid op de definitieve stand):**
+- `node tests/validate-levels.js` → drie keer ✅; `node tests/difficulty.js` → beide ✅; `node --check` op alle .js → OK.
+- `python3 tests/e2e.py` → `✅ 356/356 controles geslaagd.` (62 nieuw in onderdeel 28–32: verwijderen, exporteren/importeren, verhuizen via de link, spelregels/credits/pagina's, netwerktest, domein/deploy/store-teksten).
+- `python3 tests/screenshots.py` → 7 formaten × 34 schermen = 238 screenshots, `✅ Niets buiten beeld, alle knoppen minstens 48x48 px, 0 console-errors.` De acht nieuwe schermen zelf bekeken.
+- `python3 tests/store.py` → `✅ Store-materiaal voldoet aan de eisen.`
+- `tools/eigen-domein.sh check` → alle records "ONTBREEKT" behalve MX (zoals verwacht: DNS is nog niet ingesteld).
+- Hoofdsite: https://jmldewaal-sedillo.github.io/studio-sedillo/ en `/privacy` geven 200.
 
 **Niet te testen zonder mens/toestel/DNS:** de eigen domeinen en HTTPS, `assetlinks.json` op het echte adres, de TWA op een telefoon, de verhuizing op het echte github.io-adres, of Google de TWA onder het Families-beleid accepteert, de vertalingen van de verklaring, de verwijderpagina en de store-teksten.
 
