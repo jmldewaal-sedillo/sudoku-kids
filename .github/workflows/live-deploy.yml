@@ -34,6 +34,13 @@ jobs:
       - name: Levels controleren
         run: node tests/validate-levels.js
 
+      # Vangnet: geen privégegevens (huisadres) online. De lijst komt uit het geheim
+      # PRIVATE_BLOCKLIST; zonder geheim volgt een waarschuwing en gaat de deploy door.
+      - name: Controle op privégegevens
+        env:
+          PRIVATE_BLOCKLIST: ${{ secrets.PRIVATE_BLOCKLIST }}
+        run: python3 tests/no-private-data.py --ci
+
       - name: Live kopie klaarzetten
         env:
           LIVE_DOMAIN: ${{ vars.LIVE_DOMAIN }}

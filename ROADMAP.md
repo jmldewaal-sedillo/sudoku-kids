@@ -4,11 +4,11 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v6 staat live; **v8 (voorbereiding publiceren) staat op de testlink** en wacht op akkoord: gegevens verwijderen, voortgang overzetten, spelregels, credits, nieuwe privacyverklaring, eigen domein voorbereid, store-materiaal |
+| **Huidige fase** | v6 staat live; **v9 (voorbereiding publiceren) staat op de testlink** en wacht op akkoord: gegevens verwijderen, voortgang overzetten, spelregels, credits, nieuwe privacyverklaring, eigen domein voorbereid, store-materiaal |
 | **Laatste update** | 2026-10-11 |
 | **Volgende stap** | Jenn: testlink nalopen, daarna DNS bij Namecheap en de rest van "Wat Jenn zelf moet doen" in `docs/publiceren.md` |
-| **Uitgever** | Studio Sedillo (heeft een KvK-inschrijving) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v8 (`publish-prep`). Na DNS: https://test-sudokukids.studiosedillo.com/ |
+| **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v9 (`publish-prep`). Na DNS: https://test-sudokukids.studiosedillo.com/ |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v6` (live sinds 2026-10-11; v3 stond live van 's ochtends tot 's middags) |
 
 ---
@@ -23,7 +23,7 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v6`, test: `sudoku-kids-v8`), anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v6`, test: `sudoku-kids-v9`), anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, build-stappen, externe CDN's, tracking, advertenties of accounts.** `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Komt er ooit iets bij dat het toestel verlaat, dan eerst `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
@@ -35,6 +35,19 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-11 · v9 op de testlink: bedrijfsgegevens, onderzoek adres en Play-account, adres-vangnet (Claude Code, branch `publish-prep`)
+Gegevens van Jenn: Studio Sedillo is een eenmanszaak, KvK 42122276, Nederland; handelsnamen Studio Sedillo en Clever Creatures Club. **Vast besluit: naam en land mogen publiek, het adres (huisadres) en het vestigingsnummer nergens.** Btw-id nog niet bekend.
+
+- **Onderzoek** → `docs/bedrijf.md` (bronnen KVK, Ondernemersplein, ACM, wetten.overheid.nl, Play Console Help, geraadpleegd op 11 oktober 2026). Uitkomst: persoonlijk account zonder betaalde apps of aankopen toont alleen wettelijke naam, land en e-mail → plan bevestigd. Organisatie-account toont altijd adres en telefoon. Het bezoekadres van een eenmanszaak is openbaar in het Handelsregister tot het is afgeschermd (kan altijd, vraagt een postadres). `docs/publiceren.md` daarop aangepast.
+- **Aangepast:** privacyverklaring (5 talen) en hoofdsite (EN/NL): "Verantwoordelijke: Studio Sedillo (eenmanszaak), KvK 42122276, Nederland · studio.sedillo@gmail.com". Footer met KvK-nummer, land en e-mail op de privacy- en verwijderpagina en op alle pagina's van de hoofdsite. Credits in 10 talen: "… Studio Sedillo · KvK 42122276". `store/listing.json`: bedrijfsregel zonder adres. Datum bovenaan blijft 11 oktober 2026 (vandaag).
+- **Adres-vangnet:** `tools/no-private-data.py` (bestanden, commit, commitbericht, geschiedenis, online, zelftest), `tools/install-hooks.sh` (pre-commit en commit-msg), `tests/no-private-data.py`, stap in beide deploy-workflows met geheim `PRIVATE_BLOCKLIST` (zonder geheim: waarschuwing). Lijst buiten de repo's: `~/.studio-sedillo/blocklist.txt`, aangemaakt met alleen een voorbeeldregel. Hooks staan aan in deze repo en in `studio-sedillo`.
+- **Eenmalige controle:** de lijst is nog niet ingevuld, dus de controle op het echte adres is nog niet gedaan. Wel gezocht op alles wat op een Nederlandse postcode of straat-met-huisnummer lijkt, in alle bestanden en de hele geschiedenis van `sudoku-kids`, `studio-sedillo`, `studio-sedillo-app-template` en `the-flush-factor`: geen treffers.
+- `CACHE_VERSION` → `sudoku-kids-v9`.
+
+**Bewijs:** `python3 tests/e2e.py` twee keer achter elkaar → `✅ 361/361 controles geslaagd.` (bestaande controles uitgebreid: footer met KvK-nummer en land op beide pagina's in 5 talen, verantwoordelijke met rechtsvorm en KvK-nummer, credits met KvK-nummer; de emoji-controle telt het ©-teken niet meer als emoji). `python3 tests/screenshots.py` → `✅ Niets buiten beeld, alle knoppen minstens 48x48 px, 0 console-errors.`; credits op 320 px en de footer zelf bekeken. `python3 tests/no-private-data.py` → zelftest ✅ (een verzonnen adres wordt gevonden, schone tekst niet); controle op de echte lijst overgeslagen met waarschuwing omdat de lijst nog niet is ingevuld. Hooks bewezen in een wegwerp-repo met een verzonnen patroon: schone commit gelukt, commit met het patroon in een bestand tegengehouden, commit met het patroon in het commitbericht tegengehouden. `node tests/validate-levels.js` ✅. `python3 tests/store.py` ✅.
+
+**Bestanden geraakt:** privacy.html, delete.html, index.html, i18n.js, sw.js, beide workflows, tools/no-private-data.py (nieuw), tools/install-hooks.sh (nieuw), tests/no-private-data.py (nieuw), tests/e2e.py, tests/screenshots.py, tests/store.py, store/listing.json, store/teksten.md, docs/bedrijf.md (nieuw), docs/publiceren.md, README.md, ROADMAP.md. Repo `studio-sedillo`: index.html, privacy.html, 404.html, tools/, tests/, .github/workflows/private-check.yml. Ook `Apps/CLAUDE.md` (vaste gegevens).
 
 ### 2026-10-11 · v8 op de testlink: nieuw contactadres, privacyverklaring aangevuld, /delete (Claude Code, branch `publish-prep`)
 Vooraf gevraagd: hoe de verantwoordelijke vermeld wordt → **alleen "Studio Sedillo"**. **Studio Sedillo heeft een KvK-inschrijving** (opgegeven door Jenn), dus de handelsnaam is te herleiden.
@@ -332,6 +345,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [x] Gegevens en profiel verwijderen in de app + webpagina `delete.html` (op test; `verwijderen.html` verwijst door)
 - [x] Google Play-ontwikkelaarsaccount → bestaat al (persoonlijk account), AdMob-account ook (niet gebruikt)
 - [x] Domeinnaam kiezen → eigen subdomein per app: `sudokukids.studiosedillo.com`
+- [x] KvK-inschrijving → Studio Sedillo, eenmanszaak, KvK 42122276 (staat in de footer, de privacyverklaring en de credits)
 - [x] Store-materiaal: teksten in 10 talen, icoon, feature graphic, screenshots telefoon en tablet → `store/`
 
 **Testen (J)**
@@ -342,6 +356,16 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] Hoofdsite nalopen: https://jmldewaal-sedillo.github.io/studio-sedillo/ (klopt de tekst over Studio Sedillo? wat moet er bij The Flush Factor staan?)
 - [ ] v8: credits (één zin over eigen werk), privacyverklaring (onderdelen "Als je ons mailt" en "Gegevens buiten de EU") en de hoofdsite opnieuw lezen
 - [ ] Store-materiaal bekijken: `store/feature-graphic.png`, `store/screenshots/`, `store/teksten.md`
+
+**Bedrijf en adres (uitleg in `docs/bedrijf.md`)**
+- [ ] J: straatnaam en postcode in `~/.studio-sedillo/blocklist.txt` zetten; daarna C: alle repo's en hun geschiedenis nalopen met de ingevulde lijst
+- [ ] J: geheim `PRIVATE_BLOCKLIST` aanmaken in `sudoku-kids` en `studio-sedillo` (commando's in `docs/bedrijf.md`)
+- [ ] J: Zakelijk postadres regelen en bij KvK als vestigingsadres registreren: nodig vóór een app met advertenties of aankopen, of voor een organisatie-account. (Uit het onderzoek: bij de KVK leg je het vast als *postadres* en scherm je het bezoekadres af; tot dan is het huisadres te vinden in het Handelsregister.)
+- [ ] J: Testers verzamelen voor de gesloten test (12 personen, 14 dagen)
+- [ ] Btw-id toevoegen aan de footer (nog niet bekend; J geeft het door, C zet het op de hoofdsite en op de privacy- en verwijderpagina)
+- [ ] J: beslissen of er een telefoonnummer bij de bedrijfsgegevens moet (Ondernemersplein en ACM noemen het)
+- [ ] J: in Play Console nakijken dat het account persoonlijk is en dat er geen betaalde apps of aankopen aan staan; eigen ontwikkelaarspagina bekijken
+- [ ] C: het vangnet (`tools/no-private-data.py`, hooks) ook in de template `studio-sedillo-app-template` en in The Flush Factor zetten
 
 **Eigen domein**
 - [ ] J: DNS-records aanmaken bij Namecheap (tabel in `docs/studio-sedillo.md`); parkeer-records weghalen
@@ -389,7 +413,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 ### Na publiceren
 - [ ] Elk jaar vóór 31 augustus: nieuwe target-API-eis van Google nakijken en zo nodig een nieuwe TWA-build uploaden
 - [ ] Verwijzing naar eigen spellen van Studio Sedillo ("meer spellen"): achter het ouderslot, duidelijk te onderscheiden van het spel; eerst uitzoeken of de advertentieverklaring in Play Console dan op "ja" moet (Families-beleid rekent kruispromotie tot de advertentieregels), en `docs/privacy-audit.md` bijwerken
-- [ ] The Flush Factor toevoegen volgens `docs/studio-sedillo.md` (subdomein, test-subdomein, kaart op de hoofdsite)
+- [ ] The Flush Factor toevoegen volgens `docs/studio-sedillo.md` (subdomein, test-subdomein, kaart op de hoofdsite). **Let op: Flush Factor en elke andere app met advertenties of aankopen pas publiceren nadat het zakelijke postadres geregeld is** (Google toont dan het volledige adres; zie `docs/bedrijf.md`).
 - [ ] Het oude github.io-adres uitzetten als niemand het meer gebruikt
 - [ ] Meer levels per wereld, richting 500 (nu 50 per rastergrootte; aanvullen met `tools/generate-puzzles.js --levels`)
 - [ ] Meer werelden, richting 10 (nu 5)
@@ -424,6 +448,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] `script.js` (±1.000 regels) opsplitsen in losse bestanden (profielen, ouderslot en puzzelkeuze zijn goede kandidaten)
 
 ### Ideeën
+- **Clever Creatures Club** als label voor kinderspellen onder Studio Sedillo (domeinen clevercreatures.club en clevercreaturesclub.com zijn al in bezit).
 - **Gesproken mascotte** – korte opgenomen zinnetjes per taal ("Tik op een vakje!"). Lost het lees-probleem beter op dan plaatjes alleen.
 - **Dagelijkse puzzel** – elke dag één extra level op basis van de datum als seed (geen server nodig).
 - **Extra werelden** – bijv. kleuren-sudoku of 4×4 met vormen voor de allerjongsten; nieuwe werelden áchteraan toevoegen zodat bestaande levels en sterren kloppen.

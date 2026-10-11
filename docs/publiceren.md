@@ -8,9 +8,15 @@ Uitgangspunten (besloten op 11 oktober 2026):
 
 - **Geen advertenties.** Later eventueel een verwijzing naar eigen spellen van Studio Sedillo
   (zie eis 1d).
-- **Persoonlijk Play Console-account**, dus de verplichte gesloten test geldt, tenzij het
-  account van vóór 13 november 2023 is (zie eis 9).
-- Uitgever: **Studio Sedillo**, contact **studio.sedillo@gmail.com**.
+- **Persoonlijk Play Console-account, en dat blijft zo** (bevestigd in `docs/bedrijf.md`, 1c en 1d):
+  zonder betaalde apps of aankopen toont Google alleen de wettelijke naam, het land en het
+  ontwikkelaars-e-mailadres, geen adres. Een organisatie-account toont altijd een adres en
+  een telefoonnummer. De verplichte gesloten test geldt, tenzij het account van vóór
+  13 november 2023 is (zie eis 9).
+- **Sudoku Kids blijft gratis, zonder advertenties en zonder aankopen.** Komt daar ooit
+  verandering in, dan eerst het adres regelen (`docs/bedrijf.md`, 1b).
+- Uitgever: **Studio Sedillo** (eenmanszaak), KvK 42122276, Nederland, contact
+  **studio.sedillo@gmail.com**. Het adres wordt nergens vermeld (besluit van Jenn).
 - Adres van de app: **https://sudokukids.studiosedillo.com/**, package name
   **com.studiosedillo.sudokukids**.
 
@@ -28,6 +34,7 @@ staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
 | 3 | Domein verifiëren bij GitHub (TXT-record) | GitHub → Settings → Pages | Beschermt tegen domeinkaping |
 | 4 | Claude Code laten draaien: `tools/eigen-domein.sh check`, daarna `site`, `test`, `live` | terminal | Zet de eigen domeinen en HTTPS aan (kan pas na stap 2 en 3) |
 | 5 | In Play Console nakijken: accounttype en aanmaakdatum; ontwikkelaarsnaam op **Studio Sedillo** zetten; ontwikkelaars-e-mail op studio.sedillo@gmail.com | Play Console → Instellingen → Ontwikkelaarsaccount | Bepaalt of de gesloten test geldt; bij een persoonlijk account toont Google ook je wettelijke naam en land |
+| 5b | De stappen uit `docs/bedrijf.md` ("Wat Jenn zelf moet doen"): blocklist invullen, bezoekadres afschermen bij de KVK, btw-id doorgeven | zie daar | Het KvK-nummer staat online; het adres hoort dat niet te zijn |
 | 6 | App aanmaken in Play Console: naam "Sudoku Kids & Crazy Grids", type Game, gratis | Play Console → App maken | Nodig voor de signing key |
 | 7 | TWA bouwen met Bubblewrap en de **upload key** maken; wachtwoord en keystore veilig opbergen (zie `docs/twa.md`) | eigen pc | De key heb je bij elke update nodig |
 | 8 | De `.aab` uploaden naar **Interne test**; daarna de SHA-256 van de **app signing key** kopiëren | Play Console → Testen en releasen → App-integriteit | Die vingerafdruk moet in `assetlinks.json` |
@@ -182,8 +189,10 @@ Bronnen: [previewmateriaal][assets], [metadatabeleid][metadata].
 
 **Let op bij een persoonlijk account:** Google toont op de store-pagina naast de
 ontwikkelaarsnaam ook je **wettelijke naam, je land en het ontwikkelaars-e-mailadres**; je
-volledige adres alleen als je geld gaat verdienen (betaalde apps of aankopen). Bron:
-[accounttype kiezen][accounttype].
+volledige adres alleen als je geld gaat verdienen (betaalde apps of aankopen). De wettelijke
+naam is je eigen naam, niet "Studio Sedillo". Vul in Play Console nergens een adres in dat
+getoond wordt, en zet geen betaalde apps of aankopen aan. Bron: [accounttype kiezen][accounttype];
+uitgewerkt in `docs/bedrijf.md` (1c).
 
 ### 8. Target-API voor de TWA
 
@@ -247,7 +256,7 @@ AVG, artikel 5).
 | Hosting | Ja, beperkt | GitHub Pages levert de bestanden en kan daarbij als elke webserver het IP-adres vastleggen. Staat in de verklaring. Er zijn geen cookies en geen scripts van derden | klaar op test |
 | E-mail aan studio.sedillo@gmail.com | Ja | Wie mailt, geeft zelf een e-mailadres. De mail loopt via Gmail (Google). Grondslag: gerechtvaardigd belang om de vraag te beantwoorden (art. 6 lid 1 sub f). Alleen gebruiken om te antwoorden; na afhandeling binnen een jaar weggooien. Staat in de verklaring ("Als je ons mailt") | klaar op test; Jenn houdt zich eraan |
 | Doorgifte buiten de EU | Ja, beperkt | GitHub (hosting) en Google (e-mail) zijn Amerikaanse bedrijven. Beide doen mee aan het EU-U.S. Data Privacy Framework ([GitHub][gh-privacy], verklaring van 27 april 2026; [Google][google-frameworks]). Het adequaatheidsbesluit van 10 juli 2023 geldt nog: het Gerecht van de EU wees het beroep ertegen af op 3 september 2025; het hoger beroep bij het Hof van Justitie (zaak C-703/25 P) loopt nog. Staat in de verklaring ("Gegevens buiten de EU") met links naar beide privacyverklaringen | klaar op test; opnieuw nakijken na de uitspraak van het Hof |
-| Wie is de verantwoordelijke (art. 13 lid 1 sub a) | Ja | Vermeld als "Studio Sedillo" met het e-mailadres (keuze van Jenn, 11 oktober 2026). Studio Sedillo heeft een KvK-inschrijving, dus de handelsnaam is te herleiden | klaar op test |
+| Wie is de verantwoordelijke (art. 13 lid 1 sub a) | Ja | Vermeld als "Studio Sedillo (eenmanszaak), KvK 42122276, Nederland · studio.sedillo@gmail.com", zonder adres (besluit van Jenn, 11 oktober 2026). Zie `docs/bedrijf.md` voor wat de wet over het adres zegt en hoe het bij de KVK af te schermen is | klaar op test |
 | Rechten van betrokkenen | Ja | Inzage, correctie, verwijdering en overdraagbaarheid kan de ouder zelf uitoefenen in de app (profiel bewerken, verwijderen, "Voortgang overzetten") | klaar op test |
 | Register van verwerkingen, functionaris, DPIA | Nee | Niet verplicht bij deze omvang en zonder verwerking van gegevens van spelers. Bewaar dit document en `docs/privacy-audit.md` als onderbouwing | klaar |
 | COPPA (VS) | Ja, zelfde uitkomst | Geen verzameling van persoonlijke informatie van kinderen, dus geen ouderlijke toestemming nodig | klaar |

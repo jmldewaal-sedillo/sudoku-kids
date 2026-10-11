@@ -117,7 +117,7 @@ def make():
         browser.close()
     listing = json.loads((STORE / 'listing.json').read_text())
     lines = ['# Store-teksten', '', 'Gemaakt door `tests/store.py` uit `store/listing.json`. Pas de teksten daar aan, niet hier.', '',
-             f'- Titel: **{listing["title"]}** ({len(listing["title"])} tekens)', f'- Ontwikkelaar: {listing["developer"]}',
+             f'- Titel: **{listing["title"]}** ({len(listing["title"])} tekens)', f'- Ontwikkelaar: {listing["developer"]}', f'- Bedrijf: {listing["company"]} (geen adres vermelden)',
              f'- E-mail: {listing["email"]}', f'- Website: {listing["website"]}', f'- Privacybeleid: {listing["privacy"]}', f'- Gegevens verwijderen: {listing["delete"]}',
              f'- Categorie: {listing["category"]}', '']
     for code, text in listing['listings'].items():

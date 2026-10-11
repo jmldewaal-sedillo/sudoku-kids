@@ -4,6 +4,7 @@ Gemaakt door `tests/store.py` uit `store/listing.json`. Pas de teksten daar aan,
 
 - Titel: **Sudoku Kids & Crazy Grids** (25 tekens)
 - Ontwikkelaar: Studio Sedillo
+- Bedrijf: Studio Sedillo (eenmanszaak) · KvK 42122276 · Nederland (geen adres vermelden)
 - E-mail: studio.sedillo@gmail.com
 - Website: https://studiosedillo.com
 - Privacybeleid: https://sudokukids.studiosedillo.com/privacy

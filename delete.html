@@ -19,6 +19,7 @@
     .langs button[aria-pressed="true"] { border-color: #3D2C6B; background: #FFD93D; }
     .updated { font-style: italic; margin-top: 0; }
     ol li, ul li { margin-bottom: 4px; }
+    footer { margin-top: 28px; padding-top: 14px; border-top: 2px solid #EDD9FF; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -27,6 +28,7 @@
   <div class="langs" id="langs" role="group" aria-label="Language"></div>
   <article id="policy"></article>
   <a class="back" href="./"><span data-icon="back"></span><span data-text="back"></span></a>
+  <footer id="company"></footer>
 </main>
 
 <script src="storage.js"></script>
@@ -36,6 +38,7 @@
   'use strict';
   var MAIL = 'studio.sedillo@gmail.com';
   var ORDER = ['en', 'nl', 'es', 'pt', 'id'];
+  var COUNTRY = { en: 'the Netherlands', nl: 'Nederland', es: 'Países Bajos', pt: 'Países Baixos', id: 'Belanda' };
   var NAMES = { en: 'English', nl: 'Nederlands', es: 'Español', pt: 'Português', id: 'Bahasa Indonesia' };
   var BACK = { en: 'Back to the game', nl: 'Terug naar het spel', es: 'Volver al juego', pt: 'Voltar ao jogo', id: 'Kembali ke permainan' };
   // Every language: a title, a line under it, and sections [heading, html].
@@ -191,6 +194,7 @@
     document.getElementById('policy').innerHTML =
       '<h1>' + T.title + '</h1><p class="updated">' + T.sub + '</p>' +
       T.sections.map(function (s) { return '<h2>' + s[0] + '</h2>' + s[1].split('{mail}').join(mail); }).join('');
+    document.getElementById('company').innerHTML = '&copy; 2026 Studio Sedillo · KvK 42122276 · ' + COUNTRY[lang] + ' · ' + mail;
     document.querySelectorAll('[data-text="back"]').forEach(function (el) { el.textContent = BACK[lang]; });
     document.querySelectorAll('#langs button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
   }

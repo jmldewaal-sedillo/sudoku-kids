@@ -4,7 +4,7 @@ Een sudoku-spel voor kinderen als PWA: 5 werelden, 450 levels, 3 soorten sudoku
 (standaard, X-Sudoku, fruit), 3.700 puzzels, tot 6 profielen per toestel, eigen
 kawaii-iconen, muziek, en 10 talen (NL, EN, DE, FR, ES, PT, IT, PL, TR, ID).
 
-Gemaakt door **Studio Sedillo** · studio.sedillo@gmail.com · package name
+Gemaakt door **Studio Sedillo** (eenmanszaak, KvK 42122276, Nederland) · studio.sedillo@gmail.com · package name
 `com.studiosedillo.sudokukids`.
 
 | Onderwerp | Document |
@@ -78,6 +78,10 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `store/` | Store-materiaal: teksten in 10 talen (`listing.json`, `teksten.md`), icoon, feature graphic, screenshots |
 | `twa/twa-manifest.json` | Instellingen voor Bubblewrap (Android-app) |
 | `tools/eigen-domein.sh` | Controleert de DNS-records en zet de eigen domeinen aan |
+| `tools/no-private-data.py` | Vangnet: controleert bestanden, commits, geschiedenis en online pagina's op privégegevens uit `~/.studio-sedillo/blocklist.txt` (uitleg: `docs/bedrijf.md`) |
+| `tools/install-hooks.sh` | Zet dat vangnet aan als pre-commit en commit-msg hook |
+| `tests/no-private-data.py` | Test: zelftest van het vangnet + alle bestanden van de repo (`--online`: ook de gepubliceerde pagina's) |
+| `docs/bedrijf.md` | Bedrijfsgegevens, wat de wet over het adres zegt, Google Play-accounttypes, het adres-vangnet |
 | `.github/workflows/live-deploy.yml` | Zet `main` op het eigen subdomein (pas actief na `LIVE_DOMAIN`) |
 | `tests/store.py` | Maakt het store-materiaal en controleert het tegen de eisen van Google Play |
 | `docs/icon-opties.html` | Vergelijking van drie icoonsets (alleen op de testlink) |
@@ -273,7 +277,7 @@ Eenmalig installeren: `pip install playwright && playwright install chromium`.
 ```bash
 node tests/validate-levels.js && node tests/difficulty.js && \
 for f in *.js tests/*.js; do node --check "$f" || exit 1; done && \
-python3 tests/e2e.py && python3 tests/screenshots.py
+python3 tests/no-private-data.py && python3 tests/e2e.py && python3 tests/screenshots.py
 ```
 
 | Commando | Wat het bewijst |

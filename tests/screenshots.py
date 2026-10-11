@@ -51,7 +51,7 @@ MEASURE_JS = """
     for (const el of scope.querySelectorAll(sel)) {
       const r = el.getBoundingClientRect();
       if (!r.width || !r.height) continue;
-      if (el.matches('#policy a')) continue;      // a link inside a sentence of the policy text (not a button)
+      if (el.matches('#policy a, #company a')) continue;      // a link inside a sentence of the policy text or the company line (not a button)
       const cs = getComputedStyle(el);
       if (cs.visibility === 'hidden' || cs.display === 'none') continue;
       const name = (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) +

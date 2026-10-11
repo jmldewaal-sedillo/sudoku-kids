@@ -1254,7 +1254,8 @@ def run():
         g = Game(browser, url)
         g.start()
         g.page.goto(url + 'privacy.html')
-        emoji_js = r'() => (document.body.innerText.match(/\p{Extended_Pictographic}/u) || [""])[0]'
+        # © in de bedrijfsregel is een gewoon teken, geen emoji (Unicode telt het wel als pictogram)
+        emoji_js = r'() => (document.body.innerText.replace(/©/g, "").match(/\p{Extended_Pictographic}/u) || [""])[0]'
         check('terugknop met het kawaii-icoon, geen emoji op de pagina', g.js('document.querySelectorAll(".back svg").length') == 2 and g.js(emoji_js) == '')
         check('taalknoppen bovenaan: Engels, Nederlands, Spaans, Portugees, Indonesisch',
               g.js('[...document.querySelectorAll("#langs button")].map(b => b.textContent).join("|")') == 'English|Nederlands|Español|Português|Bahasa Indonesia')
@@ -1445,8 +1446,8 @@ def run():
         check('ook via Instellingen', g.modal() == 'modal-rules')
         g.page.click('#btn-rules-ok')
         g.page.click('#btn-credits')
-        check('creditspagina via Instellingen: "Gemaakt door Studio Sedillo" met contactadres',
-              g.modal() == 'modal-credits' and g.js('document.querySelector(".credits-by").textContent') == 'Gemaakt door Studio Sedillo' and
+        check('creditspagina via Instellingen: "Gemaakt door Studio Sedillo · KvK 42122276" met contactadres',
+              g.modal() == 'modal-credits' and g.js('document.querySelector(".credits-by").textContent') == 'Gemaakt door Studio Sedillo · KvK 42122276' and
               'studio.sedillo@gmail.com' in g.js('document.getElementById("modal-credits").textContent'))
         own = g.js('Object.fromEntries(Object.entries(STRINGS).map(([code, t]) => [code, t.ownWork]))')
         shown = g.js('document.querySelector(\'[data-i18n="ownWork"]\').textContent')
@@ -1463,18 +1464,20 @@ def run():
                 g.page.click(f'#langs button[data-lang="{code}"]')
                 shape[code] = [g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelectorAll("#policy li").length'),
                                g.js('document.querySelectorAll(\'#policy a[href="mailto:studio.sedillo@gmail.com"]\').length') >= 1,
-                               'Studio Sedillo' in g.js('document.getElementById("policy").textContent')]
-            check(f'{page_name} in 5 talen: zelfde opbouw ({min_sections} onderdelen), Studio Sedillo en het contactadres',
-                  len({json.dumps(v) for v in shape.values()}) == 1 and shape['en'][0] == min_sections and shape['en'][2] and shape['en'][3], shape)
+                               'Studio Sedillo' in g.js('document.getElementById("policy").textContent'),
+                               g.js('document.getElementById("company").textContent').startswith('© 2026 Studio Sedillo · KvK 42122276 · ') and
+                               g.js('document.getElementById("company").textContent').endswith(' · studio.sedillo@gmail.com')]
+            check(f'{page_name} in 5 talen: zelfde opbouw ({min_sections} onderdelen), Studio Sedillo, het contactadres en de footer met KvK-nummer en land',
+                  len({json.dumps(v) for v in shape.values()}) == 1 and shape['en'][0] == min_sections and shape['en'][2] and shape['en'][3] and shape['en'][4], shape)
         legal = {}
         g.page.goto(url + 'privacy.html')
         for code in ('en', 'nl', 'es', 'pt', 'id'):
             g.page.click(f'#langs button[data-lang="{code}"]')
             text = g.js('document.getElementById("policy").textContent')
-            legal[code] = ['Gmail' in text and 'Google' in text, 'Data Privacy Framework' in text, '6' in text and ('GDPR' in text or 'AVG' in text or 'RGPD' in text),
+            legal[code] = ['Gmail' in text and 'Google' in text and 'Studio Sedillo (' in text and 'KvK 42122276' in text, 'Data Privacy Framework' in text, '6' in text and ('GDPR' in text or 'AVG' in text or 'RGPD' in text),
                            g.js('[...document.querySelectorAll("#policy a")].map(a => a.getAttribute("href")).filter(h => /^https:/.test(h)).sort().join()'),
                            g.js('document.querySelector(\'#policy a[href="delete.html"]\') !== null')]
-        check('privacyverklaring in 5 talen: e-mail via Gmail (Google), grondslag art. 6 lid 1 sub f, Data Privacy Framework, links naar GitHub en Google, link naar delete.html',
+        check('privacyverklaring in 5 talen: verantwoordelijke met rechtsvorm en KvK-nummer, e-mail via Gmail (Google), grondslag art. 6 lid 1 sub f, Data Privacy Framework, links naar GitHub en Google, link naar delete.html',
               all(v == [True, True, True, 'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement,https://policies.google.com/privacy,https://policies.google.com/privacy', True]
                   for v in legal.values()), legal)
         g.page.goto(url + 'verwijderen.html?lang=nl')
