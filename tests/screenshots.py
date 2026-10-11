@@ -22,14 +22,16 @@ from playwright.sync_api import sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ROOT / 'tests' / 'out')
 
+# De formaten van de balk in de testversie (test-preview.js) + een kleine telefoon
+# en een groot pc-scherm ("volledig scherm").
 VIEWPORTS = {
     'phone-320x568': (320, 568),
     'phone-360x640': (360, 640),
     'phone-390x844': (390, 844),
+    'phone-liggend-844x390': (844, 390),
     'tablet-800x1280': (800, 1280),
-    'landscape-640x360': (640, 360),
-    'landscape-844x390': (844, 390),
-    'tablet-landscape-1280x800': (1280, 800),
+    'tablet-liggend-1280x800': (1280, 800),
+    'volledig-1920x1080': (1920, 1080),
 }
 
 # Alle levels van wereld 0 en 1 gehaald, zodat elk level te openen is.
@@ -40,7 +42,7 @@ MIN_TAP = 48
 MEASURE_JS = """
 (minTap) => {
   const vw = innerWidth, vh = innerHeight, small = [], outside = [];
-  const sel = 'button, select, a, .world-card, .sudoku-cell, label.settings-row';
+  const sel = 'button, select, a, input[type=text], .world-card, .sudoku-cell, label.settings-row';
   const scopes = [...document.querySelectorAll('.screen.active, .modal:not(.hidden)')];
   const modalOpen = scopes.some(s => s.classList.contains('modal'));
   for (const scope of scopes) {
@@ -52,7 +54,7 @@ MEASURE_JS = """
       if (cs.visibility === 'hidden' || cs.display === 'none') continue;
       const name = (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) +
                    ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
-      const scrollable = el.closest('.levels-grid, .worlds-container, .settings-list, .modal-content');
+      const scrollable = el.closest('.levels-grid, .worlds-container, .settings-list, .profiles-container, .modal-content');
       if (!el.classList.contains('sudoku-cell') && (r.width < minTap - 0.5 || r.height < minTap - 0.5)) small.push(name);
       if (r.left < -0.5 || r.right > vw + 0.5 || ((r.top < -0.5 || r.bottom > vh + 0.5) && !scrollable)) outside.push(name);
     }
@@ -183,7 +185,27 @@ def run():
                 page.evaluate('hideModals(); goToSettings()')
                 shot('13-instellingen')
                 page.click('#btn-reset-progress')
-                shot('14-reset-bevestigen')
+                shot('14-ouderslot')
+                page.click('#btn-parent-hold', delay=3300)
+                shot('15-reset-bevestigen')
+                page.click('#btn-confirm-no')
+                # Grootte klein / groot op een 9x9
+                nine = first_global_index(page, 1, 9, 'standard')
+                for label, size in (('16-9x9-klein', 'small'), ('17-9x9-groot', 'large')):
+                    page.click(f'.size-btn[data-size="{size}"]')
+                    page.evaluate('i => startLevel(i, true)', nine)
+                    shot(label)
+                    page.evaluate('goToSettings()')
+                page.click('.size-btn[data-size="normal"]')
+                # Profielen
+                page.evaluate('goToWorlds()')
+                page.click('#btn-profile')
+                page.click('#btn-profile-add')
+                page.fill('#profile-name', 'Sam')
+                shot('18-profiel-nieuw')
+                page.click('#btn-profile-save')
+                page.click('#btn-profile')
+                shot('19-profielen')
             except Exception as exc:  # een knop is niet te bereiken: dat is zelf een bevinding
                 failed = True
                 report.append(f'{name:26} VASTGELOPEN: ' + str(exc).split('Call log')[0].strip()[:160]
