@@ -47,8 +47,12 @@
     <div class="screen-header">
       <button class="btn-icon" id="btn-worlds-settings" data-i18n-aria="settings" aria-label="Instellingen"><span class="ki" data-icon="gear"></span></button>
       <h2 class="screen-title" data-i18n="chooseWorld">Kies je wereld!</h2>
-      <!-- the score opens the profile page of the player -->
-      <button class="header-score" id="btn-score" data-i18n-aria="profile" aria-label="Profiel"><span class="ki" data-icon="star"></span><span id="total-stars-display">0</span></button>
+      <div class="header-right">
+        <!-- notifications of this player (kept on the device only) -->
+        <button class="btn-icon btn-bell" id="btn-bell" data-i18n-aria="inbox" aria-label="Meldingen"><span class="ki" data-icon="bell"></span><span class="bell-count hidden" id="bell-count">0</span></button>
+        <!-- the player's picture and stars: one button that opens the profile page -->
+        <button class="header-score header-player" id="btn-score" data-i18n-aria="profile" aria-label="Profiel"><span class="score-avatar" id="score-avatar"></span><span class="ki" data-icon="star"></span><span id="total-stars-display">0</span></button>
+      </div>
     </div>
     <div class="worlds-container" id="worlds-container"></div>
   </div>
@@ -140,7 +144,6 @@
         <h3 class="settings-section-title"><span class="ki" data-icon="ruler"></span><span data-i18n="secSize">Grootte</span></h3>
         <div class="size-row" role="group" data-i18n-aria="secSize" aria-label="Grootte">
           <button class="size-btn" data-size="small" data-i18n="sizeSmall">Klein</button>
-          <button class="size-btn" data-size="normal" data-i18n="sizeNormal">Normaal</button>
           <button class="size-btn" data-size="large" data-i18n="sizeLarge">Groot</button>
         </div>
         <!-- real number tiles, exactly as large as in the game with this setting -->
@@ -189,9 +192,19 @@
           <button class="btn-play-as" id="btn-play-as" data-i18n="play">Spelen!</button>
         </div>
         <div class="stat-cards" id="profile-stats"></div>
-        <div class="profile-worlds" id="profile-worlds"></div>
-        <h4 class="profile-sub" data-i18n="badges">Badges</h4>
-        <div class="badge-row" id="profile-badges"></div>
+        <!-- three parts that can be opened: badges, worlds, history -->
+        <div class="profile-tabs" role="tablist">
+          <button class="profile-tab" id="tab-badges" role="tab" data-tab="badges"><span class="ki" data-icon="medal"></span><span data-i18n="badges">Badges</span><b id="tab-badges-count"></b></button>
+          <button class="profile-tab" id="tab-worlds" role="tab" data-tab="worlds"><span class="ki" data-icon="globe"></span><span data-i18n="tabWorlds">Werelden</span></button>
+          <button class="profile-tab" id="tab-history" role="tab" data-tab="history"><span class="ki" data-icon="calendar"></span><span data-i18n="tabHistory">Geschiedenis</span></button>
+        </div>
+        <div class="profile-panel" id="panel-badges" role="tabpanel"></div>
+        <div class="profile-panel hidden" id="panel-worlds" role="tabpanel"></div>
+        <div class="profile-panel hidden" id="panel-history" role="tabpanel">
+          <div class="stars-how" id="stars-how"></div>
+          <div class="history-filter" id="history-filter" role="group"></div>
+          <div class="history-list" id="history-list"></div>
+        </div>
       </div>
       <!-- edit -->
       <div id="profile-edit" class="hidden">
@@ -207,14 +220,24 @@
     </div>
   </div>
 
-  <!-- ===== BOTTOM BAR (worlds + levels): talking cat on the left, the player on the right.
+  <!-- ===== NOTIFICATIONS ===== -->
+  <div id="screen-inbox" class="screen">
+    <div class="screen-header">
+      <button class="btn-icon" id="btn-inbox-back" data-i18n-aria="back" aria-label="Terug"><span class="ki" data-icon="back"></span></button>
+      <h2 class="screen-title" data-i18n="inbox">Meldingen</h2>
+      <div class="header-spacer"></div>
+    </div>
+    <div class="inbox-list" id="inbox-list"></div>
+  </div>
+
+  <!-- ===== BOTTOM BAR (worlds + levels): talking cat on the left, "other player" on the right.
        It has its own strip, so it never covers a button. ===== -->
   <div class="bottom-bar hidden" id="mascot">
-    <div class="mascot-emoji bounce-anim ki" data-icon="cat" aria-hidden="true"></div>
+    <button class="btn-cat" id="btn-cat" aria-label="Miauw"><span class="mascot-emoji bounce-anim ki" data-icon="cat" aria-hidden="true"></span></button>
     <div class="mascot-bubble" aria-live="polite"></div>
     <div class="bar-player">
-      <button class="btn-avatar" id="btn-avatar" data-i18n-aria="profile" aria-label="Profiel"></button>
-      <button class="btn-switch" id="btn-switch" data-i18n-aria="switchPlayer" aria-label="Andere speler"><span class="ki" data-icon="swap"></span></button>
+      <!-- the small picture shows who is playing; the arrows say: tap to change player -->
+      <button class="btn-switch" id="btn-switch" data-i18n-aria="switchPlayer" aria-label="Andere speler"><span class="switch-avatar" id="switch-avatar"></span><span class="ki" data-icon="swap"></span></button>
     </div>
   </div>
 
@@ -302,6 +325,21 @@
     </div>
   </div>
 
+  <!-- ===== BADGE DETAILS ===== -->
+  <div id="modal-badge" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="badge-name">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <div class="badge-big" id="badge-big" aria-hidden="true"></div>
+      <h2 id="badge-name"></h2>
+      <p id="badge-desc"></p>
+      <div class="badge-progress"><span class="progress-bar"><span class="progress-fill" id="badge-fill"></span></span><b id="badge-count"></b></div>
+      <p class="badge-state" id="badge-state"></p>
+      <div class="win-buttons">
+        <button class="btn-win-home" id="btn-badge-ok" data-i18n="ok">Oké</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== INFO ===== -->
   <div id="modal-info" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="info-title">
     <div class="modal-overlay"></div>
@@ -320,6 +358,7 @@
   <script src="level-plan.js"></script>
   <script src="puzzles.js"></script>
   <script src="i18n.js"></script>
+  <script src="badges.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

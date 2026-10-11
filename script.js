@@ -8,6 +8,7 @@
 const E = window.SudokuEngine;
 const K = window.KawaiiIcons;
 const Store = window.SudokuStorage;       // profiles + their data (see storage.js)
+const Badges = window.SudokuBadges;       // the 100 badges (see badges.js)
 const IS_TEST = Store.IS_TEST;            // true on the test copy (…-test folder)
 const TEST_BUILD = '';   // filled in by the test deploy (commit id), shown in the TEST label
 
@@ -36,16 +37,21 @@ const HOLD_WINDOW_MS = 5000;
 // ============================================================
 // STATE
 // ============================================================
-const DEFAULT_SETTINGS = { sound: true, music: true, click: true, language: 'nl', highlightErrors: true, displayMode: 'numbers', size: 'normal' };
-const SIZES = {               // "Grootte" in the settings: how much of the screen the grid may use
-  small:  { factor: 0.78, cap: 440 },
-  normal: { factor: 1,    cap: 720 },
-  large:  { factor: 1,    cap: 1100 },
+const DEFAULT_SETTINGS = { sound: true, music: true, click: true, language: 'nl', highlightErrors: true, displayMode: 'numbers', size: 'large' };
+const SIZES = {               // "Grootte" in the settings: how much of the free space the grid uses
+  small: { factor: 0.68, cap: 420 },
+  large: { factor: 1,    cap: 900 },
 };
+const HISTORY_MAX = 500;      // puzzles kept in the history of a profile
+const INBOX_MAX = 50;         // notifications kept per profile
+const MILESTONES = [10, 25, 50];
 let profileId = 'p1';         // the profile that is playing
 let settings = { ...DEFAULT_SETTINGS };
 let progress = {};            // { 'w0_l0': { stars:3, time:45 }, ... }
 let played = {};              // { '<band id>': ['L0', '4-standard#12', ...] }  puzzles this profile has had
+let stats = {};               // counters for badges (see freshStats)
+let playLog = [];             // history: [level, time stamp, seconds, mistakes, hints, stars] – newest last
+let inbox = [];               // notifications: { k: kind, a: args, t: time stamp, r: read } – newest first
 let currentScreen = 'splash';
 let currentWorld = 0;
 let gameState = null;
@@ -100,6 +106,32 @@ function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArra
 function saveProgress() { Store.write(profileId, 'progress', progress); }
 function saveSettings() { Store.write(profileId, 'settings', settings); }
 function savePlayed()   { Store.write(profileId, 'played', played); }
+function saveStats()    { Store.write(profileId, 'stats', stats); }
+function saveLog()      { Store.write(profileId, 'history', playLog); }
+function saveInbox()    { Store.write(profileId, 'inbox', inbox); }
+
+// The clock. Tests can set window.__now (milliseconds) to travel in time.
+function nowMs() { return typeof window.__now === 'number' ? window.__now : Date.now(); }
+function nowSec() { return Math.floor(nowMs() / 1000); }
+function dayKey(ms) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// Counters that are kept while playing (most badges are counted from the saved progress instead).
+function freshStats() {
+  return {
+    erase: 0, hints: 0, notes: 0, cat: 0,                    // things done
+    noHintWins: 0, flawlessRun: 0, flawlessBest: 0, oneStar: 0, comeback: 0,
+    animalsWin: 0, avatarChanged: 0, zoo: 0, fruitBasket: 0,
+    early: 0, night: 0, lunch: 0, weekend: 0,                // time of day of a win
+    dayCount: 0, streak: 0, bestStreak: 0, lastDay: '',      // days played
+    fast: { 4: null, 6: null, 9: null },                     // fastest win per grid size (seconds)
+    failed: null,                                            // level of the last game over
+    earned: {},                                              // badge id -> when (0 = before this was kept)
+    seen: {},                                                // notifications already given (worlds, milestones)
+    open: [],                                                // levels that were open before levels were sorted
+  };
+}
 
 // Loads a profile. `inherit` = settings a brand-new profile starts with.
 function loadProfile(id, inherit) {
@@ -117,14 +149,61 @@ function loadProfile(id, inherit) {
   }
   if (!STRINGS[settings.language]) settings.language = 'nl';
   if (settings.displayMode !== 'animals') settings.displayMode = 'numbers';
-  if (!SIZES[settings.size]) settings.size = 'normal';
+  // There used to be three sizes: "normal" and "large" are both "large" now.
+  if (settings.size !== 'small') settings.size = 'large';
   ['sound', 'music', 'click', 'highlightErrors'].forEach(k => { settings[k] = settings[k] !== false; });
+
+  const savedStats = Store.read(id, 'stats');
+  const firstTime = !isPlainObject(savedStats);
+  stats = { ...freshStats(), ...(firstTime ? {} : savedStats) };
+  stats.fast = { 4: null, 6: null, 9: null, ...(isPlainObject(stats.fast) ? stats.fast : {}) };
+  ['earned', 'seen'].forEach(k => { if (!isPlainObject(stats[k])) stats[k] = {}; });
+  if (!Array.isArray(stats.open)) stats.open = [];
+  const savedLog = Store.read(id, 'history');
+  playLog = Array.isArray(savedLog) ? savedLog.filter(Array.isArray) : [];
+  const savedInbox = Store.read(id, 'inbox');
+  inbox = Array.isArray(savedInbox) ? savedInbox.filter(isPlainObject) : [];
+  if (firstTime) startTracking();
+  else if (stats.lastDay && stats.lastDay !== dayKey(nowMs()) && stats.seen.back !== dayKey(nowMs())) {
+    stats.seen.back = dayKey(nowMs());                 // a friendly word when you come back on another day
+    saveStats();
+    notify('cat', { m: 2 });
+  }
   applySize();
   syncMusic();
+  updateBell();
 }
 function applySize() {
   document.body.classList.remove('ui-small', 'ui-normal', 'ui-large');
   document.body.classList.add('ui-' + settings.size);
+}
+
+// The first time a profile is loaded with badges and history: start from what
+// is already saved, without losing or announcing anything.
+function startTracking() {
+  const byKey = {};
+  LEVELS.forEach(lv => { byKey[levelKey(lv.world, lv.indexInWorld)] = lv; });
+  // History: every level that was finished gets one line "played earlier" (no details known).
+  playLog = [];
+  Object.keys(progress).forEach(key => {
+    const lv = byKey[key], e = progress[key];
+    if (lv && e && e.stars > 0) playLog.push([lv.globalIndex, 0, 0, -1, -1, e.stars]);
+  });
+  // Levels that were open when levels still came in the order they were saved stay open.
+  if (playLog.length) {
+    WORLDS.forEach(({ id }) => {
+      const levels = worldLevels(id);
+      levels.forEach((lv, i) => {
+        const open = i === 0 || getLevelStars(id, i - 1) > 0 || levels[i].size !== levels[i - 1].size;
+        if (open && !getLevelStars(id, i)) stats.open.push(levelKey(id, i));
+      });
+    });
+  }
+  markReached(true);
+  checkBadges(true);
+  saveLog();
+  saveStats();
+  notify('cat', { m: 0 });       // welcome
 }
 
 function levelKey(w, i)     { return `w${w}_l${i}`; }
@@ -137,13 +216,37 @@ function isWorldUnlocked(w) {
   const world = WORLDS.find(x => x.id === w);
   return !world || world.after === null || getWorldCompleted(world.after) >= UNLOCK_LEVELS;
 }
-// A level is open if the one before it is finished, or if it is the first
-// level of a new grid size (so a child that is stuck can always try the
-// other size).
+// ---------- The order in which the levels of a world are SHOWN ----------
+// Sorted by difficulty: first all 4×4 (most given cells first), then 6×6,
+// then 9×9. This is only the order on the screen and the number a child
+// sees; a level is still saved under its own, fixed 'w<world>_l<index>'.
+const TYPE_RANK = { standard: 0, shapes: 1, xsudoku: 2 };
+const orderCache = {};
+function orderedLevels(w) {
+  if (!orderCache[w]) {
+    const givens = lv => E.getPuzzle(lv.globalIndex).givens;
+    orderCache[w] = worldLevels(w).slice().sort((a, b) =>
+      a.size - b.size || givens(b) - givens(a) || TYPE_RANK[a.type] - TYPE_RANK[b.type] || a.indexInWorld - b.indexInWorld);
+  }
+  return orderCache[w];
+}
+function displayNumber(lv) { return orderedLevels(lv.world).indexOf(lv) + 1; }
+function nextLevelOf(lv) {
+  const order = orderedLevels(lv.world);
+  return order[order.indexOf(lv) + 1] || null;
+}
+// A level is open if it is finished, if the one before it (on the screen) is
+// finished, or if it is the first level of a grid size (so a child that is
+// stuck can always try the other size). Levels that were already open before
+// the levels were sorted stay open (stats.open).
 function isLevelUnlocked(w, i) {
-  if (i === 0 || getLevelStars(w, i - 1) > 0) return true;
-  const levels = worldLevels(w);
-  return levels[i].size !== levels[i - 1].size;
+  if (getLevelStars(w, i) > 0) return true;
+  const lv = worldLevels(w)[i];
+  const order = orderedLevels(w);
+  const pos = order.indexOf(lv);
+  if (pos === 0 || order[pos - 1].size !== lv.size) return true;
+  if (getLevelStars(w, order[pos - 1].indexInWorld) > 0) return true;
+  return stats.open.includes(levelKey(w, i));
 }
 
 // ============================================================
@@ -254,7 +357,9 @@ function showMascotMessage(text) {
 function updateBottomBar() {
   $('mascot').classList.toggle('hidden', !['worlds', 'levels'].includes(currentScreen));
   const me = Store.profile(profileId);
-  $('btn-avatar').innerHTML = K.svg(me ? me.avatar : 'cat');
+  const pic = K.svg(me ? me.avatar : 'cat');
+  $('score-avatar').innerHTML = pic;       // top right: picture + stars = the profile button
+  $('switch-avatar').innerHTML = pic;      // bottom right: who is playing, on the "other player" button
 }
 
 // Restart a short CSS animation on an element.
@@ -321,7 +426,7 @@ function goBack() {
   }
   if (currentScreen === 'game') { leaveGame(); return true; }
   if (currentScreen === 'profile') { leaveProfilePage(); return true; }
-  if (['levels', 'settings', 'profiles'].includes(currentScreen)) { goToWorlds(); return true; }
+  if (['levels', 'settings', 'profiles', 'inbox'].includes(currentScreen)) { goToWorlds(); return true; }
   return false;
 }
 
@@ -391,7 +496,7 @@ function buildLevelsGrid(w) {
   const grid = $('levels-grid');
   grid.innerHTML = '';
   let lastSize = 0;
-  worldLevels(w).forEach(lv => {
+  orderedLevels(w).forEach((lv, pos) => {
     const i = lv.indexInWorld;
     if (lv.size !== lastSize) {                 // a new run of one grid size: show which
       lastSize = lv.size;
@@ -405,7 +510,7 @@ function buildLevelsGrid(w) {
     const btn = document.createElement('button');
     btn.className = 'level-btn type-' + lv.type;
     btn.dataset.level = i;
-    btn.setAttribute('aria-label', `${t('level')} ${i + 1}` + (stars ? `, ${stars}/3` : ''));
+    btn.setAttribute('aria-label', `${t('level')} ${pos + 1}` + (stars ? `, ${stars}/3` : ''));
 
     if (!unlocked) {
       btn.classList.add('locked');
@@ -414,7 +519,7 @@ function buildLevelsGrid(w) {
     } else {
       btn.classList.add(stars > 0 ? 'completed' : 'current');
       const mark = lv.type === 'shapes' ? K.svg('strawberry') : lv.type === 'xsudoku' ? '<b>X</b>' : '';
-      btn.innerHTML = `<span class="level-type-mark">${mark}</span><span class="level-number">${i + 1}</span>` +
+      btn.innerHTML = `<span class="level-type-mark">${mark}</span><span class="level-number">${pos + 1}</span>` +
         `<span class="level-stars-small" data-stars="${stars}">${stars > 0 ? icon('star').repeat(stars) : ''}</span>`;
       btn.addEventListener('click', () => startLevel(lv.globalIndex));
     }
@@ -488,7 +593,7 @@ function startLevel(globalIndex, fresh) {
 
   showScreen('game');
   $('screen-game').className = `screen active size-${lv.size}`;
-  $('game-level-label').textContent = `${t('level')} ${lv.indexInWorld + 1}`;
+  $('game-level-label').textContent = `${t('level')} ${displayNumber(lv)}`;
   $('game-type-badge').textContent =
     lv.type === 'xsudoku' ? t('typeX') : lv.type === 'shapes' ? t('typeShapes') : t('typeStandard');
   setNotesMode(false);
@@ -760,7 +865,8 @@ function onNumPress(num) {
   if (gs.isNotesMode) {
     gs.grid[idx] = 0;                 // a wrong try would hide the notes
     const notes = gs.notes[idx];
-    notes.has(num) ? notes.delete(num) : notes.add(num);
+    if (notes.has(num)) notes.delete(num);
+    else { notes.add(num); count('notes'); }
     gs.dirty = true;
     renderGrid();
     saveCurrent();
@@ -780,6 +886,8 @@ function onNumPress(num) {
       gs.isComplete = true;
       stopTimer();
       clearCurrent();
+      stats.failed = gs.lv.globalIndex;
+      saveStats();
       setTimeout(() => { if (gameState === gs && currentScreen === 'game') showGameOver(); }, 600);
     } else {
       saveCurrent();
@@ -804,6 +912,7 @@ function onErase() {
   if (!gs || gs.isComplete) return;
   const idx = gs.selected;
   if (idx < 0 || gs.grid[idx] === gs.solution[idx]) { pointAtOpenCells(); return; }
+  if (gs.grid[idx] !== 0 || gs.notes[idx].size) count('erase');   // only when something is really wiped
   gs.grid[idx] = 0;
   gs.notes[idx].clear();
   gs.dirty = true;
@@ -834,6 +943,7 @@ function giveHint() {
   gs.selected = idx;
   gs.hintsUsed++;
   gs.dirty = true;
+  count('hints');
   updateStats();
   playHint();
   showMascotMessage(pick('mHint'));
@@ -863,9 +973,181 @@ function checkWin() {
   };
   saveProgress();
   clearCurrent();
+  recordWin(gs, stars);
   renderGrid();
   setTimeout(() => { if (gameState === gs && currentScreen === 'game') showWin(stars); }, 450);
   return true;
+}
+
+// ============================================================
+// HISTORY, COUNTERS, BADGES AND NOTIFICATIONS
+// Everything stays on the device, per profile.
+// ============================================================
+// One more of something a badge counts (eraser, hints, notes, petting the cat).
+function count(what) {
+  stats[what] = (stats[what] || 0) + 1;
+  saveStats();
+  checkBadges();
+}
+
+function recordWin(gs, stars) {
+  const lv = gs.lv, now = nowMs(), d = new Date(now);
+  // History: the last HISTORY_MAX puzzles.
+  playLog.push([lv.globalIndex, Math.floor(now / 1000), gs.timerSecs, gs.mistakes, gs.hintsUsed, stars]);
+  if (playLog.length > HISTORY_MAX) playLog = playLog.slice(playLog.length - HISTORY_MAX);
+  saveLog();
+  // Counters for badges.
+  if (gs.hintsUsed === 0) stats.noHintWins++;
+  stats.flawlessRun = gs.mistakes === 0 ? stats.flawlessRun + 1 : 0;
+  stats.flawlessBest = Math.max(stats.flawlessBest, stats.flawlessRun);
+  if (stars === 1) stats.oneStar = 1;
+  if (stats.failed === lv.globalIndex) stats.comeback = 1;
+  stats.failed = null;
+  if (lv.type === 'shapes') { if (lv.size === 9) stats.fruitBasket = 1; }
+  else if (settings.displayMode === 'animals') { stats.animalsWin = 1; if (lv.size === 9) stats.zoo = 1; }
+  const best = stats.fast[lv.size];
+  stats.fast[lv.size] = best === null ? gs.timerSecs : Math.min(best, gs.timerSecs);
+  const hour = d.getHours();
+  if (hour < 8) stats.early = 1;
+  if (hour >= 19) stats.night = 1;
+  if (hour === 12) stats.lunch = 1;
+  if (d.getDay() === 0 || d.getDay() === 6) stats.weekend = 1;
+  const today = dayKey(now);
+  if (stats.lastDay !== today) {
+    stats.dayCount++;
+    stats.streak = stats.lastDay === dayKey(now - 24 * 3600 * 1000) ? stats.streak + 1 : 1;
+    stats.bestStreak = Math.max(stats.bestStreak, stats.streak);
+    stats.lastDay = today;
+    stats.seen.back = today;
+  }
+  if (!stats.seen.first) { stats.seen.first = 1; notify('cat', { m: 1 }); }
+  saveStats();
+  markReached(false);
+  checkBadges();
+}
+
+// New worlds, 10/25/50 levels, all stars of a world: tell it once.
+function markReached(silent) {
+  const done = LEVELS.filter(l => getLevelStars(l.world, l.indexInWorld) > 0).length;
+  const reach = (key, kind, args) => {
+    if (stats.seen[key]) return;
+    stats.seen[key] = 1;
+    if (!silent) notify(kind, args);
+  };
+  WORLDS.forEach(({ id, after }) => {
+    if (after !== null && isWorldUnlocked(id)) reach('world' + id, 'world', { w: id });
+    if (getWorldStars(id) >= worldLevels(id).length * 3) reach('wstars' + id, 'worldStars', { w: id });
+  });
+  MILESTONES.forEach(n => { if (done >= n) reach('levels' + n, 'levels', { n }); });
+  saveStats();
+}
+
+// Everything the badges look at, for any profile.
+function badgeStats(id) {
+  const mine = id === profileId;
+  const obj = v => (isPlainObject(v) ? v : {});
+  const prog = mine ? progress : obj(Store.read(id, 'progress'));
+  const st = mine ? stats : { ...freshStats(), ...obj(Store.read(id, 'stats')) };
+  const plays = mine ? played : obj(Store.read(id, 'played'));
+  const s = { levels: 0, stars: 0, perfect: 0, world: {}, type: { standard: 0, xsudoku: 0, shapes: 0 }, size: { 4: 0, 6: 0, 9: 0 } };
+  WORLDS.forEach(({ id: w }) => { s.world[w] = { done: 0, total: 0, stars: 0, max: 0, perfect: 0 }; });
+  LEVELS.forEach(lv => {
+    const got = (prog[levelKey(lv.world, lv.indexInWorld)] || {}).stars || 0;
+    const W = s.world[lv.world];
+    W.total++; W.max += 3;
+    if (!got) return;
+    s.levels++; s.stars += got; W.done++; W.stars += got; s.type[lv.type]++; s.size[lv.size]++;
+    if (got === 3) { s.perfect++; W.perfect++; }
+  });
+  const playedCount = Object.values(plays).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0);
+  return {
+    ...s,
+    fast: { 4: null, 6: null, 9: null, ...obj(st.fast) },
+    flawlessBest: st.flawlessBest, noHintWins: st.noHintWins, bestStreak: st.bestStreak, dayCount: st.dayCount,
+    early: st.early, night: st.night, lunch: st.lunch, weekend: st.weekend,
+    erase: st.erase, hints: st.hints, notes: st.notes, cat: st.cat,
+    oneStar: st.oneStar, comeback: st.comeback, animalsWin: st.animalsWin, avatarChanged: st.avatarChanged,
+    zoo: st.zoo, fruitBasket: st.fruitBasket,
+    puzzles: Math.max(playedCount, s.levels),       // finished before puzzles were counted: at least one each
+    profiles: Store.profiles().length,
+    earned: obj(st.earned),
+  };
+}
+function badgeText(badge) {
+  return Badges.text(settings.language, badge, {
+    world: w => t('world' + w),
+    type: k => (k === 'xsudoku' ? t('typeX') : k === 'shapes' ? t('typeShapes') : t('typeStandard')),
+    time: formatTime,
+  });
+}
+// Gives the badges that are newly earned. Once earned, a badge stays.
+function checkBadges(silent) {
+  const fresh = Badges.evaluate(badgeStats(profileId)).filter(r => r.earned && !(r.badge.id in stats.earned)).map(r => r.badge);
+  if (!fresh.length) return;
+  fresh.forEach(b => { stats.earned[b.id] = silent ? 0 : nowSec(); });
+  saveStats();
+  if (silent) return;
+  fresh.forEach(b => notify('badge', { id: b.id }));
+  showMascotMessage(t('nBadge').replace('{name}', badgeText(fresh[0]).name));
+}
+
+// ---------- notifications ----------
+function notify(kind, args) {
+  inbox.unshift({ k: kind, a: args || {}, t: nowSec(), r: 0 });
+  if (inbox.length > INBOX_MAX) inbox.length = INBOX_MAX;
+  saveInbox();
+  updateBell();
+}
+function updateBell() {
+  const unread = inbox.filter(n => !n.r).length;
+  $('bell-count').textContent = unread;
+  $('bell-count').classList.toggle('hidden', unread === 0);
+  $('btn-bell').setAttribute('aria-label', unread ? `${t('inbox')}: ${unread}` : t('inbox'));
+}
+// What a notification looks like and where a tap on it goes.
+function noteView(n) {
+  if (n.k === 'badge') {
+    const b = Badges.byId(n.a.id);
+    if (!b) return null;
+    return { pic: K.badge(b.emblem, b.color, b.label), text: t('nBadge').replace('{name}', badgeText(b).name),
+             go: () => { openProfile(profileId, 'inbox', 'badges'); showBadge(b.id, profileId); } };
+  }
+  if (n.k === 'world') {
+    const world = WORLDS.find(x => x.id === n.a.w);
+    return world && { pic: K.svg(world.icon), text: t('nWorld').replace('{world}', t('world' + n.a.w)), go: () => goToLevels(n.a.w) };
+  }
+  if (n.k === 'worldStars') {
+    const world = WORLDS.find(x => x.id === n.a.w);
+    return world && { pic: K.svg('trophy'), text: t('nWorldStars').replace('{world}', t('world' + n.a.w)), go: () => openProfile(profileId, 'inbox', 'worlds') };
+  }
+  if (n.k === 'levels') return { pic: K.svg('check'), text: t('nLevels').replace('{n}', n.a.n), go: () => openProfile(profileId, 'inbox', 'history') };
+  if (n.k === 'cat') return { pic: K.svg('cat'), text: t('nCat' + (n.a.m || 0)) || t('nCat0'), go: goToWorlds };
+  return null;
+}
+function formatDate(sec, withTime) {
+  const d = new Date(sec * 1000);
+  const opts = withTime ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'long', year: 'numeric' };
+  try { return d.toLocaleString(settings.language, opts); } catch (e) { return d.toLocaleString(); }
+}
+function openInbox() {
+  showScreen('inbox');
+  const list = $('inbox-list');
+  list.innerHTML = '';
+  inbox.forEach(n => {
+    const v = noteView(n);
+    if (!v) return;
+    const row = document.createElement('button');
+    row.className = 'inbox-item' + (n.r ? '' : ' unread');
+    row.dataset.kind = n.k;
+    row.innerHTML = `<span class="inbox-pic">${v.pic}</span><span class="inbox-main"><span class="inbox-text"></span><span class="inbox-date">${formatDate(n.t, true)}</span></span>`;
+    row.querySelector('.inbox-text').textContent = v.text;
+    row.addEventListener('click', v.go);
+    list.appendChild(row);
+  });
+  if (!list.children.length) list.innerHTML = `<p class="empty-text">${t('inboxEmpty')}</p>`;
+  // Opening the list marks everything as read.
+  if (inbox.some(n => !n.r)) { inbox.forEach(n => { n.r = 1; }); saveInbox(); }
+  updateBell();
 }
 
 // ============================================================
@@ -902,8 +1184,7 @@ function showWin(stars) {
   $('win-mistakes').textContent = gs.mistakes;
   $('win-hints').textContent = gs.hintsUsed;
   $('win-title').textContent = pick('mWin');
-  const isLast = lv.indexInWorld >= worldLevels(lv.world).length - 1;
-  $('btn-win-next').style.display = isLast ? 'none' : '';
+  $('btn-win-next').style.display = nextLevelOf(lv) ? '' : 'none';
 
   showModal('win');
   playWin();
@@ -1102,41 +1383,28 @@ function buildProfiles() {
   $('btn-profile-add').classList.toggle('hidden', Store.profiles().length >= Store.MAX_PROFILES);
 }
 
-// Everything the profile page shows about one profile.
-function profileStats(id) {
-  const prog = Store.read(id, 'progress');
-  const plays = Store.read(id, 'played');
-  const entries = isPlainObject(prog) ? prog : {};
-  const done = Object.values(entries).filter(v => v && v.stars > 0);
-  const times = done.map(v => v.time).filter(v => Number.isFinite(v) && v > 0);
-  const playedCount = isPlainObject(plays) ? Object.values(plays).reduce((s, a) => s + (Array.isArray(a) ? a.length : 0), 0) : 0;
-  return {
-    stars: starsIn(entries),
-    levels: done.length,
-    puzzles: Math.max(playedCount, done.length),      // finished before puzzles were counted: at least one each
-    bestTime: times.length ? Math.min(...times) : null,
-    worlds: WORLDS.map(({ id: w, icon: pic }) => {
-      const levels = worldLevels(w);
-      return { w, pic, max: levels.length * 3, stars: levels.reduce((s, l) => s + ((entries[levelKey(w, l.indexInWorld)] || {}).stars || 0), 0) };
-    }),
-  };
-}
+let profileTab = 'badges';     // which part of the profile page is open
+let historyFilter = 'all';     // 'all' or a world id
 
-function openProfile(id, from) {
+function openProfile(id, from, tab) {
   viewedProfile = id;
   profileFrom = from || 'worlds';
+  profileTab = tab || 'badges';
+  historyFilter = 'all';
   showScreen('profile');
   if (id === 'new') startProfileEdit(); else renderProfile();
 }
 function leaveProfilePage() {
   if (!$('profile-edit').classList.contains('hidden') && viewedProfile !== 'new') { renderProfile(); return; }   // leave edit mode first
-  if (profileFrom === 'profiles') goToProfiles(); else goToWorlds();
+  if (profileFrom === 'profiles') goToProfiles();
+  else if (profileFrom === 'inbox') openInbox();
+  else goToWorlds();
 }
 
 function renderProfile() {
   const p = Store.profile(viewedProfile);
   if (!p) { goToProfiles(); return; }
-  const s = profileStats(p.id);
+  const s = badgeStats(p.id);
   const active = p.id === profileId;
   $('profile-view').classList.remove('hidden');
   $('profile-edit').classList.add('hidden');
@@ -1147,21 +1415,150 @@ function renderProfile() {
   playAs.lastChild.textContent = active ? t('playingNow') : t('playAs').replace('{name}', profileLabel(p));
   playAs.classList.toggle('is-active', active);
 
-  const stat = (pic, label, value, key) =>
-    `<div class="stat-card" data-stat="${key}">${icon(pic)}<b>${value}</b><span>${label}</span></div>`;
+  const times = Object.values(s.fast).filter(v => v !== null && v > 0);
+  // "stars" and "levels" open the history
+  const stat = (pic, label, value, key, opens) =>
+    `<${opens ? 'button' : 'div'} class="stat-card" data-stat="${key}">${icon(pic)}<b>${value}</b><span>${label}</span></${opens ? 'button' : 'div'}>`;
   $('profile-stats').innerHTML =
-    stat('star', t('statStars'), s.stars, 'stars') + stat('check', t('statLevels'), s.levels, 'levels') +
-    stat('puzzle', t('statPuzzles'), s.puzzles, 'puzzles') + stat('clock', t('statBestTime'), s.bestTime === null ? '–' : formatTime(s.bestTime), 'time');
+    stat('star', t('statStars'), s.stars, 'stars', true) + stat('check', t('statLevels'), s.levels, 'levels', true) +
+    stat('puzzle', t('statPuzzles'), s.puzzles, 'puzzles') + stat('clock', t('statBestTime'), times.length ? formatTime(Math.min(...times)) : '–', 'time');
+  $('profile-stats').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setProfileTab('history')));
 
-  $('profile-worlds').innerHTML = s.worlds.map(x =>
-    `<div class="pw-row" data-world="${x.w}"><span class="pw-icon">${K.svg(x.pic)}</span>` +
-    `<span class="pw-main"><span class="pw-name"></span><span class="progress-bar"><span class="progress-fill" style="width:${Math.round(x.stars / x.max * 100)}%"></span></span></span>` +
-    `<span class="pw-stars">${icon('star')}<b>${x.stars}</b></span></div>`).join('');
-  $('profile-worlds').querySelectorAll('.pw-row').forEach(row => { row.querySelector('.pw-name').textContent = t('world' + row.dataset.world); });
+  const earned = Badges.evaluate(s).filter(r => r.earned || r.badge.id in s.earned).length;
+  $('tab-badges-count').textContent = `${earned}/${Badges.all.length}`;
+  setProfileTab(profileTab);
+}
 
-  const badges = [['medal', 'badgeFirst', s.levels >= 1], ['trophy', 'badge10', s.levels >= 10], ['crown', 'badge50', s.levels >= 50], ['star', 'badge100', s.stars >= 100]];
-  $('profile-badges').innerHTML = badges.map(([pic, key, got]) =>
-    `<div class="badge${got ? ' earned' : ''}" data-badge="${key}">${icon(pic)}<span>${t(key)}</span></div>`).join('');
+function setProfileTab(tab) {
+  profileTab = tab;
+  ['badges', 'worlds', 'history'].forEach(name => {
+    $('tab-' + name).classList.toggle('active', name === tab);
+    $('tab-' + name).setAttribute('aria-selected', String(name === tab));
+    $('panel-' + name).classList.toggle('hidden', name !== tab);
+  });
+  if (tab === 'badges') renderBadges();
+  if (tab === 'worlds') renderProfileWorlds();
+  if (tab === 'history') renderHistory();
+}
+
+// ---------- 1. badges: earned in colour, the rest grey with how far you are ----------
+function renderBadges() {
+  const s = badgeStats(viewedProfile);
+  const rows = Badges.evaluate(s).map(r => ({ ...r, got: r.earned || r.badge.id in s.earned }));
+  rows.sort((a, b) => Number(b.got) - Number(a.got));       // earned first, otherwise the order of badges.js
+  const panel = $('panel-badges');
+  panel.innerHTML = '';
+  rows.forEach(r => {
+    const text = badgeText(r.badge);
+    const tile = document.createElement('button');
+    tile.className = 'badge-tile' + (r.got ? ' earned' : '');
+    tile.dataset.badge = r.badge.id;
+    tile.setAttribute('aria-label', `${text.name}: ${r.got ? r.target : r.value}/${r.target}`);
+    tile.innerHTML = `<span class="badge-pic">${K.badge(r.badge.emblem, r.badge.color, r.badge.label)}</span><span class="badge-name"></span>` +
+      (r.got ? '' : `<span class="badge-todo">${r.value}/${r.target}</span>`);
+    tile.querySelector('.badge-name').textContent = text.name;
+    tile.addEventListener('click', () => showBadge(r.badge.id, viewedProfile));
+    panel.appendChild(tile);
+  });
+}
+function showBadge(id, profile) {
+  const badge = Badges.byId(id);
+  const s = badgeStats(profile);
+  const r = Badges.evaluate(s).find(x => x.badge.id === id);
+  const got = r.earned || id in s.earned;
+  const text = badgeText(badge);
+  $('badge-big').innerHTML = K.badge(badge.emblem, badge.color, badge.label);
+  $('badge-big').classList.toggle('locked', !got);
+  $('badge-name').textContent = text.name;
+  $('badge-desc').textContent = text.desc;
+  $('badge-fill').style.width = Math.round((got ? 1 : r.value / r.target) * 100) + '%';
+  $('badge-count').textContent = `${got ? r.target : r.value}/${r.target}`;
+  const when = s.earned[id];
+  $('badge-state').textContent = !got ? t('badgeTodo') : when ? t('badgeDone').replace('{date}', formatDate(when)) : t('histOld');
+  $('modal-badge').dataset.badge = id;
+  showModal('badge');
+}
+
+// ---------- 2. worlds: how far in every world; a tap goes to its levels ----------
+function renderProfileWorlds() {
+  const id = viewedProfile;
+  const prog = id === profileId ? progress : (isPlainObject(Store.read(id, 'progress')) ? Store.read(id, 'progress') : {});
+  const starsOf = lv => (prog[levelKey(lv.world, lv.indexInWorld)] || {}).stars || 0;
+  const panel = $('panel-worlds');
+  panel.innerHTML = '';
+  WORLDS.forEach(({ id: w, icon: pic, cls }) => {
+    const levels = orderedLevels(w);
+    const done = levels.filter(lv => starsOf(lv) > 0).length;
+    const stars = levels.reduce((n, lv) => n + starsOf(lv), 0);
+    const sizes = [...new Set(levels.map(lv => lv.size))];
+    const card = document.createElement('button');
+    card.className = 'wp-card ' + cls;
+    card.dataset.world = w;
+    card.setAttribute('aria-label', `${t('world' + w)}: ${done}/${levels.length}`);
+    card.innerHTML =
+      `<span class="wp-head"><span class="wp-icon">${K.svg(pic)}</span><span class="wp-name"></span>` +
+        `<span class="wp-stars">${icon('star')}<b>${stars}</b>/${levels.length * 3}</span></span>` +
+      `<span class="progress-bar"><span class="progress-fill" style="width:${Math.round(done / levels.length * 100)}%"></span></span>` +
+      '<span class="wp-sizes">' + sizes.map(size => {
+        const of = levels.filter(lv => lv.size === size);
+        return `<span class="size-chip" data-size="${size}">${gridPic(size)}<b>${of.filter(lv => starsOf(lv) > 0).length}/${of.length}</b></span>`;
+      }).join('') + `<span class="wp-total">${done}/${levels.length}</span></span>` +
+      // one dot per level, in the order of the level screen: which ones are done, and with how many stars
+      '<span class="wp-dots" aria-hidden="true">' + levels.map(lv => `<i class="s${starsOf(lv)}"></i>`).join('') + '</span>';
+    card.querySelector('.wp-name').textContent = t('world' + w);
+    card.addEventListener('click', () => {
+      if (id === profileId && isWorldUnlocked(w)) goToLevels(w);
+      else flash(card, 'shake');
+    });
+    panel.appendChild(card);
+  });
+}
+
+// ---------- 3. history: every puzzle that was played ----------
+function renderHistory() {
+  const id = viewedProfile;
+  const saved = id === profileId ? playLog : Store.read(id, 'history');
+  const log = (Array.isArray(saved) ? saved : []).filter(e => Array.isArray(e) && LEVELS[e[0]]);
+  const line = (n, key) => `<div class="how-row">${starsHtml(n)}<span>${t(key)}</span></div>`;
+  $('stars-how').innerHTML = line(3, 'starsHow3') + line(2, 'starsHow2') + line(1, 'starsHow1');
+
+  const filter = $('history-filter');
+  filter.innerHTML = '';
+  [['all', null], ...WORLDS.map(w => [String(w.id), w.icon])].forEach(([key, pic]) => {
+    const b = document.createElement('button');
+    b.className = 'filter-chip' + (String(historyFilter) === key ? ' active' : '');
+    b.dataset.filter = key;
+    b.setAttribute('aria-pressed', String(String(historyFilter) === key));
+    b.setAttribute('aria-label', key === 'all' ? t('filterAll') : t('world' + key));
+    b.innerHTML = pic ? K.svg(pic) : `<span>${t('filterAll')}</span>`;
+    b.addEventListener('click', () => { historyFilter = key; renderHistory(); });
+    filter.appendChild(b);
+  });
+
+  // newest first; lines without a date ("played earlier") come last
+  const rows = log.map((e, n) => ({ e, n })).filter(({ e }) => historyFilter === 'all' || String(LEVELS[e[0]].world) === String(historyFilter))
+    .sort((a, b) => (b.e[1] - a.e[1]) || (b.n - a.n));
+  const list = $('history-list');
+  list.innerHTML = rows.length ? '' : `<p class="empty-text">${t('histEmpty')}</p>`;
+  rows.forEach(({ e }) => {
+    const [gi, when, secs, mistakes, hints, stars] = e;
+    const lv = LEVELS[gi];
+    const kind = lv.type === 'xsudoku' ? t('typeX') : lv.type === 'shapes' ? t('typeShapes') : t('typeStandard');
+    const row = document.createElement('div');
+    row.className = 'history-row';
+    row.dataset.world = lv.world;
+    row.dataset.old = when ? '0' : '1';
+    const details = when
+      ? `<span class="h-detail">${icon('clock')}${formatTime(secs)}</span><span class="h-detail">${icon('cross')}${mistakes}</span><span class="h-detail">${icon('bulb')}${hints}</span>`
+      : '';
+    row.innerHTML =
+      `<span class="h-icon">${K.svg(WORLDS.find(x => x.id === lv.world).icon)}</span>` +
+      `<span class="h-main"><span class="h-title"></span><span class="h-sub"></span></span>` +
+      `<span class="h-right"><span class="h-stars" data-stars="${stars}">${starsHtml(stars)}</span><span class="h-details">${details}</span></span>`;
+    row.querySelector('.h-title').textContent = `${t('level')} ${displayNumber(lv)} · ${lv.size}×${lv.size} · ${kind}`;
+    row.querySelector('.h-sub').textContent = `${t('world' + lv.world)} · ${when ? formatDate(when, true) : t('histOld')}`;
+    list.appendChild(row);
+  });
 }
 
 function startProfileEdit() {
@@ -1202,6 +1599,7 @@ function saveProfileEdit() {
     // A new profile starts with the language, sounds and size of whoever made it.
     const p = Store.createProfile(name, pickedAvatar);
     if (!p) { goToProfiles(); return; }
+    checkBadges();                       // "made a second player" for whoever was playing
     const inherit = { language: settings.language, sound: settings.sound, music: settings.music, click: settings.click, size: settings.size };
     gameState = null;
     loadProfile(p.id, inherit);
@@ -1210,7 +1608,15 @@ function saveProfileEdit() {
     applyTranslations();
     viewedProfile = p.id;
   } else {
+    const before = Store.profile(viewedProfile).avatar;
     Store.updateProfile(viewedProfile, { name, avatar: pickedAvatar });
+    if (pickedAvatar !== before) {       // badge "new look", for the profile that was changed
+      if (viewedProfile === profileId) { stats.avatarChanged = 1; saveStats(); checkBadges(); }
+      else {
+        const other = Store.read(viewedProfile, 'stats');
+        Store.write(viewedProfile, 'stats', { ...freshStats(), ...(isPlainObject(other) ? other : {}), avatarChanged: 1 });
+      }
+    }
   }
   updateBottomBar();
   renderProfile();
@@ -1275,7 +1681,7 @@ function initEventListeners() {
   on('btn-notes', 'click', () => setNotesMode(!gameState.isNotesMode));
   on('btn-display', 'click', () => setDisplayMode(settings.displayMode === 'numbers' ? 'animals' : 'numbers'));
 
-  on('btn-win-next', 'click', () => { hideModals(); startLevel(gameState.lv.globalIndex + 1); });
+  on('btn-win-next', 'click', () => { hideModals(); startLevel(nextLevelOf(gameState.lv).globalIndex); });
   on('btn-win-replay', 'click', () => { hideModals(); startLevel(gameState.lv.globalIndex, true); });
   on('btn-win-home', 'click', () => { hideModals(); goToLevels(gameState.lv.world); });
   on('btn-go-replay', 'click', () => { hideModals(); startLevel(gameState.lv.globalIndex, true); });
@@ -1292,8 +1698,12 @@ function initEventListeners() {
   }));
 
   // Bottom bar: the avatar opens the player's own page, the small button the list of players.
-  on('btn-avatar', 'click', () => openProfile(profileId, 'worlds'));
   on('btn-switch', 'click', goToProfiles);
+  on('btn-cat', 'click', () => { showMascotMessage(pick('mCat')); count('cat'); });
+  on('btn-bell', 'click', openInbox);
+  on('btn-inbox-back', 'click', goToWorlds);
+  document.querySelectorAll('.profile-tab').forEach(b => b.addEventListener('click', () => setProfileTab(b.dataset.tab)));
+  on('btn-badge-ok', 'click', hideModals);
 
   // Players and profile page
   on('btn-profiles-back', 'click', goToWorlds);
@@ -1327,6 +1737,7 @@ function initEventListeners() {
   on('btn-reset-progress', 'click', () => askParent(() => showModal('confirm')));
   on('btn-confirm-yes', 'click', () => {
     progress = {}; saveProgress(); played = {}; savePlayed(); clearCurrent(); hideModals();
+    stats = freshStats(); saveStats(); playLog = []; saveLog(); inbox = []; saveInbox(); updateBell();   // badges and history go too
     goToWorlds();
     setTimeout(() => showMascotMessage(t('mReset')), 600);
   });
