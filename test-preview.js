@@ -20,9 +20,9 @@
   };
 
   var SIZES = {
-    'phone-s':  { w: 360,  h: 640,  group: 'Telefoon', icon: '📱', label: 'Klein' },
-    'phone':    { w: 390,  h: 844,  group: 'Telefoon', icon: '📱', label: 'Standaard' },
-    'phone-l':  { w: 844,  h: 390,  group: 'Telefoon', icon: '📱', label: 'Liggend' },
+    'phone-s':  { w: 360,  h: 640,  group: 'Telefoon', icon: '',   label: 'Klein' },
+    'phone':    { w: 390,  h: 844,  group: 'Telefoon', icon: '',   label: 'Standaard' },
+    'phone-l':  { w: 844,  h: 390,  group: 'Telefoon', icon: '',   label: 'Liggend' },
     'tablet':   { w: 800,  h: 1280, group: 'Tablet',   icon: '',   label: 'Staand' },
     'tablet-l': { w: 1280, h: 800,  group: 'Tablet',   icon: '',   label: 'Liggend' },
     'full':     { w: 0,    h: 0,    group: '',         icon: '',   label: 'Volledig scherm' }

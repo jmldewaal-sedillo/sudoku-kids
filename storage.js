@@ -14,7 +14,8 @@
        read(profileId, part)          -> value or null
        write(profileId, part, value)
        remove(profileId, part)
-   Parts of a profile: 'progress', 'settings', 'current', 'played'.
+   Parts of a profile: 'progress', 'settings', 'current', 'played',
+   'stats' (counters for badges), 'history' (last 500 puzzles), 'inbox' (notifications).
    ============================================================ */
 (function (root) {
   'use strict';
@@ -25,20 +26,24 @@
   const IS_TEST = /(^|\/)(test|[^/]+-test)(\/|$)/.test(root.location ? root.location.pathname : '');
   const PREFIX = (IS_TEST ? 'test_' : '') + 'sudokuKids_';
 
-  const PARTS = ['progress', 'settings', 'current', 'played'];
+  const PARTS = ['progress', 'settings', 'current', 'played', 'stats', 'history', 'inbox'];
   const FIRST_ID = 'p1';
   const MAX_PROFILES = 6;
   // Avatars are icon names (icons.js). Profiles made when avatars were still
   // emoji are translated on load.
   const AVATARS = ['cat', 'dog', 'frog', 'bear', 'fox', 'koala', 'tiger', 'penguin', 'lion', 'rabbit', 'panda', 'monkey'];
-  const OLD_AVATARS = { '🐱': 'cat', '🐶': 'dog', '🐸': 'frog', '🐻': 'bear', '🦊': 'fox', '🐨': 'koala', '🐯': 'tiger', '🐧': 'penguin', '🦁': 'lion', '🐰': 'rabbit', '🐼': 'panda', '🐵': 'monkey' };
+  const OLD_AVATARS = {     // written as code points, so no emoji is left in the source
+    '\u{1F431}': 'cat', '\u{1F436}': 'dog', '\u{1F438}': 'frog', '\u{1F43B}': 'bear', '\u{1F98A}': 'fox', '\u{1F428}': 'koala',
+    '\u{1F42F}': 'tiger', '\u{1F427}': 'penguin', '\u{1F981}': 'lion', '\u{1F430}': 'rabbit', '\u{1F43C}': 'panda', '\u{1F435}': 'monkey',
+  };
 
   function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
 
   // ---------- Local provider ----------
   // localStorage keys – never rename these, players would lose their stars.
   //   profile p1 (the first one, and everybody from before profiles existed):
-  //       sudokuKids_progress, sudokuKids_settings, sudokuKids_current, sudokuKids_played
+  //       sudokuKids_progress, sudokuKids_settings, sudokuKids_current, sudokuKids_played,
+  //       sudokuKids_stats, sudokuKids_history, sudokuKids_inbox
   //   every other profile:
   //       sudokuKids_<id>_progress, …
   //   list of profiles: sudokuKids_profiles
