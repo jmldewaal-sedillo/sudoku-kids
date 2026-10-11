@@ -1,8 +1,8 @@
 # Sudoku Kids & Crazy Grids
 
-Een sudoku-spel voor kinderen als PWA: 3 werelden, 105 levels, 3 soorten sudoku
-(standaard, X-Sudoku, fruit), 3.700 extra puzzels, tot 6 profielen per toestel,
-in het Nederlands, Engels, Duits en Frans.
+Een sudoku-spel voor kinderen als PWA: 5 werelden, 450 levels, 3 soorten sudoku
+(standaard, X-Sudoku, fruit), 3.700 puzzels, tot 6 profielen per toestel, eigen
+kawaii-iconen, muziek, en 10 talen (NL, EN, DE, FR, ES, PT, IT, PL, TR, ID).
 
 ## Testen en live zetten
 
@@ -15,7 +15,8 @@ in het Nederlands, Engels, Duits en Frans.
 | Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt rechtstreeks vanaf `main` |
 | Herkennen | rood label **TEST + commit-id** bovenin, titel "TEST · …" | geen label |
 | Opslag | sleutels met `test_` ervoor (`test_sudokuKids_progress`, …) | `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current` |
-| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v4-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v4` |
+| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v5-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v5` |
+| TEST-strook | rode strook van 16 px bóven de app (valt nergens overheen) | bestaat niet |
 | Formaat-balk | op een pc: balk bovenin met telefoon- en tabletformaten | bestaat niet |
 
 Een testpush is na ongeveer een minuut online. Het commit-id in het label vertelt welke
@@ -51,11 +52,14 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `index.html` | Alle schermen en pop-ups |
 | `style.css` | Opmaak |
 | `puzzles.js` | Puzzelmotor: generator, oplosser, het levelplan (105 levels) en de moeilijkheidsbanden |
-| `puzzle-bank.js` | Voorraad van 3.700 puzzels (100 per band), gemaakt door `tools/build-bank.js` |
+| `puzzle-bank.js` | Voorraad van 3.700 puzzels (100 per band), gemaakt door `tools/generate-puzzles.js` |
+| `level-plan.js` | Alle levels na de eerste 105 (wereld, soort, band, puzzelnummer); alleen achteraan aanvullen |
+| `icons.js` | Eigen kawaii-iconen als SVG (dieren, fruit, knoppen, werelden); geen licentie nodig |
 | `storage.js` | Profielen en opslag; de enige plek die weet waar gegevens staan |
 | `test-preview.js` | Formaat-balk van de testversie |
 | `docs/account-koppelen.md` | Onderzoek en advies over inloggen/koppelen in een kinderapp |
-| `tools/build-bank.js` | Breidt de puzzelvoorraad uit (geen build-stap; resultaat staat in de repo) |
+| `docs/icon-opties.html` | Vergelijking van drie icoonsets (alleen op de testlink) |
+| `tools/generate-puzzles.js` | Nieuwe puzzels of levels maken met één commando (geen build-stap; resultaat staat in de repo) |
 | `i18n.js` | Alle teksten in NL / EN / DE / FR |
 | `script.js` | Spellogica en schermen |
 | `manifest.json`, `sw.js` | PWA: installeren en offline spelen |
@@ -81,9 +85,44 @@ en die puzzel heeft gegarandeerd **één** oplossing. Daardoor:
 
 Verander de seeds niet meer nadat de app gepubliceerd is.
 
+## Werelden en levels
+
+| Volgorde | Wereld (id) | Levels | Gaat open na |
+|---|---|---|---|
+| 1 | Het Dierenbos (0) | 50× 4×4 · 50× 6×6 | altijd open |
+| 2 | De Boerderij (3) | 50× 4×4 · 50× 6×6 | 17 levels in het Dierenbos |
+| 3 | De Snoepjesfabriek (1) | 50× 6×6 · 50× 9×9 | 17 levels in het Dierenbos |
+| 4 | De Jungle (4) | 50× 6×6 · 50× 9×9 | 17 levels in de Snoepjesfabriek |
+| 5 | De Ruimte-raket (2) | 50× 9×9 | 17 levels in de Snoepjesfabriek |
+
+Het id is het nummer in de opgeslagen voortgang (`w<id>_l<index>`) en verandert nooit; de
+volgorde op het scherm staat in `WORLDS` in `script.js`. De eerste 35 levels van wereld 0–2
+zijn precies de levels van vroeger. Nieuwe levels staan er achteraan, in blokken per
+rastergrootte; het eerste level van elk blok is altijd open.
+
+## Nieuwe puzzels of levels maken
+
+```bash
+node tools/generate-puzzles.js --status      # levels per wereld, voorraad per soort
+node tools/generate-puzzles.js --max         # hoeveel unieke puzzels zijn er maximaal mogelijk
+node tools/generate-puzzles.js --soort 4x4-standard --aantal 50                   # 50 extra puzzels per band
+node tools/generate-puzzles.js --levels --wereld 0 --soort 6x6-fruit --aantal 10   # 10 levels achteraan wereld 0
+```
+
+Soorten: `4x4-standard`, `4x4-fruit`, `6x6-standard`, `6x6-x`, `6x6-fruit`, `9x9-standard`,
+`9x9-x`, `9x9-fruit`. Bij `--levels` kun je met `--van 0 --tot 1` kiezen van welke band
+(0 = makkelijkste, 1 = moeilijkste) de levels oplopen. Het script draait daarna zelf
+`tests/validate-levels.js` en werkt de snapshots bij. Het kan alleen toevoegen: verandert er
+een bestaande puzzel of level, dan weigert de validatie. Vergeet daarna niet `CACHE_VERSION`
+te verhogen.
+
+`--max` in het kort: 4×4 is precies geteld (per aantal gegeven vakjes 376 tot 1.040 echt
+verschillende puzzels; de voorraad gebruikt er nu 200 per band waar standaard en fruit
+overlappen). 6×6 en 9×9 zijn praktisch onbeperkt; daar is rekentijd de grens.
+
 ## Meer puzzels per level
 
-Er blijven 35 levels per wereld, maar elk level heeft veel meer dan één puzzel:
+Elk level heeft veel meer dan één puzzel:
 
 - Een **soort** is grootte × type (`4-standard`, `4-shapes`, `6-standard`, `6-xsudoku`,
   `6-shapes`, `9-standard`, `9-xsudoku`, `9-shapes`).
@@ -98,20 +137,41 @@ Er blijven 35 levels per wereld, maar elk level heeft veel meer dan één puzzel
   volgorde van levels of werelden, dus er kunnen later puzzels, levels en werelden bij zonder
   dat iets verschuift.
 
-De voorraad uitbreiden: `node tools/build-bank.js 150` (aantal per band) en daarna
-`node tests/validate-levels.js --update-snapshot`. Bestaande puzzels blijven staan; de
-snapshot bewaakt dat.
+De puzzels die het eigen, eerste puzzel van een level zijn, worden niet als herhaling
+uitgedeeld; per band blijven er minimaal 50 vrij voor "opnieuw spelen".
 
 4×4: er bestaan per aantal gegeven vakjes 376 tot 1.040 écht verschillende puzzels (niet in
 elkaar om te zetten door draaien, spiegelen of omnummeren), zie `node tests/count-4x4.js`.
 De 1.000 4×4-puzzels in de voorraad zijn onderling allemaal echt verschillend.
 
+## Iconen, geluid en talen
+
+- **Iconen**: alle plaatjes komen uit `icons.js` (eigen tekeningen, 60 stuks, ± 22 kB). In
+  HTML: `<span class="ki" data-icon="naam">`; in code: `KawaiiIcons.svg('naam')`. Er staat
+  nergens meer een emoji in de app; `tests/e2e.py` (onderdeel 17) controleert dat. Een nieuw
+  icoon teken je als functie in `ICONS` met de gedeelde onderdelen (`face`, `circle`, …).
+- **Geluid**: alles wordt gemaakt met de Web Audio API, er zijn geen geluidsbestanden.
+  Muziek (een rustig deuntje van 32 tellen dat naadloos doorloopt, zacht, pauzeert op de
+  achtergrond en start pas na de eerste tik), klikgeluid en geluidseffecten zijn drie losse
+  schakelaars, per profiel bewaard.
+- **Talen**: `i18n.js` bevat `LANGUAGES` (volgorde en naam in de eigen taal) en `STRINGS`.
+  Een taal toevoegen = een regel in `LANGUAGES` en een blok in `STRINGS` met álle sleutels van
+  `nl`; onderdeel 19 van de e2e-test faalt als er een sleutel ontbreekt. Er staan geen emoji
+  in de teksten.
+
 ## Profielen en opslag
 
-Tik op de kat rechtsonder (wereldkaart of levelscherm) voor "Wie speelt er?". Maximaal 6
-profielen, elk met een dierenplaatje, een optionele naam, eigen sterren, eigen gespeelde
-puzzels, eigen instellingen en een eigen onafgemaakt spel. Verwijderen en voortgang wissen
-zitten achter het ouderslot (knop 3 seconden ingedrukt houden).
+Onderaan de wereldkaart en het levelscherm staat een balk: links de pratende kat, rechts het
+plaatje van de speler met een wisselknopje. Het plaatje (en de ster met de score rechtsboven)
+opent de profielpagina van de speler: grote avatar, naam, sterren, levels, gespeelde puzzels,
+snelste tijd, sterren per wereld en badges. Het potlood naast de naam zet de pagina in
+bewerkmodus. Het wisselknopje opent "Wie speelt er?"; tikken op een speler opent diens
+pagina, met de knop "Spelen als …". Maximaal 6 profielen, elk met eigen sterren, gespeelde
+puzzels, instellingen (ook taal, grootte, muziek, klik en geluid) en onafgemaakt spel.
+
+Ouderslot: de knop twee keer achter elkaar 1,5 seconde ingedrukt houden, de tweede keer
+binnen 5 seconden; een ring laat de voortgang zien. Het zit vóór profiel verwijderen,
+voortgang wissen en account koppelen.
 
 | Sleutel in localStorage | Inhoud |
 |---|---|

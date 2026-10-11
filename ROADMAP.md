@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v3 staat live; v4 (profielen, 3.700 puzzels, grootte, formaat-balk) staat op de testlink |
+| **Huidige fase** | v3 staat live; v5 staat op de testlink (5 werelden / 450 levels, kawaii-iconen, muziek, 10 talen, profielpagina's, dubbel ouderslot) |
 | **Laatste update** | 2026-10-11 |
-| **Volgende stap** | v4 nalopen op de testlink (zie Testen), daarna mergen naar `main`; dan de groep "Voor publiceren" |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, nu gelijk aan `feature-2026-10-11` (cache v4) |
+| **Volgende stap** | v5 nalopen op de testlink (zie Testen), daarna mergen naar `main`; dan de groep "Voor publiceren" |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, nu gelijk aan `feature-2026-10-11` (cache v5) |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v3` (live sinds 2026-10-11) |
 
 ---
@@ -15,11 +15,13 @@
 ## Vaste regels (nooit breken)
 
 1. **Bestaande puzzels veranderen nooit.**
-   - *Level-puzzels (variant 1):* de 105 bestaande levels houden hun seed `20261004 + i * 7919` en hun plek in `LEVEL_PLAN`. Die volgorde en seeds nooit wijzigen; nieuwe levels of werelden komen erachteraan.
-   - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/build-bank.js`.
+   - *De eerste 105 levels:* houden hun seed `20261004 + i * 7919` en hun plek in `LEVEL_PLAN`. Die volgorde en seeds nooit wijzigen.
+   - *Alle levels daarna* staan in `level-plan.js` als (wereld, soort, band, puzzelnummer). Alleen ACHTERAAN aanvullen via `tools/generate-puzzles.js`, nooit regels verplaatsen of weghalen: `w<wereld>_l<index>` in de voortgang van spelers mag nooit verschuiven. Wereld-id's (0 bos, 1 snoep, 2 raket, 3 boerderij, 4 jungle) veranderen nooit; de volgorde op het scherm staat los daarvan in `WORLDS`.
+   - *Ontgrendelen:* een wereld gaat open na 17 gehaalde levels in de wereld ervoor (was "de helft van 35"). Dat getal niet verhogen, anders gaat een wereld bij bestaande spelers weer op slot.
+   - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live: `sudoku-kids-v3`, test: `sudoku-kids-v4`), anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live: `sudoku-kids-v3`, test: `sudoku-kids-v5`), anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, build-stappen, externe CDN's, tracking, advertenties of accounts.** `tests/e2e.py` controleert dat er geen verzoek naar een ander domein gaat.
@@ -29,6 +31,31 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-11 · v5 op de testlink: feedbackronde A t/m F (Claude Code, branch `feature-2026-10-11`)
+Vooraf gevraagd en beantwoord: A1 = 50 levels per rastergrootte per wereld (later verder aanvullen), B1 = optie 1 (zelf getekende iconen), A3 = Boerderij + Jungle.
+
+**A – werelden en puzzels.** 450 levels in 5 werelden, elke wereld 50 levels per rastergrootte. De eerste 105 levels zijn onveranderd (zelfde plek, zelfde puzzel); nieuwe staan achteraan in `level-plan.js`. Nieuwe werelden Boerderij (id 3: 4×4 + 6×6, tussen Dierenbos en Snoepjesfabriek) en Jungle (id 4: 6×6 + 9×9, tussen Snoepjesfabriek en Ruimte-raket). `tools/generate-puzzles.js` maakt met één commando puzzels of levels, valideert en werkt de snapshot bij (`--status`, `--max`). Wereldkaarten tonen met kleine rastertjes hoeveel levels er per grootte zijn. Het eerste level van elk blok is altijd open.
+
+**B – kawaii-iconen.** `docs/icon-opties.html` met drie opties (eigen SVG, OpenMoji CC BY-SA 4.0, Fluent Emoji MIT); gekozen: eigen SVG. 60 iconen in `icons.js` (± 22 kB), doorgevoerd in de hele app; er staat nergens meer een emoji. Nieuw app-icoon met de kat (alle 10 PNG's + 2 SVG's). **Credits:** niet nodig (eigen werk). OpenMoji en Fluent staan alleen op de vergelijkingspagina, met hun licentie en bronvermelding, en zitten niet in de app.
+
+**C – geluid.** Achtergrondmuziek met de Web Audio API (eigen deuntje, 32 tellen, naadloos, zacht, pauzeert op de achtergrond, start na de eerste tik), schakelaar "Klikgeluid" (zacht tikje bij elke knop), "Geluidseffecten" ongewijzigd. Alle drie per profiel.
+
+**D – instellingen.** Zes talen erbij: Spaans, Portugees, Italiaans, Pools, Turks, Indonesisch (10 totaal), met de naam in de taal zelf. Onderbouwing: de grootste Google Play-markten naar downloads zijn India, Brazilië en Indonesië, daarna o.a. de VS, Rusland, Mexico en Turkije (schattingen van Sensor Tower/data.ai, geen cijfers van Google en niet specifiek voor gezinnen – die heb ik niet kunnen vinden). Hindi, Russisch en Arabisch (rechts-naar-links) staan op de roadmap. Grootte: een echt cijferblokje op ware grootte voor 4×4, 6×6 en 9×9, dat meteen verandert.
+
+**E – ouderslot.** Twee keer 1,5 s ingedrukt houden, de tweede keer binnen 5 s, met voortgangsring. Geen contextmenu, tekstselectie of scrollen op de knop.
+
+**F – profielen.** Ster met score rechtsboven en de avatar rechtsonder openen de profielpagina (grote avatar, naam met potlood, sterren, levels, puzzels, snelste tijd, sterren per wereld, 4 badges). Spelerslijst zonder potlood; tikken opent de pagina van die speler met "Spelen als …". Onderbalk: pratende kat links, speler + wisselknop rechts; de schermen eindigen boven de balk, dus hij bedekt nooit een knop. TEST-label is een eigen strook boven de app.
+
+**Bewijs:**
+- `node tests/validate-levels.js` → drie keer ✅ (450 levels, 3.700 puzzels).
+- `node tests/difficulty.js` → beide ✅.
+- `python3 tests/e2e.py` → `✅ 231/231 controles geslaagd.` (72 nieuw voor A t/m F; o.a. alle 450 levels uitgespeeld, generatiescript in een kopie gedraaid, geen emoji meer, 10 talen compleet, voorbeeldblokje = echt vakje).
+- `python3 tests/screenshots.py` → 7 formaten × 22 schermen, `✅ Niets buiten beeld, alle knoppen minstens 48x48 px, 0 console-errors.`
+
+**Niet te testen zonder mens/toestel:** hoe de muziek klinkt, of de vertalingen natuurlijk zijn, of het ouderslot op een telefoon prettig werkt.
+
+**Bestanden geraakt:** script.js, style.css, index.html, i18n.js, puzzles.js, storage.js, sw.js, manifest.json, icons.js (nieuw), level-plan.js (nieuw), icons/ (alle iconen), screenshots/, tools/generate-puzzles.js (nieuw, vervangt build-bank.js), docs/icon-opties.html (nieuw), tests/ (e2e, screenshots, validate-levels, difficulty, count-4x4, snapshots), .github/workflows/test-deploy.yml, README.md, ROADMAP.md.
 
 ### 2026-10-11 · v4 op de testlink: formaat-balk, grootte, 3.700 puzzels, profielen (Claude Code, branch `feature-2026-10-11`)
 **Stap 1 – formaat-balk (alleen testversie).** Opzet, stijl en knoppen overgenomen van `phone-preview.js` van The Flush Factor: donkere balk, app in een iframe (`?frame=1`), keuze onthouden. Formaten: 360×640, 390×844, 844×390, 800×1280, 1280×800, volledig scherm. Alleen op het testpad en alleen op een pc; live vraagt `test-preview.js` nooit op.
@@ -184,11 +211,16 @@
 
 ### Testen (op een echte telefoon/tablet)
 Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood label TEST bovenin).
-- [ ] v4, profielen: tik op de kat, maak een tweede profiel, speel een level, wissel terug – staan de sterren van het eerste profiel er nog?
-- [ ] v4, ouderslot: lukt 3 seconden ingedrukt houden op jouw telefoon (geen contextmenu, geen trillen/selecteren)? Kan je kind het ook?
+- [ ] v5, muziek: klinkt het deuntje vrolijk en rustig genoeg, en niet te hard naast de geluidseffecten? Stopt het als je de app wegzet?
+- [ ] v5, klikgeluid: prettig of irritant bij elke knop?
+- [ ] v5, iconen: zijn de dieren en het fruit in een 9×9 op je telefoon nog goed uit elkaar te houden?
+- [ ] v5, ouderslot: twee keer ingedrukt houden op je telefoon (geen contextmenu, geen selectie)? Is 5 seconden tussentijd genoeg?
+- [ ] v5, profielen: ster rechtsboven → profielpagina; wisselknopje → lijst → speler → "Spelen als"; potlood → bewerken
+- [ ] v5, werelden: Boerderij en Jungle openen, rastertjes op de kaarten duidelijk? Levelscherm met blokken per grootte prettig?
+- [ ] v5, onderbalk: bedekt hij echt nergens iets op jouw telefoon (ook liggend)?
+- [ ] v5, grootte: klopt het voorbeeldblokje met wat je daarna in het spel ziet?
 - [ ] v4, meer puzzels: speel level 1 drie keer opnieuw – krijg je steeds een andere puzzel?
 - [ ] v4, zoomen: knijpen op de telefoon en Ctrl +/- op de pc; dubbeltikken op een vakje mag niet zoomen
-- [ ] v4, grootte: Instellingen → Grootte klein/normaal/groot op telefoon én pc
 - [ ] v4, formaat-balk: testlink op de pc, alle zes knoppen, keuze blijft na herladen
 - [ ] Zelf spelen op de telefoon (splash → wereld 1 → een paar levels uitspelen); let op of een kind de wijsvinger en de plaatjesknoppen snapt
 - [ ] Een paar levels uit elke wereld voltooien (inclusief 6×6 en 9×9) – automatisch zijn alle 105 uitgespeeld, maar niet door een mens
@@ -207,9 +239,17 @@ Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood
 - [x] Domeinnaam of subpad kiezen voor de hosting → subpad `/sudoku-kids/` op GitHub Pages
 - [x] Relatieve paden in manifest.json controleren na keuze van subpad → `tests/e2e.py` controleert manifest, iconen en `sw.js`-bestanden
 - [ ] Beleid: Families-beleid van Google Play, AVG voor kinderen, leeftijdsclassificatie (IARC), Data safety-formulier, privacyverklaring afmaken (contact-e-mail, NL en EN, plus de gevolgen van account koppelen), en eventueel gebruiksvoorwaarden. Basis staat in `privacy.html` en `docs/account-koppelen.md`.
-- [ ] Credits: een creditspagina in de app (via Instellingen) met de makers en de licenties van icoon- of emojisets en lettertypen.
+- [ ] Credits: een creditspagina in de app (via Instellingen) met de makers. Voor iconen is geen vermelding nodig (eigen tekeningen in `icons.js`); er zijn geen externe lettertypen, geluiden of bibliotheken. Wel noemen: "Iconen en muziek: eigen werk".
+- [ ] Vertalingen laten nakijken door een moedertaalspreker (ze zijn door de AI gemaakt):
+  - [ ] Engels  - [ ] Duits  - [ ] Frans
+  - [ ] Spaans (es)
+  - [ ] Portugees – Braziliaans (pt)
+  - [ ] Italiaans (it)
+  - [ ] Pools (pl)
+  - [ ] Turks (tr)
+  - [ ] Indonesisch (id)
 - [ ] Spelregels: een uitleg met plaatjes per sudoku-type, geschikt voor kinderen die niet lezen.
-- [ ] Nieuwe icoon- of emojiset: speelser, en op elk toestel hetzelfde. Vergelijk minimaal 3 opties met een vrije licentie (bijv. OpenMoji, Twemoji, Fluent Emoji, Noto) op stijl, licentie, credits en bestandsgrootte. Nog niet doorvoeren.
+- [x] Nieuwe icoon- of emojiset: speelser, en op elk toestel hetzelfde → drie opties vergeleken in `docs/icon-opties.html`, gekozen voor eigen kawaii-SVG's (`icons.js`), doorgevoerd in de hele app en het app-icoon.
 - [ ] Account koppelen: een keuze maken op basis van `docs/account-koppelen.md` (advies: doelgroep "alleen kinderen", geen login; eventueel een overzet-code) en het daarna bouwen.
 - [ ] `assetlinks.json` plaatsen. **Probleem:** moet op `https://jmldewaal-sedillo.github.io/.well-known/assetlinks.json` staan (root van het domein), dat kan niet vanuit deze repo. Kies: aparte repo `jmldewaal-sedillo.github.io` met `.nojekyll`, of een eigen subdomein (bijv. `sudoku.sedillo.nl`) voor deze app. Zie README.
 - [ ] Google Play-ontwikkelaarsaccount aanmaken (eenmalig $25)
@@ -219,9 +259,10 @@ Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood
 - [ ] Beslissen over schermrotatie: `manifest.json` staat op `"orientation": "portrait"`. Android 16+ negeert dat op tablets; landscape werkt nu, dus `"any"` kan ook.
 
 ### Na publiceren
-- [ ] Meer levels per wereld, richting 500 (nieuwe levels achteraan; de voorraad per band is er al)
-- [ ] Meer werelden, richting 10
+- [ ] Meer levels per wereld, richting 500 (nu 50 per rastergrootte; aanvullen met `tools/generate-puzzles.js --levels`)
+- [ ] Meer werelden, richting 10 (nu 5)
 - [ ] Meer symboolthema's: cijfers, dieren, planten, groente, fruit (te kiezen per profiel)
+- [ ] Meer talen: Hindi en Russisch (grote Play-markten, ander schrift – eerst een moedertaalspreker), Arabisch (rechts-naar-links: de lay-out moet daarvoor gespiegeld worden en is daar nog niet op getest)
 
 ### Verbeteringen
 - [x] Statusbalk-knoppen (hint/notitie/wissen) op tablets zijn klein → 84×64 px op tablets
@@ -232,7 +273,10 @@ Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood
 - [ ] Vergrendeld level geeft geen reactie bij tikken (knop is uitgeschakeld) → kort schudden zoals bij een vergrendelde wereld
 - [x] Reset-knop is voor een kind bereikbaar → ouderslot (3 seconden ingedrukt houden) vóór voortgang wissen en profiel verwijderen
 - [ ] Binnen een band verschilt het aantal "rondes" nog (zie logboek 2026-10-11). Overweeg de banden ook op rondes in te delen als kinderen het verschil merken.
-- [ ] Het TEST-label ligt op een telefoon net over de levelnaam in het spelscherm (alleen testversie)
+- [x] Het TEST-label ligt op een telefoon net over de levelnaam → eigen strook boven de app
+- [ ] Nieuwe levels staan achteraan per wereld, waardoor na level 35 (6×6) weer makkelijke 4×4-levels komen. Overweeg het levelscherm te sorteren op rastergrootte (alleen de weergave; de opslag blijft per index).
+- [ ] Muziek: één deuntje voor alles. Overweeg een eigen deuntje per wereld en een volumeschuif.
+- [ ] Badges op de profielpagina zijn nu vier vaste; uitbreiden (per wereld, 3 sterren, zonder hints).
 - [ ] Profielscherm: laat per profiel ook de voortgang per wereld zien
 - [ ] Mascotte en tekstballon liggen op het levelscherm over de onderste levelknoppen
 - [ ] De sprong van 6×6 naar het eerste 9×9-level (35 open vakjes) is groot; overweeg een paar extra makkelijke 9×9's. Let op: mag de volgorde van `LEVEL_PLAN` niet veranderen.
@@ -241,7 +285,6 @@ Gebruik de testlink: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (rood
 - [ ] `script.js` (±1.000 regels) opsplitsen in losse bestanden (profielen, ouderslot en puzzelkeuze zijn goede kandidaten)
 
 ### Ideeën
-- **Muziek / achtergrondgeluid** – rustig deuntje met aan/uit-knop. Niet gebouwd: vraagt audiobestanden (groter, licenties) en een knop die kinderen terugvinden.
 - **Gesproken mascotte** – korte opgenomen zinnetjes per taal ("Tik op een vakje!"). Lost het lees-probleem beter op dan plaatjes alleen.
 - **Dagelijkse puzzel** – elke dag één extra level op basis van de datum als seed (geen server nodig).
 - **Extra werelden** – bijv. kleuren-sudoku of 4×4 met vormen voor de allerjongsten; nieuwe werelden áchteraan toevoegen zodat bestaande levels en sterren kloppen.
