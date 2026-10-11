@@ -35,14 +35,14 @@ function analyse(lv, given) {
   return { givens: lv.size * lv.size - open, open, easyPct: open ? Math.round(solved / open * 100) : 100, start, rounds };
 }
 
-const WORLD_NAMES = ['Dierenbos', 'Snoepjesfabriek', 'Ruimte-raket'];
+const WORLD_NAMES = ['Dierenbos', 'Snoepjesfabriek', 'Ruimte-raket', 'Boerderij', 'Jungle'];
 const all = process.argv.includes('--all');
 const rows = E.LEVEL_PLAN.map(lv => ({ lv, ...analyse(lv) }));
 
 if (all) {
   rows.forEach(r => console.log(
     `${WORLD_NAMES[r.lv.world].padEnd(16)} ${String(r.lv.indexInWorld + 1).padStart(2)} ${r.lv.size}x${r.lv.size} ${r.lv.type.padEnd(8)} ` +
-    `doel ${String(r.lv.target).padStart(2)} gegeven ${String(r.givens).padStart(2)} open ${String(r.open).padStart(2)} ` +
+    `gegeven ${String(r.givens).padStart(2)} open ${String(r.open).padStart(2)} ` +
     `makkelijk ${String(r.easyPct).padStart(3)}% start ${String(r.start).padStart(2)} rondes ${r.rounds}`));
   console.log('');
 }

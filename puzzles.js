@@ -241,23 +241,45 @@
     ...W2_TYPES.map((type, i) => ({ world: 2, size: 9, type, target: w2Targets[i] })),
   ];
 
-  const counters = [0, 0, 0];
+  // The first 105 levels ("legacy"): their puzzle comes from a fixed seed per
+  // level. Never change these seeds or their order, or players' saved stars
+  // will point at different puzzles.
+  const LEGACY_LEVELS = LEVEL_PLAN.length;
+  LEVEL_PLAN.forEach((lv, i) => { lv.seed = 20261004 + i * 7919; });
+
+  // Every level after that comes from level-plan.js (made by
+  // tools/generate-puzzles.js): [world, kind, band, n]. Its puzzle is bank
+  // puzzle (kind, n). New levels are only ever ADDED at the end, so
+  // 'w<world>_l<index>' in a player's progress never shifts.
+  let extraLevels = [];
+  if (typeof module !== 'undefined' && module.exports) {
+    try { extraLevels = require('./level-plan.js'); } catch (e) { /* no extra levels yet */ }
+  } else if (root.SUDOKU_LEVELS) extraLevels = root.SUDOKU_LEVELS;
+  const reserved = new Set();            // bank puzzles that are a level's own puzzle
+  extraLevels.forEach(([world, kind, range, n]) => {
+    const [size, type] = kind.split('-');
+    const pid = kind + '#' + n;
+    reserved.add(pid);
+    LEVEL_PLAN.push({ world, size: +size, type, band: kind + '/' + range, pid });
+  });
+
+  const WORLD_COUNT = LEVEL_PLAN.reduce((m, lv) => Math.max(m, lv.world + 1), 0);
+  const counters = new Array(WORLD_COUNT).fill(0);
   LEVEL_PLAN.forEach((lv, i) => {
     lv.globalIndex = i;
     lv.indexInWorld = counters[lv.world]++;
-    // Fixed seed per level: never change these once the app is published,
-    // or players' saved stars will point at different puzzles.
-    lv.seed = 20261004 + i * 7919;
   });
 
   const puzzleCache = {};
   function getPuzzle(globalIndex) {
     if (puzzleCache[globalIndex]) return puzzleCache[globalIndex];
     const lv = LEVEL_PLAN[globalIndex];
-    const p = generatePuzzle(lv.size, lv.type === 'xsudoku', lv.target, lv.seed);
+    const p = lv.pid ? getVariant(lv.pid) : generatePuzzle(lv.size, lv.type === 'xsudoku', lv.target, lv.seed);
     puzzleCache[globalIndex] = p;
     return p;
   }
+  // The id of a level's own (first) puzzle: 'L<index>' for the first 105, a bank id after that.
+  function ownId(globalIndex) { return LEVEL_PLAN[globalIndex].pid || 'L' + globalIndex; }
 
   // ---------- 4×4 symmetry (to tell really different puzzles apart) ----------
   // Two 4×4 puzzles are "the same" for a child if one becomes the other by
@@ -383,15 +405,18 @@
   // The band a level belongs to: the one that holds its original puzzle.
   function levelBand(globalIndex) {
     const lv = LEVEL_PLAN[globalIndex];
-    return bandFor(kindOf(lv), getPuzzle(globalIndex).givens);
+    return lv.band || bandFor(kindOf(lv), getPuzzle(globalIndex).givens);
   }
+  // Puzzles of a band that may be handed out on a replay: everything except
+  // the puzzles that are some level's own first puzzle.
+  function poolOf(id) { return bankOf(id).filter(p => !reserved.has(p.id)); }
   if (typeof module !== 'undefined' && module.exports) {
     try { setBank(require('./puzzle-bank.js')); } catch (e) { /* bank not built yet */ }
   } else if (root.SUDOKU_BANK) setBank(root.SUDOKU_BANK);
 
   const api = {
     BANDS, kindOf, bandId, bandFor, bankSeed, bankCandidate, encodeGiven, decodeGiven,
-    setBank, bankOf, getVariant, levelBand, symmetries4, canonical4,
+    setBank, bankOf, poolOf, getVariant, levelBand, ownId, LEGACY_LEVELS, WORLD_COUNT, symmetries4, canonical4,
     LEVEL_PLAN, getPuzzle, generatePuzzle, countSolutions,
     isValidSolution, getUnits, boxDims, makeRng, findSingles, solvableBySingles,
   };

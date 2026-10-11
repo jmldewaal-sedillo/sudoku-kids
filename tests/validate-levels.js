@@ -26,19 +26,24 @@ const fs = require('fs');
 const path = require('path');
 const E = require(path.join(__dirname, '..', 'puzzles.js'));
 
-const WORLD_NAMES = ['Dierenbos', 'Snoepjesfabriek', 'Ruimte-raket'];
+const WORLD_NAMES = ['Dierenbos', 'Snoepjesfabriek', 'Ruimte-raket', 'Boerderij', 'Jungle'];
+const LEVELS_PER_SIZE = 50;        // every world: 50 levels per grid size it contains
 const errors = [];
 let slowest = 0;
-const perWorld = [[], [], []];
+const perWorld = Array.from({ length: E.WORLD_COUNT }, () => []);
 
 for (const lv of E.LEVEL_PLAN) {
   const label = `${WORLD_NAMES[lv.world]} level ${lv.indexInWorld + 1} (${lv.size}x${lv.size} ${lv.type})`;
   const diag = lv.type === 'xsudoku';
 
+  const legacy = lv.globalIndex < E.LEGACY_LEVELS;
   const t0 = Date.now();
-  const p = E.generatePuzzle(lv.size, diag, lv.target, lv.seed);
+  const p = legacy ? E.generatePuzzle(lv.size, diag, lv.target, lv.seed) : E.getPuzzle(lv.globalIndex);
   const ms = Date.now() - t0;
   slowest = Math.max(slowest, ms);
+  if (!p) { errors.push(`${label}: puzzel ${lv.pid} bestaat niet in de voorraad`); continue; }
+  if (legacy && lv.seed !== 20261004 + lv.globalIndex * 7919) errors.push(`${label}: seed is veranderd`);
+  if (!legacy && E.bandFor(E.kindOf(lv), p.givens) !== lv.band) errors.push(`${label}: puzzel hoort niet in band ${lv.band}`);
 
   if (!E.isValidSolution(p.solution, lv.size, diag)) errors.push(`${label}: ongeldige oplossing`);
   if (p.given.some((v, i) => v !== 0 && v !== p.solution[i])) errors.push(`${label}: gegeven cijfers kloppen niet met de oplossing`);
@@ -47,8 +52,10 @@ for (const lv of E.LEVEL_PLAN) {
 
   if (!E.solvableBySingles(p.given, lv.size, diag)) errors.push(`${label}: niet op te lossen zonder gokken`);
 
-  const again = E.generatePuzzle(lv.size, diag, lv.target, lv.seed);
-  if (again.given.join() !== p.given.join()) errors.push(`${label}: puzzel is niet stabiel tussen runs`);
+  if (legacy) {
+    const again = E.generatePuzzle(lv.size, diag, lv.target, lv.seed);
+    if (again.given.join() !== p.given.join()) errors.push(`${label}: puzzel is niet stabiel tussen runs`);
+  }
 
   perWorld[lv.world].push({ lv, givens: p.givens, ms });
 }
@@ -56,7 +63,7 @@ for (const lv of E.LEVEL_PLAN) {
 // Unique puzzles: no two levels may share the same starting grid.
 const seen = new Map();
 E.LEVEL_PLAN.forEach(lv => {
-  const key = E.generatePuzzle(lv.size, lv.type === 'xsudoku', lv.target, lv.seed).given.join('');
+  const key = lv.size + ':' + E.getPuzzle(lv.globalIndex).given.join('');
   if (seen.has(key)) errors.push(`Level ${lv.globalIndex} is gelijk aan level ${seen.get(key)}`);
   seen.set(key, lv.globalIndex);
 });
@@ -64,9 +71,16 @@ E.LEVEL_PLAN.forEach(lv => {
 // Snapshot: every level must still be exactly the puzzle that was published.
 const SNAPSHOT = path.join(__dirname, 'levels.snapshot.json');
 const current = E.LEVEL_PLAN.map(lv => E.getPuzzle(lv.globalIndex).given.join(''));
+const savedLevels = fs.existsSync(SNAPSHOT) ? JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8')) : [];
+const levelsChanged = savedLevels.some((g, i) => current[i] !== g);
 if (process.argv.includes('--update-snapshot')) {
-  fs.writeFileSync(SNAPSHOT, JSON.stringify(current, null, 0).replace(/,/g, ',\n') + '\n');
-  console.log('Snapshot bijgewerkt: tests/levels.snapshot.json');
+  // Updating may only ADD levels. Changing an existing one needs --force (and a very good reason).
+  if (levelsChanged && !process.argv.includes('--force')) {
+    errors.push('Bestaande level-puzzels zijn veranderd: snapshot NIET bijgewerkt (alleen toevoegen is toegestaan)');
+  } else {
+    fs.writeFileSync(SNAPSHOT, JSON.stringify(current, null, 0).replace(/,/g, ',\n') + '\n');
+    console.log('Snapshot bijgewerkt: tests/levels.snapshot.json');
+  }
 } else if (!fs.existsSync(SNAPSHOT)) {
   errors.push('tests/levels.snapshot.json ontbreekt (maak hem met --update-snapshot)');
 } else {
@@ -83,11 +97,17 @@ const BANK_SNAPSHOT = path.join(__dirname, 'bank.snapshot.json');
 const MIN_PER_BAND = 100;
 const exact = new Map();           // size:givens -> where
 const canon4 = new Map();
+const ownCount = {};
 E.LEVEL_PLAN.forEach(lv => {
+  if (!E.levelBand(lv.globalIndex)) errors.push(`Level ${lv.globalIndex} valt in geen enkele moeilijkheidsband`);
+  if (lv.globalIndex >= E.LEGACY_LEVELS) {       // its puzzle IS a bank puzzle: may be used by one level only
+    ownCount[lv.pid] = (ownCount[lv.pid] || 0) + 1;
+    if (ownCount[lv.pid] > 1) errors.push(`Puzzel ${lv.pid} is de eigen puzzel van meer dan één level`);
+    return;
+  }
   const g = E.getPuzzle(lv.globalIndex).given;
   exact.set(lv.size + ':' + g.join(''), 'level ' + lv.globalIndex);
   if (lv.size === 4) canon4.set(E.canonical4(g), 'level ' + lv.globalIndex);
-  if (!E.levelBand(lv.globalIndex)) errors.push(`Level ${lv.globalIndex} valt in geen enkele moeilijkheidsband`);
 });
 let bankTotal = 0;
 const bankHashes = {};
@@ -101,6 +121,7 @@ for (const kind of Object.keys(E.BANDS)) {
     counts.push(list.length);
     bankTotal += list.length;
     if (list.length < MIN_PER_BAND) errors.push(`${id}: ${list.length} puzzels, minder dan ${MIN_PER_BAND}`);
+    if (E.poolOf(id).length < 50) errors.push(`${id}: maar ${E.poolOf(id).length} puzzels vrij voor "opnieuw spelen" (minimaal 50)`);
     if (bi > 0 && band[1] >= E.BANDS[kind][bi - 1][0]) errors.push(`${id}: band overlapt met de vorige of is niet moeilijker`);
     list.forEach(({ id: pid, n, text }) => {
       const given = E.decodeGiven(text);
@@ -144,17 +165,24 @@ if (process.argv.includes('--update-snapshot')) {
 }
 
 perWorld.forEach((rows, w) => {
-  const sizes = [...new Set(rows.map(r => r.lv.size))].map(s => `${s}x${s}`).join(', ');
-  const g = rows.map(r => r.givens);
-  console.log(`${WORLD_NAMES[w].padEnd(16)} ${rows.length} levels | ${sizes} | gegeven cellen: ${g[0]} → ${g[g.length - 1]}`);
+  const sizes = [...new Set(rows.map(r => r.lv.size))];
+  const parts = sizes.map(sz => {
+    const n = rows.filter(r => r.lv.size === sz).length;
+    if (n !== LEVELS_PER_SIZE) errors.push(`${WORLD_NAMES[w]}: ${n} levels van ${sz}x${sz}, verwacht ${LEVELS_PER_SIZE}`);
+    return `${n}× ${sz}x${sz}`;
+  });
+  console.log(`${WORLD_NAMES[w].padEnd(16)} ${String(rows.length).padStart(3)} levels | ${parts.join(' · ')}`);
 });
 console.log(`Totaal: ${E.LEVEL_PLAN.length} levels, traagste generatie ${slowest} ms`);
 console.log('\nVoorraad (puzzle-bank.js):');
 bankLines.forEach(l => console.log('  ' + l));
 console.log(`  Totaal: ${bankTotal} puzzels in ${Object.keys(bankHashes).length} banden`);
 
-if (E.LEVEL_PLAN.length < 105) errors.push('Minder dan 105 levels');
-[0, 1, 2].forEach(w => { if (perWorld[w].length < 35) errors.push(`${WORLD_NAMES[w]} heeft minder dan 35 levels`); });
+if (E.LEGACY_LEVELS !== 105) errors.push('De eerste 105 levels zijn niet meer compleet');
+E.LEVEL_PLAN.slice(0, 105).forEach((lv, i) => {
+  const expectWorld = i < 35 ? 0 : i < 70 ? 1 : 2;
+  if (lv.world !== expectWorld || lv.indexInWorld !== i - expectWorld * 35) errors.push(`Level ${i}: plek in de wereld is verschoven`);
+});
 
 if (errors.length) {
   console.error(`\n❌ ${errors.length} probleem/problemen:\n - ` + errors.join('\n - '));
