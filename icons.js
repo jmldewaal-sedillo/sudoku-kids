@@ -239,13 +239,39 @@
     crown: () =>
       path('M8 50 L6 20 L20 32 L32 12 L44 32 L58 20 L56 50 Z', '#FFD43B') + rect(8, 46, 48, 10, 4, '#FFB02E') + circle(32, 12, 4, '#FF5C8A') + circle(6, 20, 3.4, '#7CC4FF') + circle(58, 20, 3.4, '#7CC4FF'),
     check: () => el('path', 'd="M12 34 L26 48 L52 18"', `stroke="${INK}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"`) + el('path', 'd="M12 34 L26 48 L52 18"', `stroke="#6CCB5F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"`),
+    bell: () =>
+      path('M32 8 C20 8 14 18 14 30 V40 L8 48 H56 L50 40 V30 C50 18 44 8 32 8 Z', '#FFD43B') +
+      circle(32, 6, 3.4, '#FFB02E') + path('M25 50 a7 7 0 0 0 14 0 Z', '#FFB02E') + face(32, 30, 0.8),
+    calendar: () =>
+      rect(8, 12, 48, 44, 8, '#fff') + path('M8 26 V20 a8 8 0 0 1 8 -8 H48 a8 8 0 0 1 8 8 V26 Z', '#FF8FB1') +
+      el('path', 'd="M20 6 v10 M44 6 v10"', `stroke="${INK}" stroke-width="4" stroke-linecap="round"`) + face(32, 39, 0.7),
     lockpad: () => ICONS.lock(),
   };
+
+  // ---------- badges ----------
+  // A badge picture: a scalloped medal in a colour, an icon in the middle and
+  // a little banner with a number or word. 100 badges = 100 combinations.
+  function badge(emblem, color, label) {
+    const inner = emblem in ICONS ? ICONS[emblem]() : '';
+    let out = '';
+    for (let i = 0; i < 12; i++) {
+      const a = i * Math.PI / 6;
+      out += circle((32 + 22 * Math.cos(a)).toFixed(1), (29 + 22 * Math.sin(a)).toFixed(1), 7, color);
+    }
+    out += circle(32, 29, 22.5, color, '') + circle(32, 29, 18.5, '#FFFDF7', `stroke="${INK}" stroke-width="2"`);
+    out += `<g transform="translate(17.6 14.6) scale(0.45)">${inner}</g>`;
+    const text = String(label);
+    const w = Math.max(20, 9 + text.length * 6.4);
+    out += rect(32 - w / 2, 47, w, 14, 7, '#fff') +
+      `<text x="32" y="57.6" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="10.5" fill="${INK}">${text}</text>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${out}</svg>`;
+  }
 
   const cache = {};
   const api = {
     names: Object.keys(ICONS),
     has(name) { return name in ICONS; },
+    badge,
     svg(name) {
       if (!(name in ICONS)) return '';
       if (!cache[name]) cache[name] = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${ICONS[name]()}</svg>`;
