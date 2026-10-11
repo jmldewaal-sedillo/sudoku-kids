@@ -28,7 +28,10 @@
   const PARTS = ['progress', 'settings', 'current', 'played'];
   const FIRST_ID = 'p1';
   const MAX_PROFILES = 6;
-  const AVATARS = ['🐱', '🐶', '🐸', '🐻', '🦊', '🐨', '🐯', '🐧', '🦁', '🐰', '🐼', '🐵'];
+  // Avatars are icon names (icons.js). Profiles made when avatars were still
+  // emoji are translated on load.
+  const AVATARS = ['cat', 'dog', 'frog', 'bear', 'fox', 'koala', 'tiger', 'penguin', 'lion', 'rabbit', 'panda', 'monkey'];
+  const OLD_AVATARS = { '🐱': 'cat', '🐶': 'dog', '🐸': 'frog', '🐻': 'bear', '🦊': 'fox', '🐨': 'koala', '🐯': 'tiger', '🐧': 'penguin', '🦁': 'lion', '🐰': 'rabbit', '🐼': 'panda', '🐵': 'monkey' };
 
   function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
 
@@ -67,6 +70,7 @@
       : [];
     list.forEach(p => {
       p.name = typeof p.name === 'string' ? p.name.slice(0, 12) : '';
+      if (OLD_AVATARS[p.avatar]) p.avatar = OLD_AVATARS[p.avatar];
       if (!AVATARS.includes(p.avatar)) p.avatar = AVATARS[0];
       if (!isPlainObject(p.account)) p.account = null;      // filled in when a parent links an account
     });

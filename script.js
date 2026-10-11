@@ -1,27 +1,42 @@
 /* ============================================================
    SUDOKU KIDS & CRAZY GRIDS – script.js
-   Game UI. Puzzles come from puzzles.js, texts from i18n.js.
+   Game UI. Puzzles come from puzzles.js, texts from i18n.js,
+   pictures from icons.js, saved data from storage.js.
    ============================================================ */
 'use strict';
 
 const E = window.SudokuEngine;
-
-const ANIMAL_SYMBOLS = ['🐶','🐱','🐸','🐻','🦊','🐨','🐯','🐧','🦁'];
-const FRUIT_SYMBOLS  = ['🍎','🍌','🍇','🍓','🍊','🍋','🍉','🍑','🍒'];
-const MAX_MISTAKES = 3;       // 6×6 and 9×9: three hearts. 4×4 has no game over.
-const MAX_HINTS = 3;
-const WORLD_COUNT = 3;
-const ROOT_SCREENS = ['splash', 'worlds'];   // "back" leaves the app from here
-
+const K = window.KawaiiIcons;
 const Store = window.SudokuStorage;       // profiles + their data (see storage.js)
 const IS_TEST = Store.IS_TEST;            // true on the test copy (…-test folder)
 const TEST_BUILD = '';   // filled in by the test deploy (commit id), shown in the TEST label
-const PARENT_HOLD_MS = 3000;              // parent lock: hold the button this long
+
+const ANIMALS = ['dog', 'cat', 'frog', 'bear', 'fox', 'koala', 'tiger', 'penguin', 'lion'];
+const FRUITS  = ['apple', 'banana', 'grapes', 'strawberry', 'orange', 'lemon', 'watermelon', 'peach', 'cherry'];
+const MAX_MISTAKES = 3;       // 6×6 and 9×9: three hearts. 4×4 has no game over.
+const MAX_HINTS = 3;
+const ROOT_SCREENS = ['splash', 'worlds'];   // "back" leaves the app from here
+
+// Worlds in the order they are shown (easy → hard). `id` is the number used in
+// saved progress ('w<id>_l<index>') and never changes; `after` is the world
+// that has to be played first.
+const WORLDS = [
+  { id: 0, icon: 'tree',     cls: 'world-forest', after: null },
+  { id: 3, icon: 'barn',     cls: 'world-farm',   after: 0 },
+  { id: 1, icon: 'lollipop', cls: 'world-candy',  after: 0 },
+  { id: 4, icon: 'palm',     cls: 'world-jungle', after: 1 },
+  { id: 2, icon: 'rocket',   cls: 'world-space',  after: 1 },
+];
+const UNLOCK_LEVELS = 17;     // levels to finish in the world before (was "half of 35")
+
+// Parent lock: press and hold twice, each HOLD_MS, the second within HOLD_WINDOW_MS.
+const HOLD_MS = 1500;
+const HOLD_WINDOW_MS = 5000;
 
 // ============================================================
 // STATE
 // ============================================================
-const DEFAULT_SETTINGS = { sound: true, language: 'nl', highlightErrors: true, displayMode: 'numbers', size: 'normal' };
+const DEFAULT_SETTINGS = { sound: true, music: true, click: true, language: 'nl', highlightErrors: true, displayMode: 'numbers', size: 'normal' };
 const SIZES = {               // "Grootte" in the settings: how much of the screen the grid may use
   small:  { factor: 0.78, cap: 440 },
   normal: { factor: 1,    cap: 720 },
@@ -35,8 +50,30 @@ let currentScreen = 'splash';
 let currentWorld = 0;
 let gameState = null;
 
-const LEVELS = E.LEVEL_PLAN;  // 105 level definitions (world, size, type, seed)
+const LEVELS = E.LEVEL_PLAN;  // all level definitions (world, size, type, …)
 const reducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const $ = id => document.getElementById(id);
+
+// ============================================================
+// PICTURES
+// ============================================================
+function icon(name, cls = '') { return `<span class="ki ${cls}" aria-hidden="true">${K.svg(name)}</span>`; }
+function applyIcons(root = document) {
+  root.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = K.svg(el.dataset.icon); });
+}
+function starsHtml(n, max = 3) { return icon('star').repeat(n) + icon('star-empty').repeat(max - n); }
+// A tiny drawing of a 4×4, 6×6 or 9×9 grid: tells the grid size without reading.
+function gridPic(size) {
+  const [br, bc] = E.boxDims(size);
+  let thin = '', thick = '';
+  for (let i = 1; i < size; i++) {
+    if (i % bc === 0) thick += `M${i} 0V${size}`; else thin += `M${i} 0V${size}`;
+    if (i % br === 0) thick += `M0 ${i}H${size}`; else thin += `M0 ${i}H${size}`;
+  }
+  return `<svg class="grid-pic" viewBox="-0.5 -0.5 ${size + 1} ${size + 1}" aria-hidden="true">` +
+    `<rect x="0" y="0" width="${size}" height="${size}" rx="${size * 0.08}" fill="#fff" stroke="#3D2C6B" stroke-width="${size * 0.07}"/>` +
+    `<path d="${thin}" stroke="#B9AED1" stroke-width="${size * 0.03}"/><path d="${thick}" stroke="#3D2C6B" stroke-width="${size * 0.06}"/></svg>`;
+}
 
 // ============================================================
 // I18N
@@ -81,14 +118,13 @@ function loadProfile(id, inherit) {
   if (!STRINGS[settings.language]) settings.language = 'nl';
   if (settings.displayMode !== 'animals') settings.displayMode = 'numbers';
   if (!SIZES[settings.size]) settings.size = 'normal';
+  ['sound', 'music', 'click', 'highlightErrors'].forEach(k => { settings[k] = settings[k] !== false; });
   applySize();
+  syncMusic();
 }
 function applySize() {
   document.body.classList.remove('ui-small', 'ui-normal', 'ui-large');
   document.body.classList.add('ui-' + settings.size);
-}
-function starsIn(prog) {
-  return isPlainObject(prog) ? Object.values(prog).reduce((s, v) => s + ((v && v.stars) || 0), 0) : 0;
 }
 
 function levelKey(w, i)     { return `w${w}_l${i}`; }
@@ -98,36 +134,104 @@ function getTotalStars()    { return LEVELS.reduce((s, l) => s + getLevelStars(l
 function getWorldStars(w)   { return worldLevels(w).reduce((s, l) => s + getLevelStars(w, l.indexInWorld), 0); }
 function getWorldCompleted(w) { return worldLevels(w).filter(l => getLevelStars(w, l.indexInWorld) > 0).length; }
 function isWorldUnlocked(w) {
-  if (w === 0) return true;
-  return getWorldCompleted(w - 1) >= Math.floor(worldLevels(w - 1).length * 0.5);
+  const world = WORLDS.find(x => x.id === w);
+  return !world || world.after === null || getWorldCompleted(world.after) >= UNLOCK_LEVELS;
 }
-function isLevelUnlocked(w, i) { return i === 0 || getLevelStars(w, i - 1) > 0; }
+// A level is open if the one before it is finished, or if it is the first
+// level of a new grid size (so a child that is stuck can always try the
+// other size).
+function isLevelUnlocked(w, i) {
+  if (i === 0 || getLevelStars(w, i - 1) > 0) return true;
+  const levels = worldLevels(w);
+  return levels[i].size !== levels[i - 1].size;
+}
 
 // ============================================================
-// AUDIO (Web Audio API – generated bloops, no files)
+// AUDIO (Web Audio API – everything is generated, no files)
+//   sound effects  settings.sound   right / wrong / hint / win
+//   click          settings.click   a soft tick on every button
+//   music          settings.music   a calm tune that loops
 // ============================================================
 let audioCtx = null;
-function playTone(freq, type = 'sine', duration = 0.12, gain = 0.25) {
-  if (!settings.sound) return;
+function audio() {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.connect(g); g.connect(audioCtx.destination);
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, audioCtx.currentTime + duration * 0.6);
-    g.gain.setValueAtTime(gain, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-    osc.start(); osc.stop(audioCtx.currentTime + duration);
-  } catch (e) { /* audio not available */ }
+    return audioCtx;
+  } catch (e) { return null; }           // audio not available
 }
-const playBloop   = () => playTone(440, 'sine', 0.1, 0.18);
-const playPlace   = () => playTone(620, 'sine', 0.12, 0.2);
-const playError   = () => playTone(200, 'triangle', 0.25, 0.2);
-const playHint    = () => playTone(660, 'sine', 0.18, 0.22);
-const playWin     = () => [523, 587, 659, 784, 880, 1047].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.16, 0.25), i * 70));
+function tone(dest, freq, type, start, duration, gain, glide = 1) {
+  const ctx = audioCtx;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.connect(g); g.connect(dest);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+  if (glide !== 1) osc.frequency.exponentialRampToValueAtTime(freq * glide, start + duration * 0.6);
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(gain, start + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  osc.start(start); osc.stop(start + duration + 0.02);
+}
+function playTone(freq, type = 'sine', duration = 0.12, gain = 0.25) {
+  if (!settings.sound) return;
+  const ctx = audio();
+  if (ctx) tone(ctx.destination, freq, type, ctx.currentTime, duration, gain, 1.5);
+}
+const playPlace = () => playTone(620, 'sine', 0.12, 0.2);
+const playError = () => playTone(200, 'triangle', 0.25, 0.2);
+const playHint  = () => playTone(660, 'sine', 0.18, 0.22);
+const playWin   = () => [523, 587, 659, 784, 880, 1047].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.16, 0.25), i * 70));
+function playClick() {
+  if (!settings.click) return;
+  const ctx = audio();
+  if (ctx) tone(ctx.destination, 880, 'triangle', ctx.currentTime, 0.045, 0.07);
+}
+
+// ---------- Music: a calm, happy 8-bar tune in C, made of soft sine notes ----------
+const NOTE = { C3: 130.81, F3: 174.61, G3: 196, A3: 220, C4: 261.63, D4: 293.66, E4: 329.63, G4: 392, A4: 440, C5: 523.25, D5: 587.33, E5: 659.25 };
+const MUSIC_BEAT = 0.6;                  // seconds per beat (100 bpm)
+const MUSIC_VOLUME = 0.05;               // soft: far below the sound effects
+// One entry per beat: melody note (or null = rest) – 32 beats, then it starts again.
+const MELODY = [
+  'E4', 'G4', 'C5', 'G4',   'A4', 'G4', 'E4', null,   'D4', 'E4', 'G4', 'E4',   'D4', 'C4', null, null,
+  'E4', 'G4', 'C5', 'D5',   'E5', 'D5', 'C5', null,   'A4', 'C5', 'G4', 'E4',   'D4', 'C4', null, null,
+];
+const BASS = ['C3', 'A3', 'G3', 'C3', 'C3', 'A3', 'F3', 'G3'];   // one per bar (4 beats)
+const music = { on: false, started: false, step: 0, next: 0, timer: null, gain: null };
+let userHasTapped = false;               // browsers only allow sound after the first tap
+
+function scheduleMusic() {
+  const ctx = audioCtx;
+  while (music.next < ctx.currentTime + 0.5) {
+    const note = MELODY[music.step];
+    if (note) tone(music.gain, NOTE[note], 'sine', music.next, MUSIC_BEAT * 1.6, 0.9);
+    if (music.step % 4 === 0) tone(music.gain, NOTE[BASS[music.step / 4]], 'triangle', music.next, MUSIC_BEAT * 3.8, 0.5);
+    music.step = (music.step + 1) % MELODY.length;
+    music.next += MUSIC_BEAT;
+  }
+}
+// Starts or stops the music so that it matches the setting and the situation.
+function syncMusic() {
+  const want = settings.music && userHasTapped && !document.hidden;
+  if (want === music.on) return;
+  if (!want) {
+    music.on = false;
+    clearInterval(music.timer);
+    if (music.gain) music.gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.08);   // fade out what is still sounding
+    return;
+  }
+  const ctx = audio();
+  if (!ctx) return;
+  if (!music.gain) { music.gain = ctx.createGain(); music.gain.connect(ctx.destination); }
+  music.gain.gain.cancelScheduledValues(ctx.currentTime);
+  music.gain.gain.setTargetAtTime(MUSIC_VOLUME, ctx.currentTime, 0.2);
+  music.next = ctx.currentTime + 0.1;    // continues at the note where it stopped
+  music.on = true;
+  music.started = true;
+  scheduleMusic();
+  music.timer = setInterval(scheduleMusic, 150);
+}
 
 // ============================================================
 // MASCOT
@@ -146,12 +250,11 @@ function showMascotMessage(text) {
   clearTimeout(mascotTimeout);
   mascotTimeout = setTimeout(() => bubble.classList.remove('show'), 3500);
 }
-function updateMascotVisibility() {
-  document.getElementById('mascot').classList.toggle('hidden', !['worlds', 'levels'].includes(currentScreen));
+// The bottom bar: talking cat on the left, the player's avatar on the right.
+function updateBottomBar() {
+  $('mascot').classList.toggle('hidden', !['worlds', 'levels'].includes(currentScreen));
   const me = Store.profile(profileId);
-  document.getElementById('mascot-avatar').textContent = me ? me.avatar : '';
-  // The cat itself is the mascot; the small badge shows who is playing (not needed if that is the cat too).
-  document.getElementById('mascot-avatar').classList.toggle('hidden', !me || (me.avatar === '🐱' && Store.profiles().length === 1));
+  $('btn-avatar').innerHTML = K.svg(me ? me.avatar : 'cat');
 }
 
 // Restart a short CSS animation on an element.
@@ -166,9 +269,10 @@ function flash(el, cls, ms = 500) {
 // ============================================================
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + id).classList.add('active');
+  $('screen-' + id).classList.add('active');
   currentScreen = id;
-  updateMascotVisibility();
+  document.querySelectorAll('.mascot-bubble').forEach(bubble => bubble.classList.remove('show'));   // no stale message on the next screen
+  updateBottomBar();
   armBackButton();
 }
 function goToWorlds() {
@@ -181,8 +285,8 @@ function goToLevels(w) {
   stopTimer();
   currentWorld = w;
   showScreen('levels');
-  document.getElementById('levels-world-title').textContent = t('world' + w);
-  document.getElementById('world-total-stars').textContent = getWorldStars(w);
+  $('levels-world-title').textContent = t('world' + w);
+  $('world-total-stars').textContent = getWorldStars(w);
   buildLevelsGrid(w);
 }
 function goToSettings() {
@@ -210,68 +314,114 @@ function armBackButton() {
 function goBack() {
   const modal = document.querySelector('.modal:not(.hidden)');
   if (modal) {
+    resetHold();
     hideModals();
     if (modal.id === 'modal-win' || modal.id === 'modal-gameover') goToLevels(gameState.lv.world);
     return true;
   }
   if (currentScreen === 'game') { leaveGame(); return true; }
-  if (currentScreen === 'levels' || currentScreen === 'settings' || currentScreen === 'profiles') { goToWorlds(); return true; }
+  if (currentScreen === 'profile') { leaveProfilePage(); return true; }
+  if (['levels', 'settings', 'profiles'].includes(currentScreen)) { goToWorlds(); return true; }
   return false;
 }
 
 // ============================================================
 // WORLDS
 // ============================================================
+function sizesOf(w) {        // { 4: 50, 6: 50 } – how many levels per grid size
+  const out = {};
+  worldLevels(w).forEach(l => { out[l.size] = (out[l.size] || 0) + 1; });
+  return out;
+}
+function buildWorlds() {
+  const box = $('worlds-container');
+  box.innerHTML = '';
+  WORLDS.forEach(({ id, icon: pic, cls }) => {
+    const sizes = sizesOf(id);
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'world-card ' + cls;
+    card.id = 'world-card-' + id;
+    card.dataset.world = id;
+    card.innerHTML =
+      `<span class="world-emoji" aria-hidden="true">${K.svg(pic)}</span>` +
+      '<span class="world-info">' +
+        `<span class="world-name" data-i18n="world${id}"></span>` +
+        '<span class="world-sizes">' + Object.keys(sizes).map(s =>
+          `<span class="size-chip" data-size="${s}">${gridPic(+s)}<b>${sizes[s]}</b><span class="size-x">${s}×${s}</span></span>`).join('') + '</span>' +
+        `<span class="progress-bar"><span class="progress-fill" id="world-${id}-progress"></span></span>` +
+        `<span class="progress-text" id="world-${id}-text"></span>` +
+      '</span>' +
+      `<span class="world-stars" id="world-${id}-stars"></span>` +
+      `<span class="world-lock" aria-hidden="true" id="world-${id}-lock">${K.svg('lock')}</span>`;
+    card.addEventListener('click', () => {
+      if (!isWorldUnlocked(id)) {
+        playError();
+        flash(card, 'shake');
+        showMascotMessage(t('mLocked'));
+        return;
+      }
+      goToLevels(id);
+    });
+    box.appendChild(card);
+  });
+}
 function updateWorldsUI() {
-  document.getElementById('total-stars-display').textContent = getTotalStars();
-  for (let w = 0; w < WORLD_COUNT; w++) {
-    const total = worldLevels(w).length;
-    const done = getWorldCompleted(w);
-    const locked = !isWorldUnlocked(w);
-    const card = document.getElementById(`world-card-${w}`);
-    document.getElementById(`world-${w}-progress`).style.width = Math.round(done / total * 100) + '%';
-    document.getElementById(`world-${w}-text`).textContent = `${done}/${total}`;
-    document.getElementById(`world-${w}-lock`).style.display = locked ? 'flex' : 'none';
+  $('total-stars-display').textContent = getTotalStars();
+  WORLDS.forEach(({ id }) => {
+    const total = worldLevels(id).length;
+    const done = getWorldCompleted(id);
+    const locked = !isWorldUnlocked(id);
+    const card = $(`world-card-${id}`);
+    $(`world-${id}-progress`).style.width = Math.round(done / total * 100) + '%';
+    $(`world-${id}-text`).textContent = `${done}/${total}`;
+    $(`world-${id}-lock`).style.display = locked ? 'flex' : 'none';
     card.classList.toggle('locked', locked);
     card.setAttribute('aria-disabled', String(locked));
-    const filled = Math.round(getWorldStars(w) / (total * 3) * 3);
-    document.getElementById(`world-${w}-stars`).textContent = '⭐'.repeat(filled) + '☆'.repeat(3 - filled);
-  }
+    const filled = Math.round(getWorldStars(id) / (total * 3) * 3);
+    $(`world-${id}-stars`).innerHTML = starsHtml(filled);
+    $(`world-${id}-stars`).dataset.stars = filled;
+  });
 }
 
 // ============================================================
 // LEVEL SELECT
 // ============================================================
 function buildLevelsGrid(w) {
-  const grid = document.getElementById('levels-grid');
+  const grid = $('levels-grid');
   grid.innerHTML = '';
+  let lastSize = 0;
   worldLevels(w).forEach(lv => {
     const i = lv.indexInWorld;
+    if (lv.size !== lastSize) {                 // a new run of one grid size: show which
+      lastSize = lv.size;
+      const head = document.createElement('div');
+      head.className = 'levels-section';
+      head.innerHTML = `${gridPic(lv.size)}<span>${lv.size}×${lv.size}</span>`;
+      grid.appendChild(head);
+    }
     const stars = getLevelStars(w, i);
     const unlocked = isLevelUnlocked(w, i);
     const btn = document.createElement('button');
     btn.className = 'level-btn type-' + lv.type;
-    btn.innerHTML = '<span class="level-type-dot"></span>';
-    btn.setAttribute('aria-label', `${t('level')} ${i + 1}` + (stars ? `, ${stars}/3 ⭐` : ''));
+    btn.dataset.level = i;
+    btn.setAttribute('aria-label', `${t('level')} ${i + 1}` + (stars ? `, ${stars}/3` : ''));
 
     if (!unlocked) {
       btn.classList.add('locked');
       btn.disabled = true;
-      btn.innerHTML += '<span class="level-lock-icon">🔒</span>';
+      btn.innerHTML = `<span class="level-lock-icon">${K.svg('lock')}</span>`;
     } else {
       btn.classList.add(stars > 0 ? 'completed' : 'current');
-      btn.innerHTML += `<span class="level-number">${i + 1}</span>`;
-      if (stars > 0) btn.innerHTML += `<span class="level-stars-small">${'⭐'.repeat(stars)}</span>`;
-      else {
-        const icon = lv.type === 'shapes' ? '🍓' : lv.type === 'xsudoku' ? '✖️' : `${lv.size}×${lv.size}`;
-        btn.innerHTML += `<span class="level-sub">${icon}</span>`;
-      }
-      btn.addEventListener('click', () => { playBloop(); startLevel(lv.globalIndex); });
+      const mark = lv.type === 'shapes' ? K.svg('strawberry') : lv.type === 'xsudoku' ? '<b>X</b>' : '';
+      btn.innerHTML = `<span class="level-type-mark">${mark}</span><span class="level-number">${i + 1}</span>` +
+        `<span class="level-stars-small" data-stars="${stars}">${stars > 0 ? icon('star').repeat(stars) : ''}</span>`;
+      btn.addEventListener('click', () => startLevel(lv.globalIndex));
     }
     grid.appendChild(btn);
   });
   // Scroll the next level to play into view (scroll the screen itself, never the page).
-  const screen = document.getElementById('screen-levels');
+  const screen = $('screen-levels');
   const current = grid.querySelector('.level-btn.current');
   screen.scrollTop = current ? Math.max(0, current.offsetTop - screen.clientHeight / 2) : 0;
 }
@@ -282,29 +432,27 @@ function buildLevelsGrid(w) {
 function mistakeLimit(lv) { return lv.size === 4 ? Infinity : MAX_MISTAKES; }
 
 // ---------- Which puzzle? ----------
-// Every level has its own first puzzle ('L<level>', the one it always had).
-// After that, each new start gives another puzzle from the level's difficulty
-// band, one this profile has not had yet. Only when the band is used up do
-// puzzles come back.
-function legacyId(globalIndex) { return 'L' + globalIndex; }
+// Every level has its own first puzzle (E.ownId). After that, each new start
+// gives another puzzle from the level's difficulty band, one this profile has
+// not had yet. Only when the band is used up do puzzles come back.
 function puzzleById(pid, globalIndex) {
-  return (pid && pid !== legacyId(globalIndex) && E.getVariant(pid)) || E.getPuzzle(globalIndex);
+  return (pid && pid !== E.ownId(globalIndex) && E.getVariant(pid)) || E.getPuzzle(globalIndex);
 }
 function nextPuzzleId(globalIndex) {
   const lv = LEVELS[globalIndex];
   const band = E.levelBand(globalIndex);
-  const own = legacyId(globalIndex);
+  const own = E.ownId(globalIndex);
   if (!Array.isArray(played[band])) played[band] = [];
   const had = played[band];
   // Finished before profiles kept track of puzzles: the level's own puzzle has been played.
   if (getLevelStars(lv.world, lv.indexInWorld) > 0 && !had.includes(own)) had.push(own);
   let pid = own;
   if (had.includes(own)) {
-    const pool = E.bankOf(band).map(p => p.id);
+    const pool = E.poolOf(band).map(p => p.id);
     let fresh = pool.filter(id => !had.includes(id));
     if (!fresh.length && pool.length) {            // band used up: start again, but not with the last one
       const last = had[had.length - 1];
-      played[band] = had.filter(id => id[0] === 'L');
+      played[band] = had.filter(id => !pool.includes(id));
       fresh = pool.length > 1 ? pool.filter(id => id !== last) : pool;
     }
     if (fresh.length) pid = fresh[Math.floor(Math.random() * fresh.length)];
@@ -339,9 +487,9 @@ function startLevel(globalIndex, fresh) {
   if (saved) restoreCurrent(saved); else clearCurrent();
 
   showScreen('game');
-  document.getElementById('screen-game').className = `screen active size-${lv.size}`;
-  document.getElementById('game-level-label').textContent = `${t('level')} ${lv.indexInWorld + 1}`;
-  document.getElementById('game-type-badge').textContent =
+  $('screen-game').className = `screen active size-${lv.size}`;
+  $('game-level-label').textContent = `${t('level')} ${lv.indexInWorld + 1}`;
+  $('game-type-badge').textContent =
     lv.type === 'xsudoku' ? t('typeX') : lv.type === 'shapes' ? t('typeShapes') : t('typeStandard');
   setNotesMode(false);
   updateStats();
@@ -358,19 +506,22 @@ function startLevel(globalIndex, fresh) {
 
 function updateStats() {
   const gs = gameState;
-  const lives = document.getElementById('lives-display');
+  const lives = $('lives-display');
+  delete lives.dataset.stars; delete lives.dataset.lives;
   if (gs.maxMistakes === Infinity) {
     // 4×4: no game over, the stars you will get are shown instead.
     const stars = calcStars(gs.mistakes, gs.hintsUsed);
-    lives.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-    lives.setAttribute('aria-label', `${stars}/3 ⭐`);
+    lives.innerHTML = starsHtml(stars);
+    lives.dataset.stars = stars;
+    lives.setAttribute('aria-label', `${stars}/3`);
   } else {
     const left = Math.max(0, gs.maxMistakes - gs.mistakes);
-    lives.textContent = '❤️'.repeat(left) + '🤍'.repeat(gs.maxMistakes - left);
+    lives.innerHTML = icon('heart').repeat(left) + icon('heart-empty').repeat(gs.maxMistakes - left);
+    lives.dataset.lives = left;
     lives.setAttribute('aria-label', `${t('mistakes')}: ${gs.mistakes}/${gs.maxMistakes}`);
   }
-  document.getElementById('hint-count').textContent = MAX_HINTS - gs.hintsUsed;
-  document.getElementById('btn-hint').disabled = gs.hintsUsed >= MAX_HINTS;
+  $('hint-count').textContent = MAX_HINTS - gs.hintsUsed;
+  $('btn-hint').disabled = gs.hintsUsed >= MAX_HINTS;
 }
 
 // ---------- Unfinished game: saved after every move ----------
@@ -388,12 +539,12 @@ function clearCurrent() { Store.remove(profileId, 'current'); }
 function savedGameFor(globalIndex) {
   const lv = LEVELS[globalIndex], s = Store.read(profileId, 'current');
   if (!isPlainObject(s) || s.i !== globalIndex) return null;
-  const pid = typeof s.pid === 'string' ? s.pid : legacyId(globalIndex);   // saved before puzzle variants existed
+  const pid = typeof s.pid === 'string' ? s.pid : E.ownId(globalIndex);   // saved before puzzle variants existed
+  if (pid !== E.ownId(globalIndex) && !E.getVariant(pid)) return null;
   const given = puzzleById(pid, globalIndex).given;
   const n = given.length;
   const isList = a => Array.isArray(a) && a.length === n;
   const inRange = v => Number.isInteger(v) && v >= 0 && v <= lv.size;
-  if (pid !== legacyId(globalIndex) && !E.getVariant(pid)) return null;
   if (!isList(s.grid) || !isList(s.notes) || !isList(s.tried)) return null;
   if (!s.grid.every((v, i) => inRange(v) && (given[i] === 0 || v === given[i]))) return null;
   if (![...s.notes, ...s.tried].every(a => Array.isArray(a) && a.every(inRange))) return null;
@@ -415,13 +566,11 @@ function restoreCurrent(s) {
 // ============================================================
 // GRID
 // ============================================================
-function buildGrid() {
-  const { size, type } = gameState;
-  const gridEl = document.getElementById('sudoku-grid');
+// How large one cell of a size×size grid is with the current layout and the
+// "Grootte" setting. Also resets the grid box so the free space can be measured.
+function measureCell(size) {
+  const gridEl = $('sudoku-grid');
   const container = document.querySelector('.grid-container');
-  gridEl.innerHTML = '';
-
-  // Measure the free space the layout leaves for the grid.
   gridEl.style.width = gridEl.style.height = '0px';
   container.style.width = '';
   const box = container.getBoundingClientRect();
@@ -430,19 +579,26 @@ function buildGrid() {
   const sideBySide = window.matchMedia('(orientation: landscape)').matches;
   if (sideBySide) {
     // Side by side: the grid may use what the button column (min. 300 px) leaves over.
-    const screen = document.getElementById('screen-game');
+    const screen = $('screen-game');
     const cs = getComputedStyle(screen);
     freeWidth = screen.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 300 - 3 * (parseFloat(cs.columnGap) || 0);
   }
   const { factor, cap } = SIZES[settings.size] || SIZES.normal;
   const avail = Math.max(160, Math.min((freeWidth - pad) * factor, (box.height - pad) * factor, cap));
-  const cellSize = Math.floor(avail / size);
+  return { cellSize: Math.floor(avail / size), pad, sideBySide, container, gridEl };
+}
+function cellFont(cellSize, size) { return Math.max(14, Math.floor(cellSize * (size === 9 ? 0.6 : 0.5))); }
 
+function buildGrid() {
+  const { size, type } = gameState;
+  const { cellSize, pad, sideBySide, container, gridEl } = measureCell(size);
+  gridEl.innerHTML = '';
   gridEl.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
   gridEl.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
   gridEl.style.width = gridEl.style.height = (cellSize * size) + 'px';
   container.style.width = sideBySide ? (cellSize * size + pad) + 'px' : '';   // its column is exactly this wide
-  gridEl.style.setProperty('--cell-font', Math.max(14, Math.floor(cellSize * (size === 9 ? 0.6 : 0.5))) + 'px');
+  gridEl.style.setProperty('--cell-font', cellFont(cellSize, size) + 'px');
+  gridEl.style.setProperty('--cell-pic', Math.floor(cellSize * 0.74) + 'px');
   gridEl.style.setProperty('--note-font', Math.max(7, Math.floor(cellSize / (size === 4 ? 4 : 3.6))) + 'px');
   gridEl.style.setProperty('--note-cols', size === 4 ? 2 : 3);
 
@@ -468,11 +624,15 @@ function baseClasses(size, type) {
   });
 }
 
+// What a value looks like: a number, or a picture (fruit levels / animal mode). Returns HTML.
+function symbolsInUse() {
+  if (gameState.type === 'shapes') return FRUITS;
+  return settings.displayMode === 'animals' ? ANIMALS : null;
+}
 function getDisplayValue(num) {
   if (!num) return '';
-  if (gameState.type === 'shapes') return FRUIT_SYMBOLS[num - 1];
-  if (settings.displayMode === 'animals') return ANIMAL_SYMBOLS[num - 1];
-  return String(num);
+  const symbols = symbolsInUse();
+  return symbols ? K.svg(symbols[num - 1]) : String(num);
 }
 
 // The grid with only the correct values (wrong tries left out).
@@ -495,7 +655,8 @@ function renderGrid() {
   const sel = gs.selected;
   const selVal = sel >= 0 ? gs.grid[sel] : 0;
   const related = sel >= 0 ? new Set(gs.rcbPeers[sel]) : null;
-  const cells = document.getElementById('sudoku-grid').children;
+  const cells = $('sudoku-grid').children;
+  const pictures = !!symbolsInUse();
 
   // New player: point at a cell to tap, then at the number buttons.
   const guiding = gs.guide && !gs.isComplete;
@@ -503,13 +664,14 @@ function renderGrid() {
     gs.guideCell = Math.min(...E.findSingles(correctGrid(), gs.size, gs.type === 'xsudoku').keys());
   }
   const selOpen = sel >= 0 && gs.grid[sel] !== gs.solution[sel];
-  document.getElementById('numpad').classList.toggle('nudge-pad', guiding && selOpen);
+  $('numpad').classList.toggle('nudge-pad', guiding && selOpen);
 
   for (let idx = 0; idx < cells.length; idx++) {
     const cell = cells[idx];
     const val = gs.grid[idx];
     const isGiven = gs.given[idx] !== 0;
     const isWrong = !isGiven && val !== 0 && val !== gs.solution[idx];
+    const nudge = guiding && sel < 0 && idx === gs.guideCell;
     let cls = gs.cellBase[idx];
     if (isGiven) cls += ' given';
     if (val !== gs.solution[idx]) cls += ' open';
@@ -517,45 +679,48 @@ function renderGrid() {
     else if (selVal && val === selVal) cls += ' same-num';
     else if (related && related.has(idx)) cls += ' highlighted';
     if (isWrong && settings.highlightErrors) cls += ' error';
-    if (guiding && sel < 0 && idx === gs.guideCell) cls += ' nudge';
+    if (nudge) cls += ' nudge';
     if (cell.className.replace(/ (shake|correct-flash)/g, '') !== cls) cell.className = cls;
 
     let html = '';
     if (val) {
-      html = `<span class="cell-content">${getDisplayValue(val)}</span>`;
+      html = `<span class="cell-content${pictures ? ' pic' : ''}">${getDisplayValue(val)}</span>`;
     } else if (gs.notes[idx].size) {
       html = '<div class="cell-notes">';
       for (let n = 1; n <= gs.size; n++) html += `<span class="note-num">${gs.notes[idx].has(n) ? getDisplayValue(n) : ''}</span>`;
       html += '</div>';
+    } else if (nudge) {
+      html = `<span class="nudge-hand">${K.svg('hand')}</span>`;
     }
     if (cell._html !== html) { cell.innerHTML = html; cell._html = html; }
 
     const r = Math.floor(idx / gs.size) + 1, c = idx % gs.size + 1;
-    const label = `${t('row')} ${r}, ${t('col')} ${c}: ${val ? getDisplayValue(val) : t('empty')}`;
+    const label = `${t('row')} ${r}, ${t('col')} ${c}: ${val || t('empty')}`;
     if (cell._label !== label) { cell.setAttribute('aria-label', label); cell._label = label; }
   }
 }
 
-function flashCell(idx, cls) { flash(document.getElementById('sudoku-grid').children[idx], cls); }
+function flashCell(idx, cls) { flash($('sudoku-grid').children[idx], cls); }
 
 // ============================================================
 // NUMPAD
 // ============================================================
 function buildNumPad() {
-  const pad = document.getElementById('numpad');
+  const pad = $('numpad');
   pad.innerHTML = '';
   pad.style.setProperty('--pad-cols', gameState.size === 6 ? 4 : 5);
   for (let n = 1; n <= gameState.size; n++) {
     const btn = document.createElement('button');
     btn.className = 'num-btn';
     btn.dataset.num = n;
-    btn.textContent = getDisplayValue(n);
+    btn.innerHTML = getDisplayValue(n);
+    btn.setAttribute('aria-label', String(n));
     btn.addEventListener('click', () => onNumPress(n));
     pad.appendChild(btn);
   }
   const eraseBtn = document.createElement('button');
   eraseBtn.className = 'num-btn erase-btn';
-  eraseBtn.textContent = '🧹';
+  eraseBtn.innerHTML = K.svg('eraser');
   eraseBtn.setAttribute('aria-label', t('erase'));
   eraseBtn.addEventListener('click', onErase);
   pad.appendChild(eraseBtn);
@@ -576,14 +741,13 @@ function updateNumPadCompletion() {
 // ============================================================
 function onCellClick(idx) {
   if (!gameState || gameState.isComplete) return;
-  playBloop();
   gameState.selected = idx;
   renderGrid();
 }
 
 // Nothing useful is selected: show (without words) which cells can be tapped.
 function pointAtOpenCells() {
-  flash(document.getElementById('sudoku-grid'), 'wake', 900);
+  flash($('sudoku-grid'), 'wake', 900);
   showMascotMessage(t('mTap'));
 }
 
@@ -598,7 +762,6 @@ function onNumPress(num) {
     const notes = gs.notes[idx];
     notes.has(num) ? notes.delete(num) : notes.add(num);
     gs.dirty = true;
-    playBloop();
     renderGrid();
     saveCurrent();
     return;
@@ -644,17 +807,16 @@ function onErase() {
   gs.grid[idx] = 0;
   gs.notes[idx].clear();
   gs.dirty = true;
-  playBloop();
   renderGrid();
   saveCurrent();
 }
 
 function setNotesMode(on) {
   gameState.isNotesMode = on;
-  const btn = document.getElementById('btn-notes');
+  const btn = $('btn-notes');
   btn.classList.toggle('active-mode', on);
   btn.setAttribute('aria-pressed', String(on));
-  document.getElementById('numpad').classList.toggle('notes-mode', on);
+  $('numpad').classList.toggle('notes-mode', on);
 }
 
 function giveHint() {
@@ -720,7 +882,7 @@ function startTimer() {
 }
 function stopTimer() { if (gameState) clearInterval(gameState.timerInterval); }
 function formatTime(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
-function updateTimerDisplay() { document.getElementById('game-timer').textContent = formatTime(gameState.timerSecs); }
+function updateTimerDisplay() { $('game-timer').textContent = formatTime(gameState.timerSecs); }
 
 // ============================================================
 // WIN / GAME OVER
@@ -733,14 +895,15 @@ function calcStars(mistakes, hints) {
 
 function showWin(stars) {
   const gs = gameState, lv = gs.lv;
-  document.getElementById('win-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-  document.getElementById('win-stars').setAttribute('aria-label', `${stars}/3 ⭐`);
-  document.getElementById('win-time').textContent = formatTime(gs.timerSecs);
-  document.getElementById('win-mistakes').textContent = gs.mistakes;
-  document.getElementById('win-hints').textContent = gs.hintsUsed;
-  document.getElementById('win-title').textContent = pick('mWin');
+  $('win-stars').innerHTML = starsHtml(stars);
+  $('win-stars').dataset.stars = stars;
+  $('win-stars').setAttribute('aria-label', `${stars}/3`);
+  $('win-time').textContent = formatTime(gs.timerSecs);
+  $('win-mistakes').textContent = gs.mistakes;
+  $('win-hints').textContent = gs.hintsUsed;
+  $('win-title').textContent = pick('mWin');
   const isLast = lv.indexInWorld >= worldLevels(lv.world).length - 1;
-  document.getElementById('btn-win-next').style.display = isLast ? 'none' : 'block';
+  $('btn-win-next').style.display = isLast ? 'none' : '';
 
   showModal('win');
   playWin();
@@ -754,9 +917,10 @@ function showGameOver() {
 
 function showModal(name) {
   hideModals();
-  const modal = document.getElementById('modal-' + name);
+  const modal = $('modal-' + name);
   modal.classList.remove('hidden');
   document.querySelectorAll('.screen').forEach(s => { s.inert = true; });
+  $('mascot').inert = true;
   const first = [...modal.querySelectorAll('button')].find(b => b.style.display !== 'none');
   if (first) first.focus({ preventScroll: true });
   armBackButton();
@@ -764,10 +928,11 @@ function showModal(name) {
 function hideModals() {
   document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
   document.querySelectorAll('.screen').forEach(s => { s.inert = false; });
+  $('mascot').inert = false;
 }
 
 function launchConfetti() {
-  const container = document.getElementById('confetti-container');
+  const container = $('confetti-container');
   container.innerHTML = '';
   if (reducedMotion.matches) return;
   const colors = ['#FF6B9D', '#FFD93D', '#6BCFB5', '#6BB8FF', '#C77DFF', '#FF9F43'];
@@ -790,20 +955,21 @@ function launchConfetti() {
 // ============================================================
 function updateDisplayToggle() {
   // The button shows what you get when you tap it.
-  const btn = document.getElementById('btn-display');
+  const btn = $('btn-display');
   const other = settings.displayMode === 'numbers' ? 'animals' : 'numbers';
   btn.classList.toggle('hidden', gameState.type === 'shapes');
-  btn.textContent = other === 'animals' ? '🐶' : '123';
+  btn.innerHTML = other === 'animals' ? K.svg('dog') : '123';
+  btn.dataset.shows = other;
   btn.classList.toggle('as-text', other === 'numbers');
   btn.setAttribute('aria-label', t(other));
 }
 function setDisplayMode(mode) {
   settings.displayMode = mode;
   saveSettings();
-  playBloop();
   if (!gameState) return;
   updateDisplayToggle();
   buildNumPad();
+  document.querySelectorAll('#sudoku-grid > *').forEach(c => { c._html = undefined; });
   renderGrid();
 }
 
@@ -811,119 +977,216 @@ function setDisplayMode(mode) {
 // SETTINGS
 // ============================================================
 function syncSettingsUI() {
-  document.getElementById('setting-sound').checked = settings.sound;
-  document.getElementById('setting-language').value = settings.language;
-  document.getElementById('setting-highlight-errors').checked = settings.highlightErrors;
+  $('setting-sound').checked = settings.sound;
+  $('setting-music').checked = settings.music;
+  $('setting-click').checked = settings.click;
+  $('setting-language').value = settings.language;
+  $('setting-highlight-errors').checked = settings.highlightErrors;
   document.querySelectorAll('.size-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.size === settings.size);
     b.setAttribute('aria-pressed', String(b.dataset.size === settings.size));
   });
+  renderSizePreview();
+}
+
+// Real number tiles, exactly as large as a cell of a 4×4, 6×6 and 9×9 is in
+// the game with the chosen size. The (hidden) game screen is laid out for
+// each grid size to measure it.
+function renderSizePreview() {
+  const screen = $('screen-game');
+  const pad = $('numpad');
+  const keepClass = screen.className, keepPad = pad.innerHTML;
+  const box = $('size-preview');
+  box.innerHTML = '';
+  [4, 6, 9].forEach(size => {
+    screen.className = `screen size-${size}`;
+    pad.style.setProperty('--pad-cols', size === 6 ? 4 : 5);
+    pad.innerHTML = '<button class="num-btn">1</button>'.repeat(size + 1);
+    const px = measureCell(size).cellSize;
+    const item = document.createElement('div');
+    item.className = 'size-sample';
+    item.dataset.grid = size;
+    item.dataset.px = px;
+    item.innerHTML = `<div class="sample-cell" style="width:${px}px;height:${px}px;font-size:${cellFont(px, size)}px">${Math.min(size, 5)}</div>` +
+                     `<div class="sample-label">${gridPic(size)}<span>${size}×${size}</span></div>`;
+    box.appendChild(item);
+  });
+  screen.className = keepClass;
+  pad.innerHTML = keepPad;
 }
 
 // ============================================================
-// PARENT LOCK – hold the button for 3 seconds. Too long and too boring for
-// a young child, no reading or sums needed for the parent.
+// PARENT LOCK – press and hold the button twice in a row (2 × 1.5 s within
+// 5 s). A ring shows the progress. Too fiddly for a young child, no reading
+// or sums needed for the parent.
 // ============================================================
+const RING_LENGTH = 2 * Math.PI * 52;
 let parentAction = null;
-let holdTimer = null;
+let holdTimer = null;       // runs while the button is held
+let holdsDone = 0;          // 0, 1 (or 2 = open)
+let holdWindow = null;      // time limit for the second hold
+
+function setRing(part) {
+  $('hold-progress').style.strokeDasharray = RING_LENGTH;
+  $('hold-progress').style.strokeDashoffset = RING_LENGTH * (1 - part);
+  $('hold-label').textContent = t(holdsDone === 1 ? 'parentAgain' : 'parentHold');
+  $('btn-parent-hold').dataset.holds = holdsDone;
+}
+function resetHold() {
+  clearInterval(holdTimer); holdTimer = null;
+  clearTimeout(holdWindow); holdWindow = null;
+  holdsDone = 0;
+  setRing(0);
+}
 function askParent(action) {
   parentAction = action;
-  document.getElementById('hold-fill').style.width = '0%';
+  resetHold();
   showModal('parent');
 }
 function startHold() {
   if (holdTimer) return;
-  const fill = document.getElementById('hold-fill');
   const t0 = performance.now();
   holdTimer = setInterval(() => {
-    const part = Math.min(1, (performance.now() - t0) / PARENT_HOLD_MS);
-    fill.style.width = (part * 100) + '%';
+    const part = Math.min(1, (performance.now() - t0) / HOLD_MS);
+    setRing((holdsDone + part) / 2);
     if (part < 1) return;
-    cancelHold();
+    clearInterval(holdTimer); holdTimer = null;
+    holdsDone++;
+    if (holdsDone < 2) {                       // first hold done: now once more, in time
+      setRing(0.5);
+      playPlace();
+      holdWindow = setTimeout(resetHold, HOLD_WINDOW_MS);
+      return;
+    }
     const action = parentAction;
     parentAction = null;
+    resetHold();
     hideModals();
-    playPlace();
+    playWin();
     if (action) action();
-  }, 50);
+  }, 40);
 }
-function cancelHold() {
-  clearInterval(holdTimer);
-  holdTimer = null;
-  document.getElementById('hold-fill').style.width = '0%';
+function releaseHold() {
+  if (!holdTimer) return;
+  clearInterval(holdTimer); holdTimer = null;
+  setRing(holdsDone / 2);                      // an unfinished hold does not count
 }
 
 // ============================================================
-// PROFILES
+// PLAYERS (list) AND PROFILE PAGE
 // ============================================================
-let editingProfile = null;     // id of the profile in the edit window, or 'new'
+let viewedProfile = null;      // id of the profile on the profile page, or 'new'
+let profileFrom = 'worlds';    // where "back" on the profile page goes
 let pickedAvatar = null;
 
 function profileLabel(p) { return p.name || t('player'); }
+function starsIn(prog) {
+  return isPlainObject(prog) ? Object.values(prog).reduce((s, v) => s + ((v && v.stars) || 0), 0) : 0;
+}
 
 function buildProfiles() {
-  const list = document.getElementById('profiles-list');
+  const list = $('profiles-list');
   list.innerHTML = '';
   Store.profiles().forEach(p => {
-    const row = document.createElement('div');
+    const stars = starsIn(Store.read(p.id, 'progress'));
+    const row = document.createElement('button');
     row.className = 'profile-card' + (p.id === profileId ? ' active' : '');
     row.dataset.id = p.id;
-    const stars = p.id === profileId ? getTotalStars() : starsIn(Store.read(p.id, 'progress'));
-
-    const pick = document.createElement('button');
-    pick.className = 'profile-pick';
-    pick.setAttribute('aria-label', `${profileLabel(p)}, ${stars} ⭐`);
-    pick.setAttribute('aria-pressed', String(p.id === profileId));
-    pick.innerHTML = '<span class="profile-avatar" aria-hidden="true"></span><span class="profile-name"></span><span class="profile-stars" aria-hidden="true"></span>';
-    pick.children[0].textContent = p.avatar;
-    pick.children[1].textContent = profileLabel(p);      // textContent: a name can never become HTML
-    pick.children[2].textContent = '⭐ ' + stars;
-    pick.addEventListener('click', () => { playBloop(); switchProfile(p.id); });
-
-    const edit = document.createElement('button');
-    edit.className = 'profile-edit';
-    edit.textContent = '✏️';
-    edit.setAttribute('aria-label', `${t('editProfile')}: ${profileLabel(p)}`);
-    edit.addEventListener('click', () => { playBloop(); openProfileEditor(p.id); });
-
-    row.append(pick, edit);
+    row.setAttribute('aria-label', `${profileLabel(p)}, ${stars}` + (p.id === profileId ? `, ${t('playingNow')}` : ''));
+    row.innerHTML = `<span class="profile-avatar">${K.svg(p.avatar)}</span><span class="profile-name"></span>` +
+      `<span class="profile-stars">${icon('star')}<b>${stars}</b></span>` + (p.id === profileId ? `<span class="profile-check">${K.svg('check')}</span>` : '');
+    row.querySelector('.profile-name').textContent = profileLabel(p);      // textContent: a name can never become HTML
+    row.addEventListener('click', () => openProfile(p.id, 'profiles'));
     list.appendChild(row);
   });
-  const add = document.getElementById('btn-profile-add');
-  add.classList.toggle('hidden', Store.profiles().length >= Store.MAX_PROFILES);
+  $('btn-profile-add').classList.toggle('hidden', Store.profiles().length >= Store.MAX_PROFILES);
 }
 
-function switchProfile(id) {
-  if (id !== profileId) {
-    gameState = null;
-    loadProfile(id);
-    applyTranslations();
-    Store.setActive(id);
-  }
-  goToWorlds();
+// Everything the profile page shows about one profile.
+function profileStats(id) {
+  const prog = Store.read(id, 'progress');
+  const plays = Store.read(id, 'played');
+  const entries = isPlainObject(prog) ? prog : {};
+  const done = Object.values(entries).filter(v => v && v.stars > 0);
+  const times = done.map(v => v.time).filter(v => Number.isFinite(v) && v > 0);
+  const playedCount = isPlainObject(plays) ? Object.values(plays).reduce((s, a) => s + (Array.isArray(a) ? a.length : 0), 0) : 0;
+  return {
+    stars: starsIn(entries),
+    levels: done.length,
+    puzzles: Math.max(playedCount, done.length),      // finished before puzzles were counted: at least one each
+    bestTime: times.length ? Math.min(...times) : null,
+    worlds: WORLDS.map(({ id: w, icon: pic }) => {
+      const levels = worldLevels(w);
+      return { w, pic, max: levels.length * 3, stars: levels.reduce((s, l) => s + ((entries[levelKey(w, l.indexInWorld)] || {}).stars || 0), 0) };
+    }),
+  };
 }
 
-function openProfileEditor(id) {
-  editingProfile = id;
-  const p = id === 'new' ? null : Store.profile(id);
+function openProfile(id, from) {
+  viewedProfile = id;
+  profileFrom = from || 'worlds';
+  showScreen('profile');
+  if (id === 'new') startProfileEdit(); else renderProfile();
+}
+function leaveProfilePage() {
+  if (!$('profile-edit').classList.contains('hidden') && viewedProfile !== 'new') { renderProfile(); return; }   // leave edit mode first
+  if (profileFrom === 'profiles') goToProfiles(); else goToWorlds();
+}
+
+function renderProfile() {
+  const p = Store.profile(viewedProfile);
+  if (!p) { goToProfiles(); return; }
+  const s = profileStats(p.id);
+  const active = p.id === profileId;
+  $('profile-view').classList.remove('hidden');
+  $('profile-edit').classList.add('hidden');
+  $('profile-avatar').innerHTML = K.svg(p.avatar);
+  $('profile-name-text').textContent = profileLabel(p);
+  const playAs = $('btn-play-as');
+  playAs.innerHTML = active ? `${icon('check')}<span></span>` : `${icon('play')}<span></span>`;
+  playAs.lastChild.textContent = active ? t('playingNow') : t('playAs').replace('{name}', profileLabel(p));
+  playAs.classList.toggle('is-active', active);
+
+  const stat = (pic, label, value, key) =>
+    `<div class="stat-card" data-stat="${key}">${icon(pic)}<b>${value}</b><span>${label}</span></div>`;
+  $('profile-stats').innerHTML =
+    stat('star', t('statStars'), s.stars, 'stars') + stat('check', t('statLevels'), s.levels, 'levels') +
+    stat('puzzle', t('statPuzzles'), s.puzzles, 'puzzles') + stat('clock', t('statBestTime'), s.bestTime === null ? '–' : formatTime(s.bestTime), 'time');
+
+  $('profile-worlds').innerHTML = s.worlds.map(x =>
+    `<div class="pw-row" data-world="${x.w}"><span class="pw-icon">${K.svg(x.pic)}</span>` +
+    `<span class="pw-main"><span class="pw-name"></span><span class="progress-bar"><span class="progress-fill" style="width:${Math.round(x.stars / x.max * 100)}%"></span></span></span>` +
+    `<span class="pw-stars">${icon('star')}<b>${x.stars}</b></span></div>`).join('');
+  $('profile-worlds').querySelectorAll('.pw-row').forEach(row => { row.querySelector('.pw-name').textContent = t('world' + row.dataset.world); });
+
+  const badges = [['medal', 'badgeFirst', s.levels >= 1], ['trophy', 'badge10', s.levels >= 10], ['crown', 'badge50', s.levels >= 50], ['star', 'badge100', s.stars >= 100]];
+  $('profile-badges').innerHTML = badges.map(([pic, key, got]) =>
+    `<div class="badge${got ? ' earned' : ''}" data-badge="${key}">${icon(pic)}<span>${t(key)}</span></div>`).join('');
+}
+
+function startProfileEdit() {
+  const isNew = viewedProfile === 'new';
+  const p = isNew ? null : Store.profile(viewedProfile);
   const used = Store.profiles().map(q => q.avatar);
   pickedAvatar = p ? p.avatar : (Store.AVATARS.find(a => !used.includes(a)) || Store.AVATARS[0]);
-  document.getElementById('profile-edit-title').textContent = t(p ? 'editProfile' : 'newProfile');
-  document.getElementById('profile-name').value = p ? p.name : '';
-  document.getElementById('profile-name').placeholder = t('namePlaceholder');
-  document.getElementById('btn-profile-delete').classList.toggle('hidden', !p || Store.profiles().length <= 1);
-  const grid = document.getElementById('avatar-grid');
+  $('profile-view').classList.add('hidden');
+  $('profile-edit').classList.remove('hidden');
+  $('profile-edit-title').textContent = t(isNew ? 'newProfile' : 'editProfile');
+  $('profile-name').value = p ? p.name : '';
+  $('profile-name').placeholder = t('namePlaceholder');
+  $('btn-profile-delete').classList.toggle('hidden', isNew || Store.profiles().length <= 1);
+  const grid = $('avatar-grid');
   grid.innerHTML = '';
   Store.AVATARS.forEach(a => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'avatar-btn' + (a === pickedAvatar ? ' active' : '');
-    b.textContent = a;
+    b.dataset.avatar = a;
+    b.innerHTML = K.svg(a);
     b.setAttribute('aria-label', a);
     b.setAttribute('aria-pressed', String(a === pickedAvatar));
     b.addEventListener('click', () => {
       pickedAvatar = a;
-      playBloop();
       grid.querySelectorAll('.avatar-btn').forEach(x => {
         x.classList.toggle('active', x === b);
         x.setAttribute('aria-pressed', String(x === b));
@@ -931,134 +1194,143 @@ function openProfileEditor(id) {
     });
     grid.appendChild(b);
   });
-  showModal('profile');
 }
 
-function saveProfileEditor() {
-  const name = document.getElementById('profile-name').value.trim().slice(0, 12);
-  hideModals();
-  if (editingProfile === 'new') {
-    // A new profile starts with the language and sound of whoever made it.
+function saveProfileEdit() {
+  const name = $('profile-name').value.trim().slice(0, 12);
+  if (viewedProfile === 'new') {
+    // A new profile starts with the language, sounds and size of whoever made it.
     const p = Store.createProfile(name, pickedAvatar);
-    if (!p) return;
-    const inherit = { language: settings.language, sound: settings.sound, size: settings.size };
+    if (!p) { goToProfiles(); return; }
+    const inherit = { language: settings.language, sound: settings.sound, music: settings.music, click: settings.click, size: settings.size };
     gameState = null;
     loadProfile(p.id, inherit);
     saveSettings();
     Store.setActive(p.id);
     applyTranslations();
-    goToWorlds();
-    return;
+    viewedProfile = p.id;
+  } else {
+    Store.updateProfile(viewedProfile, { name, avatar: pickedAvatar });
   }
-  Store.updateProfile(editingProfile, { name, avatar: pickedAvatar });
-  updateMascotVisibility();
-  buildProfiles();
+  updateBottomBar();
+  renderProfile();
+}
+function cancelProfileEdit() {
+  if (viewedProfile === 'new') goToProfiles(); else renderProfile();
 }
 
-function deleteEditedProfile() {
-  const id = editingProfile;
+function switchProfile(id) {
+  if (id !== profileId) {
+    gameState = null;
+    loadProfile(id);
+    applyTranslations();
+    buildWorlds();
+    applyTranslations();
+    Store.setActive(id);
+  }
+  goToWorlds();
+}
+
+function deleteViewedProfile() {
+  const id = viewedProfile;
   if (!Store.deleteProfile(id)) return;
   if (id === profileId) {
     gameState = null;
     loadProfile(Store.activeId());
     applyTranslations();
   }
-  showScreen('profiles');
-  buildProfiles();
-  showMascotMessage(t('mProfileDeleted'));
+  goToProfiles();
 }
 
 function linkAccount() {
   // No cloud provider yet (see docs/account-koppelen.md): only tell it is coming.
-  document.getElementById('info-title').textContent = t('linkAccount');
-  document.getElementById('info-text').textContent = t(Store.canLinkAccount() ? 'linkSoon' : 'linkSoon');
+  $('info-title').textContent = t('linkAccount');
+  $('info-text').textContent = t('linkSoon');
   showModal('info');
 }
 
 // ============================================================
 // EVENTS
 // ============================================================
-function on(id, ev, fn) { document.getElementById(id).addEventListener(ev, fn); }
+function on(id, ev, fn) { $(id).addEventListener(ev, fn); }
 
 function initEventListeners() {
-  on('btn-start', 'click', () => { playBloop(); goToWorlds(); });
+  // The soft click on every button (the "Klikgeluid" setting).
+  document.addEventListener('click', e => {
+    if (e.target.closest('button, select, a, label.settings-row, .sudoku-cell')) playClick();
+  }, true);
+  // Music may only start after the first tap or key (browser rule).
+  const firstTap = () => { userHasTapped = true; syncMusic(); };
+  document.addEventListener('pointerdown', firstTap, { once: true, capture: true });
+  document.addEventListener('keydown', firstTap, { once: true, capture: true });
 
-  document.querySelectorAll('.world-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const w = parseInt(card.dataset.world, 10);
-      if (!isWorldUnlocked(w)) {
-        playError();
-        flash(card, 'shake');
-        showMascotMessage(t('mLocked'));
-        return;
-      }
-      playBloop();
-      goToLevels(w);
-    });
-  });
-
-  on('btn-worlds-settings', 'click', () => { playBloop(); goToSettings(); });
-  on('btn-levels-back', 'click', () => { playBloop(); goToWorlds(); });
-  on('btn-game-back', 'click', () => { playBloop(); leaveGame(); });
-  on('btn-settings-back', 'click', () => { playBloop(); goToWorlds(); });
+  on('btn-start', 'click', goToWorlds);
+  on('btn-worlds-settings', 'click', goToSettings);
+  on('btn-score', 'click', () => openProfile(profileId, 'worlds'));
+  on('btn-levels-back', 'click', goToWorlds);
+  on('btn-game-back', 'click', leaveGame);
+  on('btn-settings-back', 'click', goToWorlds);
 
   on('btn-hint', 'click', giveHint);
-  on('btn-notes', 'click', () => { setNotesMode(!gameState.isNotesMode); playBloop(); });
+  on('btn-notes', 'click', () => setNotesMode(!gameState.isNotesMode));
   on('btn-display', 'click', () => setDisplayMode(settings.displayMode === 'numbers' ? 'animals' : 'numbers'));
 
-  on('btn-win-next', 'click', () => { hideModals(); playBloop(); startLevel(gameState.lv.globalIndex + 1); });
-  on('btn-win-replay', 'click', () => { hideModals(); playBloop(); startLevel(gameState.lv.globalIndex, true); });
-  on('btn-win-home', 'click', () => { hideModals(); playBloop(); goToLevels(gameState.lv.world); });
-  on('btn-go-replay', 'click', () => { hideModals(); playBloop(); startLevel(gameState.lv.globalIndex, true); });
-  on('btn-go-home', 'click', () => { hideModals(); playBloop(); goToLevels(gameState.lv.world); });
+  on('btn-win-next', 'click', () => { hideModals(); startLevel(gameState.lv.globalIndex + 1); });
+  on('btn-win-replay', 'click', () => { hideModals(); startLevel(gameState.lv.globalIndex, true); });
+  on('btn-win-home', 'click', () => { hideModals(); goToLevels(gameState.lv.world); });
+  on('btn-go-replay', 'click', () => { hideModals(); startLevel(gameState.lv.globalIndex, true); });
+  on('btn-go-home', 'click', () => { hideModals(); goToLevels(gameState.lv.world); });
 
-  on('setting-sound', 'change', e => { settings.sound = e.target.checked; saveSettings(); playBloop(); });
+  on('setting-sound', 'change', e => { settings.sound = e.target.checked; saveSettings(); playPlace(); });
+  on('setting-music', 'change', e => { settings.music = e.target.checked; saveSettings(); syncMusic(); });
+  on('setting-click', 'change', e => { settings.click = e.target.checked; saveSettings(); playClick(); });
   on('setting-language', 'change', e => { settings.language = e.target.value; saveSettings(); applyTranslations(); });
   on('setting-highlight-errors', 'change', e => { settings.highlightErrors = e.target.checked; saveSettings(); });
-
   document.querySelectorAll('.size-btn').forEach(b => b.addEventListener('click', () => {
     settings.size = b.dataset.size;
-    saveSettings(); applySize(); syncSettingsUI(); playBloop();
-    relayoutGame();
+    saveSettings(); applySize(); syncSettingsUI();
   }));
 
-  // Profiles (tap the cat in the corner)
-  on('btn-profile', 'click', () => { playBloop(); goToProfiles(); });
-  on('btn-profiles-back', 'click', () => { playBloop(); goToWorlds(); });
-  on('btn-profile-add', 'click', () => { playBloop(); openProfileEditor('new'); });
-  on('btn-profile-save', 'click', () => { playBloop(); saveProfileEditor(); });
-  on('btn-profile-cancel', 'click', () => { playBloop(); hideModals(); });
+  // Bottom bar: the avatar opens the player's own page, the small button the list of players.
+  on('btn-avatar', 'click', () => openProfile(profileId, 'worlds'));
+  on('btn-switch', 'click', goToProfiles);
+
+  // Players and profile page
+  on('btn-profiles-back', 'click', goToWorlds);
+  on('btn-profile-add', 'click', () => openProfile('new', 'profiles'));
+  on('btn-profile-back', 'click', leaveProfilePage);
+  on('btn-profile-edit', 'click', startProfileEdit);
+  on('btn-profile-save', 'click', saveProfileEdit);
+  on('btn-profile-cancel', 'click', cancelProfileEdit);
+  on('btn-play-as', 'click', () => switchProfile(viewedProfile));
   on('btn-profile-delete', 'click', () => {
-    playBloop();
     askParent(() => {
-      const p = Store.profile(editingProfile);
-      document.getElementById('delete-text').textContent = `${p.avatar} ${profileLabel(p)}\n${t('deleteText')}`;
+      const p = Store.profile(viewedProfile);
+      $('delete-avatar').innerHTML = K.svg(p.avatar);
+      $('delete-text').textContent = `${profileLabel(p)}\n${t('deleteText')}`;
       showModal('delete');
     });
   });
-  on('btn-delete-yes', 'click', () => { hideModals(); playBloop(); deleteEditedProfile(); });
-  on('btn-delete-no', 'click', () => { hideModals(); playBloop(); });
-  on('btn-link-account', 'click', () => { playBloop(); askParent(linkAccount); });
-  on('btn-info-ok', 'click', () => { hideModals(); playBloop(); });
+  on('btn-delete-yes', 'click', () => { hideModals(); deleteViewedProfile(); });
+  on('btn-delete-no', 'click', hideModals);
+  on('btn-link-account', 'click', () => askParent(linkAccount));
+  on('btn-info-ok', 'click', hideModals);
 
-  // Parent lock
-  const hold = document.getElementById('btn-parent-hold');
-  ['pointerdown', 'keydown'].forEach(ev => hold.addEventListener(ev, e => {
-    if (ev === 'keydown' && e.key !== ' ' && e.key !== 'Enter') return;
-    e.preventDefault();
-    startHold();
-  }));
-  ['pointerup', 'pointerleave', 'pointercancel', 'keyup', 'blur'].forEach(ev => hold.addEventListener(ev, cancelHold));
-  hold.addEventListener('contextmenu', e => e.preventDefault());
-  on('btn-parent-cancel', 'click', () => { cancelHold(); parentAction = null; hideModals(); playBloop(); });
+  // Parent lock: no context menu, no text selection, no scrolling while holding.
+  const hold = $('btn-parent-hold');
+  hold.addEventListener('pointerdown', e => { e.preventDefault(); startHold(); });
+  hold.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); startHold(); } });
+  ['pointerup', 'pointerleave', 'pointercancel', 'keyup', 'blur'].forEach(ev => hold.addEventListener(ev, releaseHold));
+  ['contextmenu', 'selectstart', 'dragstart'].forEach(ev => hold.addEventListener(ev, e => e.preventDefault()));
+  on('btn-parent-cancel', 'click', () => { parentAction = null; resetHold(); hideModals(); });
 
-  on('btn-reset-progress', 'click', () => { playBloop(); askParent(() => showModal('confirm')); });
+  on('btn-reset-progress', 'click', () => askParent(() => showModal('confirm')));
   on('btn-confirm-yes', 'click', () => {
-    progress = {}; saveProgress(); played = {}; savePlayed(); clearCurrent(); hideModals(); playBloop();
+    progress = {}; saveProgress(); played = {}; savePlayed(); clearCurrent(); hideModals();
     goToWorlds();
     setTimeout(() => showMascotMessage(t('mReset')), 600);
   });
-  on('btn-confirm-no', 'click', () => { hideModals(); playBloop(); });
+  on('btn-confirm-no', 'click', hideModals);
 
   document.addEventListener('keydown', onKeyDown);
   window.addEventListener('popstate', () => {
@@ -1067,15 +1339,22 @@ function initEventListeners() {
     armBackButton();
   });
 
-  // Keep the unfinished game (and its timer) when the app goes to the background.
-  document.addEventListener('visibilitychange', () => { if (document.hidden && currentScreen === 'game') saveCurrent(); });
+  // Keep the unfinished game (and its timer) when the app goes to the background,
+  // and pause the music there.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && currentScreen === 'game') saveCurrent();
+    syncMusic();
+  });
   window.addEventListener('pagehide', () => { if (currentScreen === 'game') saveCurrent(); });
 
   // The grid follows the window right away (once per frame, no waiting).
   let resizeFrame = 0;
   window.addEventListener('resize', () => {
     cancelAnimationFrame(resizeFrame);
-    resizeFrame = requestAnimationFrame(relayoutGame);
+    resizeFrame = requestAnimationFrame(() => {
+      relayoutGame();
+      if (currentScreen === 'settings') renderSizePreview();
+    });
   });
 }
 
@@ -1093,7 +1372,7 @@ function onKeyDown(e) {
   const n = parseInt(e.key, 10);
   if (n >= 1 && n <= size) { onNumPress(n); return; }
   if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { onErase(); return; }
-  if (e.key === 'n' || e.key === 'N') { document.getElementById('btn-notes').click(); return; }
+  if (e.key === 'n' || e.key === 'N') { $('btn-notes').click(); return; }
   if (e.key === 'h' || e.key === 'H') { giveHint(); return; }
 
   const moves = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
@@ -1124,14 +1403,16 @@ function registerSW() {
 }
 
 // ============================================================
-// TEST COPY ONLY (see storage.js: IS_TEST) – a visible TEST label, and on a
+// TEST COPY ONLY (see storage.js: IS_TEST) – a visible TEST strip, and on a
 // pc a bar with phone/tablet sizes (test-preview.js). Never on the live app.
 // ============================================================
 function showTestLabel() {
+  // Its own strip above the app, so it never lies over a title or level name.
   const badge = document.createElement('div');
   badge.className = 'test-badge';
   badge.textContent = TEST_BUILD ? 'TEST ' + TEST_BUILD : 'TEST';
   document.body.appendChild(badge);
+  document.body.classList.add('is-test');
   document.title = 'TEST · ' + document.title;
 }
 // Should this page be the outer page that shows the app in a frame of a chosen size?
@@ -1160,6 +1441,9 @@ function init() {
     return;
   }
   if (IS_TEST) showTestLabel();
+  applyIcons();
+  $('setting-language').innerHTML = LANGUAGES.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
+  buildWorlds();
   loadProfile(Store.activeId());
   applyTranslations();
   initEventListeners();
