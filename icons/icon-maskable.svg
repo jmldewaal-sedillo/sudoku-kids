@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Sudoku Kids app icon: three number tiles and the cat mascot (own drawing, see icons.js) -->
   <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#FF8FB5"/><stop offset="1" stop-color="#FF6B9D"/></linearGradient></defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <g transform="translate(121 115) scale(0.9)">
+  <g transform="translate(121 119) scale(0.9)">
   <rect x="0" y="12" width="300" height="300" rx="56" fill="#000" opacity="0.12"/>
   <rect x="0" y="0" width="300" height="300" rx="56" fill="#FFFFFF"/>
   <rect x="24" y="32" width="120" height="120" rx="30" fill="#000" opacity="0.10"/>
@@ -15,7 +16,7 @@
   <rect x="24" y="156" width="120" height="120" rx="30" fill="#6BB8FF"/>
   <text x="84" y="244" text-anchor="middle" font-family="Arial Rounded MT Bold, Nunito, Arial, Helvetica, sans-serif" font-weight="900" font-size="88" fill="#FFFFFF" stroke="#3D2C6B" stroke-width="6" paint-order="stroke">3</text>
   <rect x="156" y="164" width="120" height="120" rx="30" fill="#000" opacity="0.10"/>
-  <rect x="156" y="156" width="120" height="120" rx="30" fill="#C77DFF"/>
-  <text x="216" y="244" text-anchor="middle" font-family="Arial Rounded MT Bold, Nunito, Arial, Helvetica, sans-serif" font-weight="900" font-size="88" fill="#FFFFFF" stroke="#3D2C6B" stroke-width="6" paint-order="stroke">4</text>
+  <rect x="156" y="156" width="120" height="120" rx="30" fill="#EDD9FF"/>
+  <g transform="translate(160 158) scale(1.75)"><path d="M11 27 L14 7 L29 17 Z" fill="#FFB347" stroke="#3D2C6B" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M53 27 L50 7 L35 17 Z" fill="#FFB347" stroke="#3D2C6B" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M15.5 21 L17 12 L24 17 Z" fill="#FFC9D6" /><path d="M48.5 21 L47 12 L40 17 Z" fill="#FFC9D6" /><ellipse cx="32" cy="38" rx="23" ry="19.5" fill="#FFB347" stroke="#3D2C6B" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M27 21 v5 M32 20 v6 M37 21 v5" stroke="#E8892B" stroke-width="2.4" stroke-linecap="round"/><path d="M5 38 h8 M6 44 l7 -2 M59 38 h-8 M58 44 l-7 -2" stroke="#3D2C6B" stroke-width="1.6" stroke-linecap="round"/><path d="M30 39.5 h4 l-2 2.4 z" fill="#FF7BA5" /><circle cx="24" cy="37" r="2.7" fill="#3D2C6B" /><circle cx="23.1" cy="36.1" r="0.95" fill="#fff" /><ellipse cx="19" cy="42" rx="3.5" ry="2.3" fill="#FF8FB1" opacity="0.75"/><circle cx="40" cy="37" r="2.7" fill="#3D2C6B" /><circle cx="39.1" cy="36.1" r="0.95" fill="#fff" /><ellipse cx="45" cy="42" rx="3.5" ry="2.3" fill="#FF8FB1" opacity="0.75"/><path d="M27.6 41 q2.2 3 4.4 0 q2.2 3 4.4 0" stroke="#3D2C6B" stroke-width="2" stroke-linecap="round" fill="none"/></g>
   </g>
 </svg>

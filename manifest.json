@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Sudoku Kids & Crazy Grids",
   "short_name": "Sudoku Kids",
-  "description": "Het leukste sudoku-avontuur voor kinderen! 3 werelden, 105 levels, 3 sudoku-types.",
+  "description": "Het leukste sudoku-avontuur voor kinderen! 5 werelden, 450 levels, 3 sudoku-types.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

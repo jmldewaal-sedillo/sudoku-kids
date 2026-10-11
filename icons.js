@@ -175,7 +175,6 @@
     gear: () =>
       [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<rect x="27" y="4" width="10" height="14" rx="3.5" fill="#B79CF2" ${O} transform="rotate(${a} 32 32)"/>`).join('') +
       circle(32, 32, 19, '#B79CF2') + circle(32, 32, 12.5, '#F3ECFF', `stroke="${INK}" stroke-width="2.2"`) + face(32, 30, 0.55),
-    hint: () => ICONS.bulb(),
 
     // ---------- worlds ----------
     tree: () =>
@@ -189,6 +188,58 @@
       path('M18 38 L8 50 L21 47 Z', '#FF5C7A') + path('M46 38 L56 50 L43 47 Z', '#FF5C7A') +
       path('M32 4 C44 14 46 34 42 48 H22 C18 34 20 14 32 4 Z', '#fff') + path('M32 4 C37 8 40.4 13.4 42.4 19 H21.6 C23.6 13.4 27 8 32 4 Z', '#FF5C7A') +
       circle(32, 30, 8.5, '#BDE3FF') + face(32, 30, 0.42, 'smile'),
+    barn: () =>
+      path('M8 58 V30 L18 16 L32 8 L46 16 L56 30 V58 Z', '#FF6B6B') + path('M8 30 L18 16 L32 8 L46 16 L56 30', 'none', `stroke="#fff" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`) +
+      path('M8 30 L18 16 L32 8 L46 16 L56 30', 'none') + rect(22, 40, 20, 18, 3, '#FFF6E8') +
+      el('path', 'd="M22 40 l20 18 M42 40 l-20 18"', `stroke="${INK}" stroke-width="2" stroke-linecap="round"`) + circle(32, 22, 5, '#FFF6E8') + face(32, 31, 0.62),
+    palm: () =>
+      path('M29 58 C28 44 30 34 33 26 L38 27 C36 36 36 46 38 58 Z', '#C68B59') +
+      path('M34 26 C22 14 10 18 6 28 C16 24 24 26 34 26 Z', '#5FC56B') + path('M34 26 C46 12 58 18 60 28 C50 23 42 25 34 26 Z', '#5FC56B') +
+      path('M34 26 C28 8 14 6 10 10 C20 12 28 18 34 26 Z', '#7FD47A') + path('M34 26 C40 8 54 6 58 10 C48 12 40 18 34 26 Z', '#7FD47A') +
+      circle(30, 30, 4, '#A9713D') + circle(38, 31, 4, '#A9713D') + face(34, 44, 0.42),
+    puzzle: () =>
+      path('M10 18 H24 C22 10 34 8 34 16 C34 17 33.6 18 33.6 18 H48 V32 C56 30 58 42 50 42 C49 42 48 41.6 48 41.6 V56 H10 V41.6 C18 44 20 30 12 32 C11 32 10 32.4 10 32.4 Z', '#7FD47A') + face(29, 38, 0.8),
+
+    // ---------- buttons ----------
+    back: () => circle(32, 32, 26, '#C5E4FF') + el('path', 'd="M36 18 L22 32 L36 46"', `stroke="${INK}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"`),
+    next: () => el('path', 'd="M12 32 H48 M36 18 L50 32 L36 46"', `stroke="${INK}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"`),
+    play: () => path('M20 12 L52 32 L20 52 Z', '#FF5C8A', `stroke="${INK}" stroke-width="3" stroke-linejoin="round"`),
+    home: () => path('M8 32 L32 10 L56 32 V56 H8 Z', '#FFD43B') + path('M4 33 L32 8 L60 33', 'none', `stroke="${INK}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"`) + rect(26, 40, 12, 16, 3, '#FF8FB1') ,
+    replay: () =>
+      el('path', 'd="M50 32 A18 18 0 1 1 42 17"', `stroke="${INK}" stroke-width="7" stroke-linecap="round" fill="none"`) +
+      path('M40 6 L52 16 L38 22 Z', INK, `stroke="${INK}" stroke-width="3" stroke-linejoin="round"`),
+    clock: () => circle(32, 34, 23, '#fff') + rect(27, 4, 10, 8, 3, '#C9CEDB') + el('path', 'd="M32 20 V34 L42 40"', `stroke="${INK}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"`),
+    cross: () => el('path', 'd="M16 16 L48 48 M48 16 L16 48"', `stroke="${INK}" stroke-width="13" stroke-linecap="round"`) + el('path', 'd="M16 16 L48 48 M48 16 L16 48"', `stroke="#FF5C5C" stroke-width="8" stroke-linecap="round"`),
+    plus: () => el('path', 'd="M32 12 V52 M12 32 H52"', `stroke="${INK}" stroke-width="13" stroke-linecap="round"`) + el('path', 'd="M32 12 V52 M12 32 H52"', `stroke="#6CCB5F" stroke-width="8" stroke-linecap="round"`),
+    trash: () => rect(8, 14, 48, 9, 4, '#C9CEDB') + rect(25, 6, 14, 10, 4, '#C9CEDB') + path('M13 23 H51 L48 58 H16 Z', '#E4E7EF') + el('path', 'd="M25 31 v19 M32 31 v19 M39 31 v19"', `stroke="${INK}" stroke-width="2.6" stroke-linecap="round"`),
+    warning: () => path('M32 6 L60 54 H4 Z', '#FFD43B', `stroke="${INK}" stroke-width="3.4" stroke-linejoin="round"`) + el('path', 'd="M32 24 V38"', `stroke="${INK}" stroke-width="5" stroke-linecap="round"`) + circle(32, 46, 3, INK, ''),
+    hand: () =>
+      path('M24 30 V12 a5 5 0 0 1 10 0 V26 l12 2.4 c5 1 7 4 6.4 9 L50 50 c-1 6 -5 10 -11 10 H31 c-5 0 -8 -2 -11 -6 L10 40 c-3 -5 3 -9 7 -5 l7 6 Z', '#FFD9B8'),
+    swap: () =>
+      el('path', 'd="M12 24 H48 M38 12 L50 24 L38 36 M52 42 H16 M26 30 L14 42 L26 54"', `stroke="${INK}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"`),
+    note: () =>
+      path('M24 12 L52 6 V40 a8 7 0 1 1 -6 -6.6 V19 L30 22.4 V46 a8 7 0 1 1 -6 -6.6 Z', '#B79CF2'),
+    speaker: () =>
+      path('M8 24 H20 L34 12 V52 L20 40 H8 Z', '#7CC4FF') + el('path', 'd="M42 24 q6 8 0 16 M48 16 q12 16 0 32"', `stroke="${INK}" stroke-width="4" stroke-linecap="round" fill="none"`),
+    tap: () =>
+      el('path', 'd="M32 4 v8 M14 12 l5 6 M50 12 l-5 6"', `stroke="#FFB02E" stroke-width="4" stroke-linecap="round"`) +
+      `<g transform="translate(4 14) scale(0.82)">` + path('M24 30 V12 a5 5 0 0 1 10 0 V26 l12 2.4 c5 1 7 4 6.4 9 L50 50 c-1 6 -5 10 -11 10 H31 c-5 0 -8 -2 -11 -6 L10 40 c-3 -5 3 -9 7 -5 l7 6 Z', '#FFD9B8') + '</g>',
+    globe: () =>
+      circle(32, 32, 25, '#7CC4FF') + path('M14 22 C22 16 26 24 22 30 C18 36 26 40 22 46 C16 46 10 40 9 34 C9 28 11 25 14 22 Z', '#7FD47A', '') +
+      path('M38 9 C46 12 52 18 54 26 C48 30 42 26 40 20 C38 16 36 12 38 9 Z', '#7FD47A', '') + path('M40 40 C46 38 52 40 52 44 C48 52 42 55 36 56 C34 50 36 44 40 40 Z', '#7FD47A', '') +
+      circle(32, 32, 25, 'none') + face(32, 32, 0.7),
+    ruler: () =>
+      `<g transform="rotate(-35 32 32)">` + rect(4, 22, 56, 20, 5, '#FFD43B') +
+      el('path', 'd="M14 22 v8 M24 22 v11 M34 22 v8 M44 22 v11 M54 22 v8"', `stroke="${INK}" stroke-width="2.4" stroke-linecap="round"`) + '</g>',
+    trophy: () =>
+      el('path', 'd="M18 14 H8 c0 12 4 18 12 20 M46 14 H56 c0 12 -4 18 -12 20"', `stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"`) +
+      path('M16 8 H48 V24 C48 36 40 42 32 42 C24 42 16 36 16 24 Z', '#FFD43B') + rect(28, 42, 8, 8, 2, '#FFB02E') + rect(18, 50, 28, 8, 4, '#FFB02E') + face(32, 24, 0.7),
+    medal: () =>
+      path('M20 4 H32 L38 26 H26 Z', '#7CC4FF') + path('M44 4 H32 L26 26 H38 Z', '#FF8FB1') + circle(32, 40, 18, '#FFD43B') + circle(32, 40, 12, '#FFE98A', `stroke="${INK}" stroke-width="2"`) + face(32, 39, 0.55),
+    crown: () =>
+      path('M8 50 L6 20 L20 32 L32 12 L44 32 L58 20 L56 50 Z', '#FFD43B') + rect(8, 46, 48, 10, 4, '#FFB02E') + circle(32, 12, 4, '#FF5C8A') + circle(6, 20, 3.4, '#7CC4FF') + circle(58, 20, 3.4, '#7CC4FF'),
+    check: () => el('path', 'd="M12 34 L26 48 L52 18"', `stroke="${INK}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"`) + el('path', 'd="M12 34 L26 48 L52 18"', `stroke="#6CCB5F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"`),
+    lockpad: () => ICONS.lock(),
   };
 
   const cache = {};
