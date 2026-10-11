@@ -1,7 +1,8 @@
 # Sudoku Kids & Crazy Grids
 
 Een sudoku-spel voor kinderen als PWA: 3 werelden, 105 levels, 3 soorten sudoku
-(standaard, X-Sudoku, fruit), in het Nederlands, Engels, Duits en Frans.
+(standaard, X-Sudoku, fruit), 3.700 extra puzzels, tot 6 profielen per toestel,
+in het Nederlands, Engels, Duits en Frans.
 
 ## Testen en live zetten
 
@@ -14,7 +15,8 @@ Een sudoku-spel voor kinderen als PWA: 3 werelden, 105 levels, 3 soorten sudoku
 | Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt rechtstreeks vanaf `main` |
 | Herkennen | rood label **TEST + commit-id** bovenin, titel "TEST · …" | geen label |
 | Opslag | sleutels met `test_` ervoor (`test_sudokuKids_progress`, …) | `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current` |
-| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v3-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v3` |
+| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v4-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v4` |
+| Formaat-balk | op een pc: balk bovenin met telefoon- en tabletformaten | bestaat niet |
 
 Een testpush is na ongeveer een minuut online. Het commit-id in het label vertelt welke
 versie je ziet; staat er nog het oude, sluit de app dan en open hem opnieuw.
@@ -23,6 +25,20 @@ De app ziet zelf dat hij een testkopie is: hij draait dan vanuit een map die `te
 op `-test` eindigt. In de code is er verder geen verschil, dus wat je test is wat live gaat.
 Sterren, instellingen en caches van test en live staan los van elkaar; `python3 tests/e2e.py`
 (onderdeel 11) bewijst dat spelen en wissen in de test de live-opslag niet verandert.
+
+### Formaat-balk (alleen testversie, alleen op een pc)
+
+Open je de testlink op een pc, dan zie je bovenin een donkere balk (zelfde opzet als de
+preview van The Flush Factor) met de knoppen Telefoon klein 360×640, standaard 390×844,
+liggend 844×390, Tablet staand 800×1280, liggend 1280×800 en Volledig scherm. De app draait
+dan in een frame van dat formaat (`?frame=1`); de laatste keuze wordt onthouden
+(`test_sudokuKids_preview`). Op een echte telefoon verschijnt de balk niet.
+
+- `…/sudoku-kids-test/?preview=off` – zonder balk, ook op een pc
+- `…/sudoku-kids-test/?preview=on` – met balk, ook op een touchscreen
+
+De code staat in `test-preview.js`. `script.js` laadt dat bestand alleen op het testpad; de
+live app vraagt het nooit op (`tests/e2e.py`, onderdeel 15).
 
 Er staat niets van de testversie in de live map en de Pages-instellingen van deze repository
 zijn niet veranderd. De workflow gebruikt de secret `TEST_DEPLOY_KEY` (een deploy key die
@@ -34,7 +50,12 @@ alleen in `sudoku-kids-test` mag schrijven).
 |---|---|
 | `index.html` | Alle schermen en pop-ups |
 | `style.css` | Opmaak |
-| `puzzles.js` | Puzzelmotor: generator, oplosser en het levelplan (105 levels) |
+| `puzzles.js` | Puzzelmotor: generator, oplosser, het levelplan (105 levels) en de moeilijkheidsbanden |
+| `puzzle-bank.js` | Voorraad van 3.700 puzzels (100 per band), gemaakt door `tools/build-bank.js` |
+| `storage.js` | Profielen en opslag; de enige plek die weet waar gegevens staan |
+| `test-preview.js` | Formaat-balk van de testversie |
+| `docs/account-koppelen.md` | Onderzoek en advies over inloggen/koppelen in een kinderapp |
+| `tools/build-bank.js` | Breidt de puzzelvoorraad uit (geen build-stap; resultaat staat in de repo) |
 | `i18n.js` | Alle teksten in NL / EN / DE / FR |
 | `script.js` | Spellogica en schermen |
 | `manifest.json`, `sw.js` | PWA: installeren en offline spelen |
@@ -43,7 +64,8 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `privacy.html` | Privacyverklaring (NL + EN), ook offline beschikbaar |
 | `.github/workflows/test-deploy.yml` | Zet branch `test` op de testlink |
 | `tests/validate-levels.js` | Controleert alle levels automatisch |
-| `tests/difficulty.js` | Meet de moeilijkheid per level |
+| `tests/difficulty.js` | Meet de moeilijkheid per level en per band van de voorraad |
+| `tests/count-4x4.js` | Telt hoeveel echt verschillende 4×4-puzzels er bestaan |
 | `tests/e2e.py` | Speelt het spel automatisch en controleert de belangrijkste flows |
 | `tests/screenshots.py` | Screenshots van elk scherm op 7 schermformaten + lay-outcontrole |
 | `tests/manifest-screenshots.py` | Maakt de twee screenshots voor `manifest.json` opnieuw |
@@ -58,6 +80,49 @@ en die puzzel heeft gegarandeerd **één** oplossing. Daardoor:
 - is level 12 op elke telefoon en na elke herstart hetzelfde level, dus opgeslagen sterren blijven kloppen.
 
 Verander de seeds niet meer nadat de app gepubliceerd is.
+
+## Meer puzzels per level
+
+Er blijven 35 levels per wereld, maar elk level heeft veel meer dan één puzzel:
+
+- Een **soort** is grootte × type (`4-standard`, `4-shapes`, `6-standard`, `6-xsudoku`,
+  `6-shapes`, `9-standard`, `9-xsudoku`, `9-shapes`).
+- Elke soort heeft **moeilijkheidsbanden**: een aantal gegeven vakjes (4×4: precies één aantal
+  per band, 6×6 en 9×9: een bereik van 2–3). Alle puzzels in een band hebben dus even veel
+  gegeven vakjes en zijn zonder gokken op te lossen. Er zijn 37 banden met elk 100 puzzels.
+- Elk level hoort bij de band van zijn eigen, oorspronkelijke puzzel. De eerste keer speel je
+  die puzzel (variant 1, zodat bestaande sterren kloppen). Elke nieuwe start daarna geeft een
+  puzzel uit de band die dit profiel nog niet gehad heeft. Pas als de band op is komen er
+  herhalingen. De sterren blijven per level.
+- Puzzel *n* van een soort komt altijd uit `bankSeed(soort, n)`. Niets hangt af van de
+  volgorde van levels of werelden, dus er kunnen later puzzels, levels en werelden bij zonder
+  dat iets verschuift.
+
+De voorraad uitbreiden: `node tools/build-bank.js 150` (aantal per band) en daarna
+`node tests/validate-levels.js --update-snapshot`. Bestaande puzzels blijven staan; de
+snapshot bewaakt dat.
+
+4×4: er bestaan per aantal gegeven vakjes 376 tot 1.040 écht verschillende puzzels (niet in
+elkaar om te zetten door draaien, spiegelen of omnummeren), zie `node tests/count-4x4.js`.
+De 1.000 4×4-puzzels in de voorraad zijn onderling allemaal echt verschillend.
+
+## Profielen en opslag
+
+Tik op de kat rechtsonder (wereldkaart of levelscherm) voor "Wie speelt er?". Maximaal 6
+profielen, elk met een dierenplaatje, een optionele naam, eigen sterren, eigen gespeelde
+puzzels, eigen instellingen en een eigen onafgemaakt spel. Verwijderen en voortgang wissen
+zitten achter het ouderslot (knop 3 seconden ingedrukt houden).
+
+| Sleutel in localStorage | Inhoud |
+|---|---|
+| `sudokuKids_progress`, `_settings`, `_current`, `_played` | profiel 1 – dezelfde sleutels als vóór de profielen, dus bestaande voortgang is vanzelf profiel 1 |
+| `sudokuKids_p2_progress`, … | profiel 2 en verder |
+| `sudokuKids_profiles` | lijst van profielen en wie er actief is (ontstaat pas bij het tweede profiel) |
+
+In de testversie staat er `test_` voor. Het spel praat alleen met `SudokuStorage`
+(`storage.js`); daarachter zit nu de lokale provider. Een cloud-provider met dezelfde vijf
+methoden kan later worden ingeplugd zonder het spel aan te passen. Zie
+`docs/account-koppelen.md` voor wat daarbij komt kijken.
 
 ## Na elke wijziging aan de levels
 
@@ -87,9 +152,9 @@ python3 tests/e2e.py && python3 tests/screenshots.py
 
 | Commando | Wat het bewijst |
 |---|---|
-| `node tests/validate-levels.js` | 105 levels geldig, één oplossing, zonder gokken, gelijk aan de snapshot |
+| `node tests/validate-levels.js` | 105 levels én 3.700 voorraadpuzzels: geldig, één oplossing, zonder gokken, geen dubbele, juiste band, gelijk aan de snapshots |
 | `node tests/difficulty.js` (`--all` voor elk level) | moeilijkheidscurve per blok levels |
-| `python3 tests/e2e.py` | spelregels, opslaan, terug-knop, talen, toetsenbord, snelheid (CPU ×4), offline, geen externe verzoeken, test en live naast elkaar |
+| `python3 tests/e2e.py` | spelregels, opslaan, terug-knop, talen, toetsenbord, snelheid (CPU ×4), offline, geen externe verzoeken, test en live naast elkaar, puzzelvarianten, profielen en migratie, zoomen/grootte, formaat-balk |
 | `python3 tests/screenshots.py [map]` | niets buiten beeld, alle knoppen ≥ 48×48 px, 0 console-errors; PNG's in `tests/out/` |
 
 De scripts starten zelf een lokale server; er hoeft niets te draaien.
