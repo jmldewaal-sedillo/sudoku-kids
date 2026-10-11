@@ -32,7 +32,7 @@ jobs:
         run: |
           BUILD="${GITHUB_SHA::7}"
           mkdir site
-          cp -r index.html privacy.html style.css script.js storage.js puzzles.js puzzle-bank.js i18n.js icons.js test-preview.js sw.js manifest.json icons screenshots site/
+          cp -r index.html privacy.html style.css script.js storage.js puzzles.js puzzle-bank.js level-plan.js i18n.js icons.js test-preview.js sw.js manifest.json icons screenshots site/
           # Vergelijkingspagina's voor de maker (alleen op de testlink)
           mkdir site/docs && cp docs/*.html site/docs/
           # Commit-id in het TEST-label en in de cache-naam: elke push is een nieuwe versie.
