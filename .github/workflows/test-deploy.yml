@@ -1,16 +1,14 @@
 name: Testversie
 
 # testen = push naar branch `test`  →  https://jmldewaal-sedillo.github.io/sudoku-kids-test/
-#                                       (met eigen domein: https://test-sudokukids.studiosedillo.com/)
-# live   = merge naar `main`        →  zie live-deploy.yml
+# live   = merge naar `main`        →  https://jmldewaal-sedillo.github.io/sudoku-kids/
 #
 # Deze workflow zet de inhoud van branch `test` in de aparte repository
 # jmldewaal-sedillo/sudoku-kids-test (GitHub Pages vanaf main). De live site
 # en de Pages-instellingen van deze repository worden niet aangeraakt.
 #
-# Eigen domein: bestaat de repository-variabele TEST_DOMAIN (gezet door
-# tools/eigen-domein.sh test, pas als DNS klopt), dan komt er een CNAME-bestand
-# in de testkopie. Zonder die variabele blijft de github.io-link werken.
+# De webversie is een testkopie (noindex); de app zelf verschijnt als Android-app en op
+# webportals (docs/lanceren.md). Er hoort geen eigen domein bij deze repository's.
 
 on:
   push:
@@ -41,12 +39,10 @@ jobs:
         run: python3 tests/no-private-data.py --ci
 
       - name: Testkopie klaarzetten
-        env:
-          TEST_DOMAIN: ${{ vars.TEST_DOMAIN }}
         run: |
           BUILD="${GITHUB_SHA::7}"
           mkdir site
-          cp -r index.html privacy.html delete.html verwijderen.html style.css script.js storage.js puzzles.js puzzle-bank.js level-plan.js i18n.js badges.js icons.js test-preview.js sw.js manifest.json icons screenshots .well-known site/
+          cp -r index.html style.css script.js platform.js storage.js puzzles.js puzzle-bank.js level-plan.js i18n.js badges.js icons.js test-preview.js sw.js manifest.json icons screenshots site/
           # Vergelijkingspagina's voor de maker (alleen op de testlink)
           mkdir site/docs && cp docs/*.html site/docs/
           # Commit-id in het TEST-label en in de cache-naam: elke push is een nieuwe versie.
@@ -56,14 +52,11 @@ jobs:
           # Eigen naam, zodat een geïnstalleerde testversie herkenbaar is op het startscherm.
           jq '.name = "TEST – " + .name | .short_name = "TEST Sudoku"' manifest.json > site/manifest.json
           printf '{"commit":"%s","branch":"%s","built":"%s"}\n' "$GITHUB_SHA" "$GITHUB_REF_NAME" "$(date -u +%FT%TZ)" > site/version.json
-          # .nojekyll: anders slaat GitHub Pages de map .well-known over.
           touch site/.nojekyll
-          if [ -n "$TEST_DOMAIN" ]; then printf '%s\n' "$TEST_DOMAIN" > site/CNAME; fi
 
       - name: Naar de test-repository pushen
         env:
           TEST_DEPLOY_KEY: ${{ secrets.TEST_DEPLOY_KEY }}
-          TEST_DOMAIN: ${{ vars.TEST_DOMAIN }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$TEST_DEPLOY_KEY" > ~/.ssh/test_deploy
@@ -77,4 +70,4 @@ jobs:
           git commit -q -m "Testversie van ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}"
           GIT_SSH_COMMAND="ssh -i ~/.ssh/test_deploy -o IdentitiesOnly=yes" \
             git push -q --force git@github.com:jmldewaal-sedillo/sudoku-kids-test.git main
-          echo "Testversie: https://${TEST_DOMAIN:-jmldewaal-sedillo.github.io/sudoku-kids-test}/ (${GITHUB_SHA::7})" >> "$GITHUB_STEP_SUMMARY"
+          echo "Testversie: https://jmldewaal-sedillo.github.io/sudoku-kids-test/ (${GITHUB_SHA::7})" >> "$GITHUB_STEP_SUMMARY"

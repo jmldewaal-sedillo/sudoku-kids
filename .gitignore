@@ -1,6 +1,17 @@
 __pycache__/
 tests/out/
-# Android signing keys and TWA build output: never in Git (see docs/twa.md)
+node_modules/
+# Build output of tools/build.mjs (android, crazygames, poki)
+dist/
+# Android: build output and signing keys never in Git (see docs/android.md)
 *.keystore
 *.jks
-twa/build/
+*.aab
+*.apk
+keystore.properties
+android-app/android/app/build/
+android-app/android/build/
+android-app/android/.gradle/
+android-app/android/local.properties
+android-app/android/app/src/main/assets/public/
+android-app/android/capacitor-cordova-android-plugins/

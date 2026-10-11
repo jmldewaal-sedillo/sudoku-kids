@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#FF6B9D" />
+  <!-- The web version is a test copy for now (the game is published as an Android app and on game portals): keep it out of search engines. -->
+  <meta name="robots" content="noindex, nofollow" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -165,8 +167,9 @@
         <button class="btn-danger btn-danger-dark" id="btn-wipe-all"><span class="ki" data-icon="trash"></span><span data-i18n="wipeBtn">Alle gegevens van deze app verwijderen</span></button>
       </div>
 
-      <a class="settings-link" href="privacy.html" data-i18n="privacy">Privacy (voor ouders)</a>
-      <a class="settings-link" href="delete.html" data-i18n="deleteData">Gegevens verwijderen (uitleg)</a>
+      <!-- these two pages are on the Studio Sedillo website; script.js adds the language and hides them on a games portal -->
+      <a class="settings-link" id="link-privacy" href="https://studiosedillo.com/sudoku-kids/privacy" target="_blank" rel="noopener" data-i18n="privacy">Privacy (voor ouders)</a>
+      <a class="settings-link" id="link-delete" href="https://studiosedillo.com/sudoku-kids/delete" target="_blank" rel="noopener" data-i18n="deleteData">Gegevens verwijderen (uitleg)</a>
     </div>
   </div>
 
@@ -444,6 +447,7 @@
     </div>
   </div>
 
+  <script src="platform.js"></script>
   <script src="storage.js"></script>
   <script src="icons.js"></script>
   <script src="puzzle-bank.js"></script>

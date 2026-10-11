@@ -409,8 +409,6 @@ def run():
         g.solve()
         g.page.wait_for_selector('#modal-win:not(.hidden)')
         check('offline: app laadt en een level is uit te spelen', True)
-        g.page.goto(url + 'privacy.html')
-        check('offline: privacypagina beschikbaar', 'Privacyverklaring' in g.page.content())
         g.ctx.set_offline(False)
         external = sorted({r for r in g.requests if not r.startswith(url)})
         check('geen enkel verzoek naar een ander domein', not external, external)
@@ -1250,34 +1248,8 @@ def run():
             g.close()
 
         # ------------------------------------------------------------
-        section('27. Privacyverklaring en geen emoji meer (C)')
-        g = Game(browser, url)
-        g.start()
-        g.page.goto(url + 'privacy.html')
-        # © in de bedrijfsregel is een gewoon teken, geen emoji (Unicode telt het wel als pictogram)
-        emoji_js = r'() => (document.body.innerText.replace(/©/g, "").match(/\p{Extended_Pictographic}/u) || [""])[0]'
-        check('terugknop met het kawaii-icoon, geen emoji op de pagina', g.js('document.querySelectorAll(".back svg").length') == 2 and g.js(emoji_js) == '')
-        check('taalknoppen bovenaan: Engels, Nederlands, Spaans, Portugees, Indonesisch',
-              g.js('[...document.querySelectorAll("#langs button")].map(b => b.textContent).join("|")') == 'English|Nederlands|Español|Português|Bahasa Indonesia')
-        check('standaard de taal van de app (Nederlands)', g.js('document.documentElement.lang') == 'nl' and g.js('document.querySelector("h1").textContent') == 'Privacyverklaring')
-        shape = {}
-        for code, title in (('en', 'Privacy policy'), ('es', 'Política de privacidad'), ('pt', 'Política de privacidade'), ('id', 'Kebijakan privasi'), ('nl', 'Privacyverklaring')):
-            g.page.click(f'#langs button[data-lang="{code}"]')
-            shape[code] = [g.js('document.querySelector("h1").textContent') == title, g.js('document.querySelectorAll("#policy li").length'),
-                           g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelector(\'#langs button[aria-pressed="true"]\').dataset.lang') == code,
-                           g.js('document.querySelector(".back").textContent.length > 5'), g.js(emoji_js) == '']
-        check('alle 5 talen compleet: titel, 16 punten, 12 kopjes, terugknop', all(v == [True, 16, 12, True, True, True] for v in shape.values()), shape)
-        g.js('const s = JSON.parse(localStorage.getItem("sudokuKids_settings") || "{}"); s.language = "de"; localStorage.setItem("sudokuKids_settings", JSON.stringify(s))')
-        g.page.reload()
-        check('app in een taal zonder vertaling (Duits): de verklaring start in het Engels', g.js('document.documentElement.lang') == 'en')
-        g.js('const s = JSON.parse(localStorage.getItem("sudokuKids_settings")); s.language = "pt"; localStorage.setItem("sudokuKids_settings", JSON.stringify(s))')
-        g.page.reload()
-        check('app in het Portugees: de verklaring start in het Portugees', g.js('document.documentElement.lang') == 'pt')
-        g.page.click('.back')
-        g.page.wait_for_selector('#btn-start')
-        check('terugknop gaat terug naar het spel', g.js('typeof startLevel') == 'function')
-        check('geen console-errors', not g.errors, g.errors)
-        g.close()
+        section('27. Geen emoji meer (C)')
+        # (de privacyverklaring staat sinds v10 op de hoofdsite; die wordt getest in de repo studio-sedillo, tests/pages.py)
         # zoekactie door het hele project: geen emoji in iets wat de speler te zien krijgt
         emoji_re = re.compile('[\U0001F000-\U0001FAFF☀-➿⬀-⯿️‍]')
         hits = {}
@@ -1285,7 +1257,7 @@ def run():
             found = sorted(set(emoji_re.findall(path.read_text(encoding='utf-8'))))
             if found:
                 hits[path.name] = found
-        check('zoekactie: geen emoji in index.html, privacy.html, docs/, manifest, css, js en de icoon-SVG\'s', hits == {}, hits)
+        check('zoekactie: geen emoji in index.html, docs/, manifest, css, js en de icoon-SVG\'s', hits == {}, hits)
 
         # ------------------------------------------------------------
         section('28. Gegevens verwijderen (publiceren 3)')
@@ -1455,41 +1427,15 @@ def run():
               shown == own['nl'] and own['en'] == "Icons, music and puzzles are Studio Sedillo's own work." and own['nl'] == 'Iconen, muziek en puzzels zijn eigen werk van Studio Sedillo.' and
               all(v.count('.') == 1 and 'Studio Sedillo' in v for v in own.values()) and len(set(own.values())) == 10, own)
         g.page.click('#btn-credits-ok')
-        check('links naar privacy en "gegevens verwijderen" in Instellingen',
-              g.js('[...document.querySelectorAll(".settings-link")].map(a => a.getAttribute("href")).join()') == 'privacy.html,delete.html')
-        for page_name, min_sections in (('privacy.html', 12), ('delete.html', 5)):
-            g.page.goto(url + page_name)
-            shape = {}
-            for code in ('en', 'nl', 'es', 'pt', 'id'):
-                g.page.click(f'#langs button[data-lang="{code}"]')
-                shape[code] = [g.js('document.querySelectorAll("#policy h2").length'), g.js('document.querySelectorAll("#policy li").length'),
-                               g.js('document.querySelectorAll(\'#policy a[href="mailto:studio.sedillo@gmail.com"]\').length') >= 1,
-                               'Studio Sedillo' in g.js('document.getElementById("policy").textContent'),
-                               g.js('document.getElementById("company").textContent').startswith('© 2026 Studio Sedillo · KvK 42122276 · ') and
-                               g.js('document.getElementById("company").textContent').endswith(' · studio.sedillo@gmail.com')]
-            check(f'{page_name} in 5 talen: zelfde opbouw ({min_sections} onderdelen), Studio Sedillo, het contactadres en de footer met KvK-nummer en land',
-                  len({json.dumps(v) for v in shape.values()}) == 1 and shape['en'][0] == min_sections and shape['en'][2] and shape['en'][3] and shape['en'][4], shape)
-        legal = {}
-        g.page.goto(url + 'privacy.html')
-        for code in ('en', 'nl', 'es', 'pt', 'id'):
-            g.page.click(f'#langs button[data-lang="{code}"]')
-            text = g.js('document.getElementById("policy").textContent')
-            legal[code] = ['Gmail' in text and 'Google' in text and 'Studio Sedillo (' in text and 'KvK 42122276' in text, 'Data Privacy Framework' in text, '6' in text and ('GDPR' in text or 'AVG' in text or 'RGPD' in text),
-                           g.js('[...document.querySelectorAll("#policy a")].map(a => a.getAttribute("href")).filter(h => /^https:/.test(h)).sort().join()'),
-                           g.js('document.querySelector(\'#policy a[href="delete.html"]\') !== null')]
-        check('privacyverklaring in 5 talen: verantwoordelijke met rechtsvorm en KvK-nummer, e-mail via Gmail (Google), grondslag art. 6 lid 1 sub f, Data Privacy Framework, links naar GitHub en Google, link naar delete.html',
-              all(v == [True, True, True, 'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement,https://policies.google.com/privacy,https://policies.google.com/privacy', True]
-                  for v in legal.values()), legal)
-        g.page.goto(url + 'verwijderen.html?lang=nl')
-        g.page.wait_for_url('**/delete.html?lang=nl')
-        check('het oude adres verwijderen.html verwijst door naar delete.html en houdt de taal vast',
-              g.js('document.querySelector("h1").textContent') == 'Gegevens verwijderen')
-        g.page.goto(url + 'privacy.html?lang=nl')
-        heads = g.js('[...document.querySelectorAll("#policy h2")].map(h => h.textContent)')
-        check('privacyverklaring bevat de verplichte onderdelen',
-              heads == ['Wie is verantwoordelijk', 'In het kort', 'Wat er wordt bewaard, en waar', 'Wat de app niet doet', 'Delen met anderen',
-                        'Als je ons mailt', 'Gegevens buiten de EU', 'Hoe lang gegevens bewaard blijven', 'Hoe je gegevens verwijdert', 'Je rechten (AVG)', 'Kinderen en ouders', 'Wijzigingen'] and
-              '11 oktober 2026' in g.js('document.querySelector(".updated").textContent'), heads)
+        site = 'https://studiosedillo.com/sudoku-kids/'
+        links_js = '[...document.querySelectorAll(".settings-link")].map(a => [a.href, a.target, a.rel, a.hidden].join(" ")).join()'
+        check('links naar privacy en "gegevens verwijderen" in Instellingen gaan naar de hoofdsite, in de taal van de app, in een nieuw venster',
+              g.js(links_js) == f'{site}privacy?lang=nl _blank noopener false,{site}delete?lang=nl _blank noopener false', g.js(links_js))
+        g.js('settings.language = "pt"; applyTranslations()')
+        check('andere taal in de app: de links volgen (Portugees)', g.js(links_js).count('?lang=pt') == 2)
+        g.js('settings.language = "nl"; applyTranslations()')
+        check('de pagina\'s zelf zitten niet meer in de app (geen privacy.html, delete.html of verwijderen.html in de repo)',
+              not [n for n in ('privacy.html', 'delete.html', 'verwijderen.html') if (ROOT / n).exists()])
         check('geen console-errors', not g.errors, g.errors)
         g.close()
 
@@ -1520,8 +1466,7 @@ def run():
         g.js('goToSettings()')
         g.page.click('#btn-credits')
         g.page.click('#btn-credits-ok')
-        for page_name in ('privacy.html', 'delete.html', 'verwijderen.html', ''):
-            g.page.goto(url + page_name)
+        g.page.goto(url)
         g.page.wait_for_timeout(1500)
         hosts = sorted({re.sub(r'^https?://([^/]+)/.*$', r'\1', r) for r in g.requests})
         files = sorted({r.split('?')[0].split('#')[0].replace(url, '/') for r in g.requests})
@@ -1557,42 +1502,28 @@ def run():
         g.close()
 
         # ------------------------------------------------------------
-        section('32. Eigen domein: privacy-URL, assetlinks, deploy en store-teksten (publiceren 4, 5)')
-        g = Game(browser, url)
-        for path, title in (('privacy', 'Privacyverklaring'), ('delete', 'Gegevens verwijderen'), ('verwijderen', 'Gegevens verwijderen')):
-            g.page.goto(url + path + '?lang=nl')
-            g.page.wait_for_selector('#policy h1')
-            check(f'/{path} (zonder .html, zoals op GitHub Pages) toont de pagina', g.js('document.querySelector("h1").textContent') == title)
-        links = g.js('fetch(".well-known/assetlinks.json").then(r => r.ok ? r.json() : null)')
-        check('/.well-known/assetlinks.json is geldige JSON met de package name com.studiosedillo.sudokukids',
-              isinstance(links, list) and links[0]['relation'] == ['delegate_permission/common.handle_all_urls'] and
-              links[0]['target']['namespace'] == 'android_app' and links[0]['target']['package_name'] == 'com.studiosedillo.sudokukids' and
-              all(re.fullmatch(r'([0-9A-F]{2}:){31}[0-9A-F]{2}', f) for f in links[0]['target']['sha256_cert_fingerprints']), links)
-        check('geen console-errors', not g.errors, g.errors)
-        g.close()
+        section('32. Testdeploy, geen eigen domein, store-teksten (publiceren 4, 5)')
         assets = [a[2:] for a in re.findall(r"'(\./[^']+)'", (ROOT / 'sw.js').read_text()) if a != './']
-        for name in ('test-deploy.yml', 'live-deploy.yml'):
-            flow = (ROOT / '.github' / 'workflows' / name).read_text()
-            copied = re.search(r'cp -r (.+) site/', flow).group(1).split()
-            missing = [a for a in assets if a not in copied and a.split('/')[0] not in copied]
-            check(f'{name}: kopieert elk bestand uit de cache-lijst van sw.js, plus .well-known, .nojekyll en (met variabele) CNAME',
-                  not missing and '.well-known' in copied and 'touch site/.nojekyll' in flow and 'site/CNAME' in flow, missing)
-        live = (ROOT / '.github' / 'workflows' / 'live-deploy.yml').read_text()
-        check('live-deploy.yml draait alleen op main, alleen als LIVE_DOMAIN bestaat, en neemt de formaat-balk van de testversie niet mee',
-              'branches: [main]' in live and "vars.LIVE_DOMAIN != ''" in live and 'test-preview.js' not in live)
+        flow = (ROOT / '.github' / 'workflows' / 'test-deploy.yml').read_text()
+        copied = re.search(r'cp -r (.+) site/', flow).group(1).split()
+        missing = [a for a in assets if a not in copied and a.split('/')[0] not in copied]
+        check('test-deploy.yml: kopieert elk bestand uit de cache-lijst van sw.js en zet geen eigen domein (geen CNAME)',
+              not missing and 'CNAME' not in flow and 'touch site/.nojekyll' in flow, missing)
+        check('er is geen workflow of bestand meer voor een eigen app-domein (live-deploy.yml, .well-known, twa/)',
+              not [n for n in ('.github/workflows/live-deploy.yml', '.well-known', 'twa') if (ROOT / n).exists()])
+        check('de webversie staat op noindex (testkopie; de app verschijnt als Android-app en op webportals)',
+              '<meta name="robots" content="noindex, nofollow" />' in (ROOT / 'index.html').read_text())
         old_mail = 'support@' + 'studiosedillo.com'
         skip = {'.git', 'node_modules', 'out'}
         found = [str(f.relative_to(ROOT)) for f in ROOT.rglob('*') if f.is_file() and not skip & set(f.relative_to(ROOT).parts)
                  and f.suffix in ('.html', '.js', '.json', '.md', '.py', '.yml', '.sh', '.css', '.txt') and old_mail in f.read_text(errors='ignore')]
         check('het oude contactadres komt nergens meer voor; overal studio.sedillo@gmail.com', not found, found)
-        check('.nojekyll staat in de repo en er staat geen CNAME in de root (anders neemt de bron-repo het domein over)',
-              (ROOT / '.nojekyll').is_file() and not (ROOT / 'CNAME').exists())
-        twa = json.loads((ROOT / 'twa' / 'twa-manifest.json').read_text())
-        check('TWA-instellingen: package name, host, geen meldingen',
-              twa['packageId'] == 'com.studiosedillo.sudokukids' and twa['host'] == 'sudokukids.studiosedillo.com' and twa['enableNotifications'] is False)
+        check('er staat geen CNAME in de root', not (ROOT / 'CNAME').exists())
         ignore = (ROOT / '.gitignore').read_text()
         check('signing keys kunnen niet per ongeluk in Git komen (.gitignore)', '*.keystore' in ignore and '*.jks' in ignore)
         listing = json.loads((ROOT / 'store' / 'listing.json').read_text())
+        check('store: privacy- en verwijder-URL staan op de hoofdsite',
+              listing['privacy'] == 'https://studiosedillo.com/sudoku-kids/privacy' and listing['delete'] == 'https://studiosedillo.com/sudoku-kids/delete')
         sizes = {k: (len(v['short']), len(v['full'])) for k, v in listing['listings'].items()}
         banned = re.compile(r'\b(free|gratis|best|beste|#1|top|sale|new|nieuw)\b', re.I)
         check('store-teksten: titel hoogstens 30 tekens, 10 talen, kort hoogstens 80 en lang hoogstens 4000 tekens',

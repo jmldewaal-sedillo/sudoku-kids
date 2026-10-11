@@ -9,6 +9,7 @@ const E = window.SudokuEngine;
 const K = window.KawaiiIcons;
 const Store = window.SudokuStorage;       // profiles + their data (see storage.js)
 const Badges = window.SudokuBadges;       // the 100 badges (see badges.js)
+const Platform = window.SudokuPlatform;   // web, Android app or a games portal (see platform.js)
 const IS_TEST = Store.IS_TEST;            // true on the test copy (…-test folder)
 const TEST_BUILD = '';   // filled in by the test deploy (commit id), shown in the TEST label
 const APP_VERSION = '1.0';
@@ -101,6 +102,16 @@ function applyTranslations() {
   document.documentElement.lang = settings.language;
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  syncPlatformUI();
+}
+// The privacy and delete pages live on studiosedillo.com and open in the language of the
+// app. A games portal allows no links that leave it, so there they are hidden.
+function syncPlatformUI() {
+  [['link-privacy', 'privacy'], ['link-delete', 'delete']].forEach(([id, page]) => {
+    $(id).hidden = !Platform.links;
+    $(id).href = Platform.site + page + '?lang=' + settings.language;
+  });
+  $('btn-file').hidden = !Platform.fileExport;
 }
 
 // ============================================================
@@ -408,6 +419,7 @@ function goToProfiles() {
   buildProfiles();
 }
 function leaveGame() {
+  Platform.gameplayStop();
   saveCurrent();
   goToLevels(gameState.lv.world);
 }
@@ -575,6 +587,8 @@ function nextPuzzleId(globalIndex) {
 // `fresh` = start a new puzzle (replay button); otherwise an unfinished game
 // of this level is continued where the player left it.
 function startLevel(globalIndex, fresh) {
+  Platform.gameplayStop();                  // "again" and "next level" start a new round
+  Platform.gameplayStart();
   const lv = LEVELS[globalIndex];
   const saved = fresh ? null : savedGameFor(globalIndex);
   const pid = saved ? saved.pid : nextPuzzleId(globalIndex);
@@ -1181,6 +1195,7 @@ function calcStars(mistakes, hints) {
 }
 
 function showWin(stars) {
+  Platform.gameplayStop();
   const gs = gameState, lv = gs.lv;
   $('win-stars').innerHTML = starsHtml(stars);
   $('win-stars').dataset.stars = stars;
@@ -1197,6 +1212,7 @@ function showWin(stars) {
 }
 
 function showGameOver() {
+  Platform.gameplayStop();
   showModal('gameover');
   playError();
 }
@@ -1934,6 +1950,7 @@ function onKeyDown(e) {
 // SERVICE WORKER
 // ============================================================
 function registerSW() {
+  if (!Platform.serviceWorker) return;      // the Android app and the portals carry all files themselves
   if (!('serviceWorker' in navigator) || !location.protocol.startsWith('http')) return;
   const hadController = !!navigator.serviceWorker.controller;
   let reloaded = false;
@@ -1994,6 +2011,7 @@ function init() {
   initEventListeners();
   registerSW();
   showScreen('splash');
+  Platform.loaded();
   if (imported) {
     const [key, n] = imported.split(':');
     $('info-title').textContent = t('transferTitle');

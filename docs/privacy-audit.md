@@ -1,6 +1,6 @@
 # Privacy-audit – wat de app verstuurt en bewaart
 
-*Uitgevoerd op 11 oktober 2026 op branch `publish-prep` (cache `sudoku-kids-v8`, opnieuw gemeten na de wijzigingen van v8). Opnieuw
+*Uitgevoerd op 11 oktober 2026 op branch `publish-prep` (cache `sudoku-kids-v10`, opnieuw gemeten na de wijzigingen van v10). Opnieuw
 uit te voeren met `python3 tests/e2e.py`; onderdeel 31 doet de meting en schrijft de ruwe
 uitkomst naar `tests/out/privacy-audit.json`.*
 
@@ -20,21 +20,22 @@ Dit document onderbouwt de antwoorden in het Data safety-formulier en de privacy
 **Hoe gemeten:** een echte browser (headless Chromium via Playwright) speelt een hele ronde
 en elk verzoek van de pagina wordt vastgelegd: start, wereld, de spelregels bij het eerste
 level, een hint, een level uitspelen, meldingen, de profielpagina met badges, werelden en
-geschiedenis, voortgang exporteren, credits, en daarna de privacypagina, de verwijderpagina
-en opnieuw de startpagina.
+geschiedenis, voortgang exporteren, credits, en daarna opnieuw de startpagina. (De
+privacyverklaring en de verwijderpagina zitten sinds v10 niet meer in de app; ze staan op de
+hoofdsite en worden daar getest: repo `studio-sedillo`, `tests/pages.py`.)
 
 **Uitkomst (run van 11 oktober 2026):**
 
 | | |
 |---|---|
-| Aantal verzoeken | 30 |
+| Aantal verzoeken | 22 |
 | Verschillende domeinen | 1: het eigen adres (in de test `127.0.0.1`) |
 | Verzoeken naar een ander domein | **0** |
 | Andere methoden dan GET (POST, PUT, …) | 0 |
-| Opgevraagde bestanden | `/`, `badges.js`, `i18n.js`, `icons.js`, `level-plan.js`, `delete.html`, `privacy.html`, `puzzle-bank.js`, `puzzles.js`, `script.js`, `storage.js`, `style.css`, `verwijderen.html` (verwijst door naar `delete.html`) |
+| Opgevraagde bestanden | `/`, `badges.js`, `i18n.js`, `icons.js`, `level-plan.js`, `platform.js`, `puzzle-bank.js`, `puzzles.js`, `script.js`, `storage.js`, `style.css` |
 | Cookies / sessionStorage / IndexedDB | geen / leeg / geen |
 | Toestemmingen verleend | geen |
-| Cache van de service worker | 1 cache (`sudoku-kids-v8`) met 18 eigen bestanden, voor offline spelen |
+| Cache van de service worker | 1 cache (`sudoku-kids-v10`) met 16 eigen bestanden, voor offline spelen (alleen de webversie) |
 
 De iconen, het manifest en de service worker zelf haalt de browser buiten de pagina om op;
 ook die komen van het eigen adres (de lijst staat in `sw.js`, `ASSETS`).
@@ -45,14 +46,26 @@ ook die komen van het eigen adres (de lijst staat in `sw.js`, `ASSETS`).
   link en komt in geen enkel verzoek naar de server voor (onderdeel 29).
 - In de broncode staan geen adressen van andere domeinen die geladen worden: geen CDN,
   lettertypen, statistieken of advertenties. De enige externe adressen in de app zijn tekst
-  (het mailadres), twee links in de privacyverklaring (naar de privacyverklaringen van GitHub
-  en Google; die worden pas geopend als iemand erop tikt) en, zodra ingesteld, het nieuwe eigen
-  adres in de verhuismelding.
+  (het mailadres) en twee gewone links in Instellingen naar de privacyverklaring en de pagina
+  over gegevens verwijderen op studiosedillo.com; die openen pas als iemand erop tikt, in de
+  browser van het toestel.
 - Offline: na één keer laden werkt de app zonder netwerk (onderdeel 10).
 
 **Wat buiten de app valt:** de webserver. GitHub Pages levert de bestanden en kan daarbij,
 zoals elke webserver, het IP-adres van de bezoeker vastleggen. Studio Sedillo heeft daar
 geen toegang toe. Dit staat in de privacyverklaring.
+
+## Per bouwdoel
+
+| Bouwdoel | Wat er het toestel verlaat | Opslag |
+|---|---|---|
+| **web** (testkopie) | Niets, behalve het ophalen van de eigen bestanden (deze meting) | localStorage van de browser + de cache van de service worker |
+| **android** (Capacitor) | Niets: alle bestanden zitten in de app, er is geen service worker. De app vraagt alleen de permissie INTERNET (nodig voor de WebView), geen reclame-id, en doet geen back-up naar Google | localStorage van de WebView, plus een tweede kopie van dezelfde sleutels in de native opslag van de app (Preferences). Beide worden gewist door "Alle gegevens verwijderen" en door de app te verwijderen |
+| **webportals** (CrazyGames, Poki) | Het spel zelf verstuurt niets. De **SDK van de portal** wordt van hun adres geladen en krijgt van ons alleen de meldingen "geladen", "spel gestart" en "spel gestopt". Wat de portal en haar SDK verder verzamelen valt onder hun privacyverklaring. **Vóór publicatie op een portal dit onderdeel aanvullen met een meting op de portal zelf** | localStorage op het adres van de portal |
+
+Gecontroleerd met `python3 tests/builds.py`: geen service worker in de bouwdoelen, in de
+Android-versie geen enkel verzoek naar een ander adres, in de portal-versies alleen het
+verzoek om de SDK, en geen advertentie-aanroep.
 
 ## Wat er lokaal staat
 

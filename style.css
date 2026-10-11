@@ -922,6 +922,7 @@ label.settings-row { cursor: pointer; }
   color: var(--text-dark);
   cursor:pointer;
 }
+[hidden] { display: none !important; }      /* also for elements that set their own display */
 .settings-link {
   align-self: center;
   min-height: var(--tap); padding: 12px 16px;

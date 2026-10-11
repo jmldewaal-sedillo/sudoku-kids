@@ -7,8 +7,8 @@ Gemaakt door `tests/store.py` uit `store/listing.json`. Pas de teksten daar aan,
 - Bedrijf: Studio Sedillo (eenmanszaak) · KvK 42122276 · Nederland (geen adres vermelden)
 - E-mail: studio.sedillo@gmail.com
 - Website: https://studiosedillo.com
-- Privacybeleid: https://sudokukids.studiosedillo.com/privacy
-- Gegevens verwijderen: https://sudokukids.studiosedillo.com/delete
+- Privacybeleid: https://studiosedillo.com/sudoku-kids/privacy
+- Gegevens verwijderen: https://studiosedillo.com/sudoku-kids/delete
 - Categorie: Game – Puzzle
 
 ## en-US

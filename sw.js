@@ -4,7 +4,7 @@
 // (e.g. https://example.com/sudoku/ or GitHub Pages).
 // Bump CACHE_VERSION on every release so players get the update.
 // ============================================================
-const CACHE_VERSION = 'sudoku-kids-v9';
+const CACHE_VERSION = 'sudoku-kids-v10';
 
 // Test copy (folder "test" or "…-test"): its own cache name, so the test and
 // the live version never share or delete each other's files. TEST_BUILD is
@@ -17,6 +17,7 @@ const ASSETS = [
   './',
   './index.html',
   './style.css',
+  './platform.js',
   './storage.js',
   './icons.js',
   './puzzle-bank.js',
@@ -26,9 +27,6 @@ const ASSETS = [
   './badges.js',
   './script.js',
   './manifest.json',
-  './privacy.html',
-  './delete.html',
-  './verwijderen.html',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',

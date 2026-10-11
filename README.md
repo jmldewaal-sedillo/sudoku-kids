@@ -10,8 +10,10 @@ Gemaakt door **Studio Sedillo** (eenmanszaak, KvK 42122276, Nederland) · studio
 | Onderwerp | Document |
 |---|---|
 | Alle eisen van Google Play, met status en to-do-lijst | `docs/publiceren.md` |
-| Domeinen, DNS-records, een nieuwe app toevoegen, verhuizen | `docs/studio-sedillo.md` |
-| Android-app (TWA) bouwen, signing key | `docs/twa.md` |
+| Eén codebase, bouwdoelen (android, webportals, web), volgorde van lanceren | `docs/lanceren.md` |
+| De hoofdsite, DNS-records van studiosedillo.com | `docs/studio-sedillo.md` |
+| Android-app (Capacitor) bouwen, upload key, wat je op je toestel test | `docs/android.md` |
+| Webportals (CrazyGames, Poki): eisen, advies, upload-zip | `docs/webportals.md` |
 | Wat de app bewaart en verstuurt (netwerktest) | `docs/privacy-audit.md` |
 
 ## Testen en live zetten
@@ -21,9 +23,9 @@ Gemaakt door **Studio Sedillo** (eenmanszaak, KvK 42122276, Nederland) · studio
 | | Testversie | Live versie |
 |---|---|---|
 | Link nu | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ | https://jmldewaal-sedillo.github.io/sudoku-kids/ |
-| Link met eigen domein (na DNS) | https://test-sudokukids.studiosedillo.com/ | https://sudokukids.studiosedillo.com/ (het github.io-adres blijft als "oud adres" bestaan) |
+| Eigen domein | geen: de webversie is een testkopie (`noindex`); de app verschijnt als Android-app en op webportals (`docs/lanceren.md`) | geen |
 | Bijwerken | `git push origin <jouw-branch>:test` | branch mergen naar `main` en pushen |
-| Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt het oude adres rechtstreeks vanaf `main`; `live-deploy.yml` kopieert `main` naar `sudoku-kids-live` zodra de variabele `LIVE_DOMAIN` bestaat |
+| Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt rechtstreeks vanaf `main` |
 | Herkennen | rood label **TEST + commit-id** bovenin, titel "TEST · …" | geen label |
 | Opslag | sleutels met `test_` ervoor (`test_sudokuKids_progress`, …) | `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current` |
 | Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v7-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v7` |
@@ -34,7 +36,7 @@ Een testpush is na ongeveer een minuut online. Het commit-id in het label vertel
 versie je ziet; staat er nog het oude, sluit de app dan en open hem opnieuw.
 
 De app ziet zelf dat hij een testkopie is: de hostnaam begint met `test-` of `test.`
-(`test-sudokukids.studiosedillo.com`), of hij draait vanuit een map die `test` heet of op
+(bijvoorbeeld `test-…`), of hij draait vanuit een map die `test` heet of op
 `-test` eindigt. In de code is er verder geen verschil, dus wat je test is wat live gaat.
 Sterren, instellingen en caches van test en live staan los van elkaar; `python3 tests/e2e.py`
 (onderdeel 11) bewijst dat spelen en wissen in de test de live-opslag niet verandert.
@@ -71,18 +73,17 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `storage.js` | Profielen en opslag; de enige plek die weet waar gegevens staan |
 | `test-preview.js` | Formaat-balk van de testversie |
 | `docs/account-koppelen.md` | Onderzoek en advies over inloggen/koppelen in een kinderapp |
-| `docs/publiceren.md`, `docs/studio-sedillo.md`, `docs/twa.md`, `docs/privacy-audit.md` | Publiceren: beleid, domeinen, Android-app, privacy-audit |
-| `delete.html` | Uitleg over gegevens verwijderen in 5 talen (de link die Google Play vraagt); bereikbaar als `/delete` |
-| `verwijderen.html` | Het oude adres van die pagina; verwijst door naar `delete.html` |
-| `.well-known/assetlinks.json`, `.nojekyll` | Koppeling tussen de Android-app en dit (sub)domein; zonder `.nojekyll` slaat GitHub Pages de map over |
+| `docs/publiceren.md`, `docs/lanceren.md`, `docs/android.md`, `docs/webportals.md`, `docs/studio-sedillo.md`, `docs/privacy-audit.md` | Publiceren: beleid, bouwdoelen, Android-app, webportals, hoofdsite, privacy-audit |
+| `platform.js`, `platforms/` | Waar deze kopie draait: web (standaard), `android.js`, `crazygames.js`, `poki.js`. Het enige dat per bouwdoel verschilt |
+| `tools/build.mjs` | Maakt `dist/android/` en de upload-zips voor de portals (zonder service worker) |
+| `android-app/` | Het Capacitor-project (Android-schil); `tools/build-android.sh` bouwt de `.apk`/`.aab`, `tools/android-icons.sh` maakt de iconen |
+| `tests/builds.py` | Speelt de drie bouwdoelen met een nagebootste SDK en Capacitor-brug |
 | `store/` | Store-materiaal: teksten in 10 talen (`listing.json`, `teksten.md`), icoon, feature graphic, screenshots |
-| `twa/twa-manifest.json` | Instellingen voor Bubblewrap (Android-app) |
-| `tools/eigen-domein.sh` | Controleert de DNS-records en zet de eigen domeinen aan |
+| `tools/eigen-domein.sh` | Controleert de DNS-records van de hoofdsite en zet studiosedillo.com aan |
 | `tools/no-private-data.py` | Vangnet: controleert bestanden, commits, geschiedenis en online pagina's op privégegevens uit `~/.studio-sedillo/blocklist.txt` (uitleg: `docs/bedrijf.md`) |
 | `tools/install-hooks.sh` | Zet dat vangnet aan als pre-commit en commit-msg hook |
 | `tests/no-private-data.py` | Test: zelftest van het vangnet + alle bestanden van de repo (`--online`: ook de gepubliceerde pagina's) |
 | `docs/bedrijf.md` | Bedrijfsgegevens, wat de wet over het adres zegt, Google Play-accounttypes, het adres-vangnet |
-| `.github/workflows/live-deploy.yml` | Zet `main` op het eigen subdomein (pas actief na `LIVE_DOMAIN`) |
 | `tests/store.py` | Maakt het store-materiaal en controleert het tegen de eisen van Google Play |
 | `docs/icon-opties.html` | Vergelijking van drie icoonsets (alleen op de testlink) |
 | `tools/generate-puzzles.js` | Nieuwe puzzels of levels maken met één commando (geen build-stap; resultaat staat in de repo) |
@@ -91,7 +92,6 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `manifest.json`, `sw.js` | PWA: installeren en offline spelen |
 | `icons/` | App-iconen (`any` en `maskable`) |
 | `screenshots/` | Twee screenshots van 1080×1920 voor het installatievenster |
-| `privacy.html` | Privacyverklaring in 5 talen, ook offline beschikbaar; bereikbaar als `/privacy` |
 | `.github/workflows/test-deploy.yml` | Zet branch `test` op de testlink |
 | `tests/validate-levels.js` | Controleert alle levels automatisch |
 | `tests/difficulty.js` | Meet de moeilijkheid per level en per band van de voorraad |
@@ -189,8 +189,9 @@ De 1.000 4×4-puzzels in de voorraad zijn onderling allemaal echt verschillend.
 - **Grootte**: twee keuzes, klein en groot. Groot vult de ruimte (tot 900 px), klein is 68%
   daarvan (tot 420 px); het voorbeeldblokje in Instellingen is exact zo groot als een vakje in
   het spel.
-- **Privacyverklaring**: `privacy.html` in 5 talen (EN, NL, ES, PT, ID) met taalknoppen;
-  start in de taal van de app, anders Engels. De teksten staan in het bestand zelf.
+- **Privacyverklaring en gegevens verwijderen**: staan niet in de app maar op de hoofdsite
+  (`studiosedillo.com/sudoku-kids/privacy` en `/delete`, repo `studio-sedillo`), in 5 talen.
+  De links in Instellingen openen ze in de taal van de app; op een webportal zijn ze verborgen.
 - **Talen**: `i18n.js` bevat `LANGUAGES` (volgorde en naam in de eigen taal) en `STRINGS`.
   Een taal toevoegen = een regel in `LANGUAGES` en een blok in `STRINGS` met álle sleutels van
   `nl`; onderdeel 19 van de e2e-test faalt als er een sleutel ontbreekt. Er staan geen emoji
@@ -277,7 +278,7 @@ Eenmalig installeren: `pip install playwright && playwright install chromium`.
 ```bash
 node tests/validate-levels.js && node tests/difficulty.js && \
 for f in *.js tests/*.js; do node --check "$f" || exit 1; done && \
-python3 tests/no-private-data.py && python3 tests/e2e.py && python3 tests/screenshots.py
+python3 tests/no-private-data.py && python3 tests/e2e.py && python3 tests/builds.py && python3 tests/screenshots.py
 ```
 
 | Commando | Wat het bewijst |
@@ -305,14 +306,15 @@ python3 -m http.server 8000
 Alles staat in `docs/publiceren.md` (eisen, antwoorden voor Play Console en de to-do-lijst in
 volgorde). In het kort:
 
-1. **Eigen domein**: DNS bij Namecheap, domeinverificatie bij GitHub en
-   `tools/eigen-domein.sh` (`docs/studio-sedillo.md`).
-2. **Android-app (TWA)** bouwen met Bubblewrap en de upload key veilig bewaren (`docs/twa.md`).
-3. **`assetlinks.json`**: de SHA-256 van de app signing key uit Play Console in
-   `.well-known/assetlinks.json` zetten. Het bestand staat per subdomein in de root van de app.
+1. **Hoofdsite**: DNS van studiosedillo.com bij Namecheap, domeinverificatie bij GitHub en
+   `tools/eigen-domein.sh` (`docs/studio-sedillo.md`). Daar staan de privacy- en verwijderpagina.
+2. **Android-app (Capacitor)**: Android Studio installeren, de upload key maken en veilig
+   bewaren, `tools/build-android.sh` (`docs/android.md`). De bestanden van het spel zitten in de app.
+3. **Testen op een toestel** met de lijst in `docs/android.md`.
 4. **Play Console**: app-content, Data safety, IARC, doelgroep, store-pagina (`store/`),
    gesloten test met 12 testers gedurende 14 dagen, daarna productie.
-5. **Bij elke update** verhoog je `CACHE_VERSION` in `sw.js`, zodat spelers de nieuwe versie krijgen.
+5. **Bij elke update** verhoog je `CACHE_VERSION` in `sw.js` (webversie) en `versionCode` in
+   `android-app/android/app/build.gradle` (Android), en upload je een nieuwe `.aab`.
    Staat de app open op het start- of wereldscherm, dan laadt hij de nieuwe versie vanzelf;
    midden in een puzzel gebeurt dat pas bij de volgende start.
 

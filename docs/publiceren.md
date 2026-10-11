@@ -17,8 +17,10 @@ Uitgangspunten (besloten op 11 oktober 2026):
   verandering in, dan eerst het adres regelen (`docs/bedrijf.md`, 1b).
 - Uitgever: **Studio Sedillo** (eenmanszaak), KvK 42122276, Nederland, contact
   **studio.sedillo@gmail.com**. Het adres wordt nergens vermeld (besluit van Jenn).
-- Adres van de app: **https://sudokukids.studiosedillo.com/**, package name
-  **com.studiosedillo.sudokukids**.
+- **Geen app-website** (besluit van 11 oktober 2026, `docs/lanceren.md`): de app verschijnt als
+  Android-app (Capacitor, bestanden in de app) en daarna op webportals. Package name
+  **com.studiosedillo.sudokukids**. Privacy en verwijderen staan op de hoofdsite:
+  `https://studiosedillo.com/sudoku-kids/privacy` en `/delete`.
 
 Status-woorden in dit document: **klaar** (gebouwd en getest), **klaar op test** (gebouwd,
 staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
@@ -30,15 +32,15 @@ staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
 | # | Wat | Waar | Waarom nu |
 |---|---|---|---|
 | 1 | De testversie nalopen (verwijderen, voortgang overzetten, spelregels, credits, privacy- en verwijderpagina) en akkoord geven | testlink | Niets gaat naar `main` zonder akkoord |
-| 2 | DNS-records aanmaken (tabel in `docs/studio-sedillo.md`) | Namecheap → Advanced DNS | Zonder DNS geen subdomein, geen privacy-URL, geen TWA |
+| 2 | DNS-records van de **hoofdsite** aanmaken en de records `proefapp` en `test-proefapp` verwijderen (tabel in `docs/studio-sedillo.md`) | Namecheap → Advanced DNS | Zonder DNS werken de privacy- en verwijder-URL niet op studiosedillo.com |
 | 3 | Domein verifiëren bij GitHub (TXT-record) | GitHub → Settings → Pages | Beschermt tegen domeinkaping |
-| 4 | Claude Code laten draaien: `tools/eigen-domein.sh check`, daarna `site`, `test`, `live` | terminal | Zet de eigen domeinen en HTTPS aan (kan pas na stap 2 en 3) |
+| 4 | Claude Code laten draaien: `tools/eigen-domein.sh check`, daarna `site` en `https` | terminal | Zet studiosedillo.com en HTTPS aan (kan pas na stap 2 en 3) |
 | 5 | In Play Console nakijken: accounttype en aanmaakdatum; ontwikkelaarsnaam op **Studio Sedillo** zetten; ontwikkelaars-e-mail op studio.sedillo@gmail.com | Play Console → Instellingen → Ontwikkelaarsaccount | Bepaalt of de gesloten test geldt; bij een persoonlijk account toont Google ook je wettelijke naam en land |
 | 5b | De stappen uit `docs/bedrijf.md` ("Wat Jenn zelf moet doen"): blocklist invullen, bezoekadres afschermen bij de KVK, btw-id doorgeven | zie daar | Het KvK-nummer staat online; het adres hoort dat niet te zijn |
 | 6 | App aanmaken in Play Console: naam "Sudoku Kids & Crazy Grids", type Game, gratis | Play Console → App maken | Nodig voor de signing key |
-| 7 | TWA bouwen met Bubblewrap en de **upload key** maken; wachtwoord en keystore veilig opbergen (zie `docs/twa.md`) | eigen pc | De key heb je bij elke update nodig |
-| 8 | De `.aab` uploaden naar **Interne test**; daarna de SHA-256 van de **app signing key** kopiëren | Play Console → Testen en releasen → App-integriteit | Die vingerafdruk moet in `assetlinks.json` |
-| 9 | De vingerafdruk aan Claude Code geven (of zelf in `.well-known/assetlinks.json` zetten) en live zetten | repo | Zonder dit toont de app een adresbalk |
+| 7 | Android Studio installeren, de **upload key** maken en veilig opbergen, de app bouwen (`tools/build-android.sh`) en op je toestel testen (lijst in `docs/android.md`) | eigen pc en telefoon | De key heb je bij elke update nodig; de app is nog niet op Android getest |
+| 8 | `tools/build-android.sh release` en de `.aab` uploaden naar **Interne test** | Play Console → Testen en releasen | Eerste upload legt de package name vast |
+| 9 | De app uit de interne test installeren en de lijst uit `docs/android.md` nog een keer nalopen | eigen telefoon | Dit is de versie die spelers krijgen (ondertekend door Google) |
 | 10 | App-content invullen met de antwoorden uit dit document: privacybeleid-URL, advertenties (nee), app-toegang, doelgroep, Data safety, contentclassificatie (IARC) | Play Console → Beleid → App-content | Verplicht voor elke track behalve interne test |
 | 11 | Store-pagina vullen met het materiaal uit `store/` | Play Console → Groei → Store-vermelding | |
 | 12 | Gesloten test starten met **minstens 12 testers die 14 dagen aaneengesloten** aangemeld blijven | Play Console → Testen → Gesloten test | Verplicht voor productietoegang |
@@ -56,10 +58,10 @@ Geldt zodra een kindergroep in de doelgroep zit. Bron: [Families-beleid][familie
 | | Eis | Geldt voor ons? | Wat moet er gebeuren | Wie | Status |
 |---|---|---|---|---|---|
 | 1a | Inhoud geschikt voor kinderen | Ja | Niets: sudoku, geen geweld, geen chat, geen links naar buiten | – | klaar |
-| 1b | **De app mag niet alleen een webview van een website zijn** | Ja, aandachtspunt | Sudoku Kids wordt een TWA (Trusted Web Activity): technisch geen WebView, de inhoud is ons eigen spel en werkt volledig offline. Het beleid noemt TWA's niet apart; een afwijzing op dit punt is niet uit te sluiten. Beperk het risico: `assetlinks.json` moet kloppen (geen adresbalk), de app moet offline starten, en geen link naar een website in het spel. Wordt het toch afgewezen, dan is het alternatief een native schil met de bestanden in de app zelf | Claude Code bouwt, Jenn dient in | open (risico) |
+| 1b | **De app mag niet alleen een webview van een website zijn** | Ja | Opgelost door de keuze voor Capacitor: de bestanden van het spel zitten in de app, er is geen website erachter en de app werkt volledig offline (`docs/android.md`) | klaar (nog te bouwen en testen op Android) |
 | 1c | Antwoorden in Play Console (doelgroep, Data safety, IARC) kloppen en blijven actueel | Ja | Invullen volgens dit document; bij elke wijziging aan de app opnieuw nalopen | Jenn | open |
 | 1d | **Advertenties**: alleen Families Self-Certified Ads SDK's, geen gepersonaliseerde advertenties, strenge formaatregels | Nu niet | Geen advertenties, dus "Bevat advertenties: nee". **Let op voor later:** Google rekent ook kruispromotie van je eigen apps tot de advertentieregels ("cross-promotions (for your apps and third party apps)"). Een knop naar een ander spel van Studio Sedillo moet duidelijk te onderscheiden zijn van het spel zelf en hoort achter het ouderslot. Zoek bij invoering uit of de advertentieverklaring dan op "ja" moet | Claude Code, later | n.v.t. (taak op de roadmap) |
-| 1e | Gegevens: geen advertentie-ID, IMEI, MAC, SSID e.d. versturen; geen locatie | Ja | Niets: de app verstuurt niets. De TWA mag de permissie `AD_ID` niet aanvragen (controleren in het gegenereerde `AndroidManifest.xml`) | Claude Code | open (bij de TWA-build) |
+| 1e | Gegevens: geen advertentie-ID, IMEI, MAC, SSID e.d. versturen; geen locatie | Ja | Niets: de app verstuurt niets. De Android-app mag de permissie `AD_ID` niet aanvragen (staat uitdrukkelijk als "remove" in `AndroidManifest.xml`; `tests/builds.py` controleert dat de enige permissie INTERNET is) | Claude Code | klaar (nog te bouwen) |
 | 1f | API's en SDK's: alleen goedgekeurd voor kinderdiensten; geen Google-login in een app alleen voor kinderen | Ja | Niets: geen SDK's, geen login. "Account koppelen" is vervangen door "Voortgang overzetten" met een code | – | klaar op test |
 | 1g | Sociale functies, AR | Nee | – | – | n.v.t. |
 | 1h | Voldoen aan COPPA, AVG en andere wetten | Ja | Zie eis 11 | – | zie 11 |
@@ -79,10 +81,10 @@ worden. Bron: [Data safety][datasafety]. Onderbouwing: `docs/privacy-audit.md`.
 | Worden alle verzamelde gegevens versleuteld tijdens overdracht? | (vraag vervalt bij "nee") | De site gaat hoe dan ook alleen via HTTPS |
 | Kunnen gebruikers vragen hun gegevens te laten verwijderen? | (vraag vervalt bij "nee") | Verwijderen kan in de app en staat uitgelegd op de webpagina |
 | Kunnen gebruikers in je app een account aanmaken? | **Nee** | Een profiel met een dierenplaatje op het toestel is geen account: geen gebruikersnaam, e-mail of wachtwoord, en niets op een server |
-| URL voor het verwijderen van gegevens | `https://sudokukids.studiosedillo.com/delete` | Niet verplicht zonder accounts, wel invullen als het veld er is |
+| URL voor het verwijderen van gegevens | `https://studiosedillo.com/sudoku-kids/delete` | Niet verplicht zonder accounts, wel invullen als het veld er is |
 | Beveiligingspraktijken: "Committed to follow the Play Families Policy" | **Aanvinken** | Kan zodra de doelgroep kinderen bevat en de app aan het beleid voldoet |
 | Onafhankelijke beveiligingscontrole (MASA) | Nee | Optioneel en betaald |
-| Privacybeleid-URL | `https://sudokukids.studiosedillo.com/privacy` | Verplicht om het formulier te kunnen afronden |
+| Privacybeleid-URL | `https://studiosedillo.com/sudoku-kids/privacy` | Verplicht om het formulier te kunnen afronden |
 
 Op de store-pagina komt dan te staan dat de app geen gegevens verzamelt en geen gegevens
 deelt met derden.
@@ -104,7 +106,7 @@ hebben.
 | Welke gegevens de app benadert, verzamelt, gebruikt en deelt | "Wat er wordt bewaard, en waar", "Wat de app niet doet", "Delen met anderen" | klaar op test |
 | Hoe gegevens veilig worden verwerkt | "Delen met anderen": alleen HTTPS, niets verlaat het toestel; "Als je ons mailt" en "Gegevens buiten de EU" voor e-mail en hosting | klaar op test |
 | Bewaar- en verwijderbeleid | "Hoe lang gegevens bewaard blijven", "Hoe je gegevens verwijdert" | klaar op test |
-| Op een actieve, openbare URL, niet per land afgeschermd, geen pdf, niet door bezoekers te bewerken | `https://sudokukids.studiosedillo.com/privacy` | open (wacht op DNS) |
+| Op een actieve, openbare URL, niet per land afgeschermd, geen pdf, niet door bezoekers te bewerken | `https://studiosedillo.com/sudoku-kids/privacy` | open (wacht op DNS) |
 | Link in Play Console én in de app zelf | Instellingen → "Privacy (voor ouders)"; Play Console doet Jenn | klaar op test / open |
 | Rechten onder de AVG, kinderen en ouders, datum van wijziging | Eigen onderdelen | klaar op test |
 
@@ -123,7 +125,7 @@ kunnen uitoefenen.
 |---|---|---|---|
 | In de app: één profiel verwijderen | Profiel → potlood → "Profiel verwijderen", dubbel ouderslot, bevestiging | Claude Code | klaar op test |
 | In de app: alles verwijderen | Instellingen → "Alle gegevens van deze app verwijderen", dubbel ouderslot, bevestiging; wist alle sleutels, de cache en de service worker | Claude Code | klaar op test |
-| Webpagina met uitleg, zonder dat je de app hoeft te openen, met de naam van de app en ontwikkelaar | `https://sudokukids.studiosedillo.com/delete` (5 talen) | Claude Code | klaar op test, URL wacht op DNS |
+| Webpagina met uitleg, zonder dat je de app hoeft te openen, met de naam van de app en ontwikkelaar | `https://studiosedillo.com/sudoku-kids/delete` (5 talen) | Claude Code | klaar op test, URL wacht op DNS |
 | De link in Play Console invullen | Data safety → gegevens verwijderen | Jenn | open |
 
 ### 5. Leeftijdsclassificatie (IARC)
@@ -194,17 +196,17 @@ naam is je eigen naam, niet "Studio Sedillo". Vul in Play Console nergens een ad
 getoond wordt, en zet geen betaalde apps of aankopen aan. Bron: [accounttype kiezen][accounttype];
 uitgewerkt in `docs/bedrijf.md` (1c).
 
-### 8. Target-API voor de TWA
+### 8. Target-API voor de Android-app
 
 Bron: [target-API-eisen][targetapi]. Sinds 31 augustus 2026 moeten nieuwe apps en updates
 **Android 16 (API-niveau 36)** als target hebben.
 
 | Wat | Wie | Status |
 |---|---|---|
-| Na `bubblewrap init` in `app/build.gradle` controleren dat `targetSdkVersion` 36 of hoger is (zo niet: Bubblewrap bijwerken of het getal aanpassen) | Claude Code / Jenn bij de build | open |
+| `targetSdkVersion` is 36 (Capacitor 8); `tests/builds.py` controleert dat het 36 of hoger blijft | Claude Code | klaar (nog te bouwen) |
 | Elk jaar opnieuw: Google verhoogt de eis elke augustus; dan een nieuwe build uploaden | Jenn | terugkerend (roadmap) |
 
-De TWA bevat geen eigen native code, dus eisen aan native bibliotheken spelen niet.
+Capacitor 8 zet de target-API vast op 36 (`android-app/android/variables.gradle`; `tests/builds.py` controleert dat). Eisen aan eigen native bibliotheken spelen niet: de app gebruikt alleen Capacitor en twee officiële plug-ins.
 
 ### 9. Gesloten test voor nieuwe persoonlijke accounts
 
@@ -278,7 +280,7 @@ AVG, artikel 5).
 - [Accounttype kiezen][accounttype] – Play Console Help
 - [Play App Signing][signing] – Play Console Help
 - [Teacher Approved][teacher] – Google Play
-- [Trusted Web Activity, snelstart][twa] – Chrome for Developers (Google)
+- [Capacitor: target-SDK per versie][cap-target] – Capacitor-documentatie
 - [Android App Links verifiëren][applinks] – Android Developers
 - [AVG, Verordening (EU) 2016/679][gdpr] – EUR-Lex (geen Google-bron; uit eigen kennis van de
   wettekst, de pagina zelf is in deze sessie niet opgehaald)
@@ -296,7 +298,7 @@ AVG, artikel 5).
 [accounttype]: https://support.google.com/googleplay/android-developer/answer/13634885?hl=en
 [signing]: https://support.google.com/googleplay/android-developer/answer/9842756?hl=en
 [teacher]: https://google.play/business/programs/teacherapproved/
-[twa]: https://developer.chrome.com/docs/android/trusted-web-activity/quick-start
+[cap-target]: https://capacitorjs.com/docs/android/setting-target-sdk
 [applinks]: https://developer.android.com/training/app-links/verify-android-applinks
 [gdpr]: https://eur-lex.europa.eu/eli/reg/2016/679/oj
 [gh-privacy]: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement

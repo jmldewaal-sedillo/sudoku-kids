@@ -4,12 +4,14 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v6 staat live; **v9 (voorbereiding publiceren) staat op de testlink** en wacht op akkoord: gegevens verwijderen, voortgang overzetten, spelregels, credits, nieuwe privacyverklaring, eigen domein voorbereid, store-materiaal |
+| **Huidige fase** | v6 staat op het oude github.io-adres; **v10 staat op de testlink** en wacht op akkoord. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
 | **Laatste update** | 2026-10-11 |
-| **Volgende stap** | Jenn: testlink nalopen, daarna DNS bij Namecheap en de rest van "Wat Jenn zelf moet doen" in `docs/publiceren.md` |
+| **Volgende stap** | Jenn: testlink nalopen; DNS van de hoofdsite en de twee proef-records weghalen; Android Studio installeren, upload key maken, de app bouwen en op een toestel testen (`docs/android.md`) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v9 (`publish-prep`). Na DNS: https://test-sudokukids.studiosedillo.com/ |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v10 (`publish-prep`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v6` (live sinds 2026-10-11; v3 stond live van 's ochtends tot 's middags) |
+| **Bouwdoelen** | android (`tools/build-android.sh`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
+| **Privacy / verwijderen** | https://studiosedillo.com/sudoku-kids/privacy en `/delete` (repo `studio-sedillo`); werken op dat adres zodra de DNS van de hoofdsite staat |
 
 ---
 
@@ -23,18 +25,40 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v6`, test: `sudoku-kids-v9`), anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v6`, test: `sudoku-kids-v10`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
-6. **Geen frameworks, build-stappen, externe CDN's, tracking, advertenties of accounts.** `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Komt er ooit iets bij dat het toestel verlaat, dan eerst `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
+6. **Geen frameworks, externe CDN's, tracking, advertenties of accounts in het spel.** De webversie heeft geen build-stap; `tools/build.mjs` kopieert alleen bestanden voor de andere bouwdoelen. `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Enige uitzondering: de portal-versies laden de SDK van de portal zelf (verplicht), zonder één advertentie-aanroep (`tests/builds.py`). Komt er ooit iets bij dat het toestel verlaat of een advertentie toont, dan eerst akkoord van Jenn, en `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
 7. **testen = push naar branch `test`, live = merge naar `main`.** Niets gaat naar `main` voordat het op de testlink is nagelopen. De testversie gebruikt `test_`-sleutels en een eigen cache; dat onderscheid (`IS_TEST` in `storage.js` en `sw.js`: hostnaam `test-…` of een map die op `-test` eindigt) nooit weghalen.
-8. **Voor elke release alles groen:** `node tests/validate-levels.js`, `python3 tests/e2e.py` en `python3 tests/screenshots.py` (zie README).
-9. **Elke app op een eigen subdomein** (`sudokukids.studiosedillo.com`); de voortgang hangt aan dat adres. Nooit een `CNAME`-bestand in de root van deze repo zetten (dan stuurt GitHub het oude github.io-adres door en is de voortgang van bestaande spelers onbereikbaar); het eigen domein hoort bij `sudoku-kids-live` en `sudoku-kids-test`. Package name `com.studiosedillo.sudokukids` en de code-opmaak `SK1.` van "Voortgang overzetten" nooit veranderen.
-10. **Geen signing keys of wachtwoorden in Git** (`.gitignore` sluit `*.keystore` en `*.jks` uit). Jenn maakt en bewaart de sleutels zelf (`docs/twa.md`).
+8. **Voor elke release alles groen:** `node tests/validate-levels.js`, `python3 tests/e2e.py`, `python3 tests/builds.py`, `python3 tests/screenshots.py` en `python3 tests/no-private-data.py` (zie README).
+9. **Eén codebase, drie bouwdoelen: android, webportals en (optioneel, later) web.** Geen app-websites en geen eigen domein op deze repo's (nooit een `CNAME`-bestand in de root). Wat per bouwdoel verschilt staat alleen in `platform.js` / `platforms/`; nieuwe functies komen in de gewone code. Zie `docs/lanceren.md`.
+10. **Geen signing keys of wachtwoorden in Git** (`.gitignore` sluit `*.keystore`, `*.jks`, `keystore.properties` en `.aab` uit). Jenn maakt en bewaart de sleutels zelf (`docs/android.md`).
 
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-11 · v10 op de testlink: geen app-websites; Capacitor in plaats van TWA; bouwdoel voor webportals (Claude Code, branch `publish-prep`)
+**Nieuw besluit van Jenn (vervangt het plan voor live subdomeinen):** er gaan nog geen app-websites live. Eerst de Android-app in Google Play, daarna webportals; een webversie misschien veel later. Vooraf gevraagd: de proefrepo's → **verwijderen**.
+
+- **Subdomeinen teruggedraaid.** `sudoku-kids` en `sudoku-kids-test` hadden nog geen eigen domein (er was niets ingesteld of gemerged). Van `proef-app` en `proef-app-test` zijn de domeinen `proefapp` en `test-proefapp` afgehaald. De repo's verwijderen lukte niet (`gh` mist het recht `delete_repo`): commando's voor Jenn staan in de takenlijst. Uit de repo gehaald: `live-deploy.yml`, `.well-known/assetlinks.json`, `twa/`, `docs/twa.md`, de domein-stappen in `test-deploy.yml`; `tools/eigen-domein.sh` doet alleen nog de hoofdsite en meldt records die weg moeten. De verhuismelding blijft uit (`NEW_HOME` leeg). DNS, gemeten met `dig`: alleen `proefapp` en `test-proefapp` bestaan en wijzen naar GitHub → **die twee moet Jenn verwijderen**; `sudokukids` en `test-sudokukids` bestaan niet; ook de root, `www` en het verificatie-record bestaan nog niet.
+- **noindex:** `<meta name="robots" content="noindex, nofollow">` in `index.html`. Staat daarmee op de testlink; op het oude github.io-adres van `main` pas na de merge. The Flush Factor niet aangeraakt (niet-gecommit werk van een andere sessie) → taak.
+- **Privacy en verwijderen naar de hoofdsite:** `studiosedillo.com/sudoku-kids/privacy` en `/delete`, 5 talen, in de repo `studio-sedillo` (online; tot de DNS er is op het github.io-adres van de hoofdsite). Tekst "Delen met anderen" herschreven (bestanden zitten in de app, Google Play, spellenwebsites). De app linkt erheen in de taal van de app; `privacy.html`, `delete.html` en `verwijderen.html` zijn uit de app. URL's bijgewerkt in `store/` en `docs/publiceren.md`. De hoofdsite toont de spellen als "Binnenkort", zonder links.
+- **Android via Capacitor** (advies en vergelijking met TWA in `docs/android.md`): project `android-app/` (Capacitor 8, package `com.studiosedillo.sudokukids`, target-API 36, bestanden in de app, geen service worker, alleen de permissie INTERNET, geen back-up naar Google), `tools/build-android.sh [release]`, iconen en startscherm, ondertekenen via `keystore.properties` buiten Git. Voor Android in `platforms/android.js`: terugknop, en een tweede kopie van de opslag in de native opslag omdat Capacitor localStorage als tijdelijk beschouwt.
+- **Webportals** (`docs/webportals.md`): eisen van CrazyGames en Poki onderzocht. Uitkomst: geen van beide is gemaakt voor een kinderspel zonder advertenties; CrazyGames wijst "content targeted for kids" af; Poki past inhoudelijk beter maar wil bij voorkeur 5 jaar web-exclusiviteit en verdient via advertenties. `node tools/build.mjs crazygames|poki` maakt een upload-zip (0,25 MB) zonder service worker, zonder links naar buiten, met hun SDK en **zonder één advertentie-aanroep**.
+- **Structuur:** één codebase, bouwdoelen android / webportals / web → `platform.js`, `platforms/`, `tools/build.mjs`, `docs/lanceren.md`; vaste regels 6, 8, 9 en 10 aangepast. De algemene opzet staat in `Apps/CLAUDE.md` sectie 11 en de template (gedaan door een andere sessie; daar niets aan veranderd).
+- `CACHE_VERSION` → `sudoku-kids-v10`.
+
+**Bewijs:**
+- `python3 tests/e2e.py` twee keer achter elkaar → `✅ 344/344 controles geslaagd.` (minder dan 361: de controles van de pagina's zijn verhuisd naar de hoofdsite; nieuw: links naar de hoofdsite in de taal van de app, pagina's niet meer in de app, geen domeinbestanden, noindex, store-URL's).
+- `python3 tests/builds.py` → `✅ 52/52 controles geslaagd.` (nieuw: bouwt de drie doelen; speelt de portal-versies met een nagebootste SDK: juiste aanroepen in de juiste volgorde, geen advertentie-aanroep, geen links, werkt ook zonder SDK; speelt de Android-versie met een nagebootste Capacitor-brug: terugknop op elk scherm, tweede kopie van de opslag en terugzetten na wissen, geluid, ouderslot, code maken, alles wissen; controleert het Android-project).
+- Repo `studio-sedillo`: `python3 tests/pages.py` → `✅ 17/17 controles geslaagd.` (pagina's in 5 talen, zelfde opbouw, verplichte onderdelen, footer, geen links naar app-websites).
+- `python3 tests/screenshots.py` → 7 formaten × 32 schermen, `✅ Niets buiten beeld, alle knoppen minstens 48x48 px, 0 console-errors.` `node tests/validate-levels.js` ✅ · `python3 tests/store.py` ✅ · `python3 tests/no-private-data.py` ✅ (ook `--online` op de hoofdsite).
+- Netwerktest opnieuw: 22 verzoeken, alleen GET, alleen het eigen adres.
+
+**Niet gedaan / niet te testen hier:** de Android-app is **niet gebouwd en niet op Android gestart** (geen Android-SDK op deze computer; de licenties accepteert Jenn zelf bij het installeren van Android Studio) → lijst van 10 punten in `docs/android.md`. De portal-versies zijn niet op CrazyGames of Poki zelf getest. De links naar studiosedillo.com werken pas na de DNS van de hoofdsite.
+
+**Bestanden geraakt:** index.html, script.js, style.css, sw.js, platform.js (nieuw), platforms/ (nieuw), tools/build.mjs, tools/build-android.sh, tools/android-icons.sh (nieuw), tools/eigen-domein.sh, android-app/ (nieuw), tests/builds.py (nieuw), tests/e2e.py, tests/screenshots.py, store/, .github/workflows/test-deploy.yml, .gitignore, docs/android.md, docs/webportals.md, docs/lanceren.md (nieuw), docs/studio-sedillo.md, docs/publiceren.md, docs/privacy-audit.md, README.md, ROADMAP.md. Verwijderd: privacy.html, delete.html, verwijderen.html, .well-known/, twa/, docs/twa.md, live-deploy.yml. Repo `studio-sedillo`: sudoku-kids/privacy.html, sudoku-kids/delete.html, index.html, privacy.html, tests/pages.py.
 
 ### 2026-10-11 · Adrescontrole met de ingevulde lijst; vangnet in template en Flush Factor (Claude Code)
 - Jenn heeft de blocklist ingevuld (2 patronen) en het geheim `PRIVATE_BLOCKLIST` gezet in `sudoku-kids` en `studio-sedillo`.
@@ -350,7 +374,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [x] Account koppelen: keuze gemaakt → geen login (doelgroep alleen kinderen); in plaats daarvan "Voortgang overzetten" met een code (op test)
 - [x] Gegevens en profiel verwijderen in de app + webpagina `delete.html` (op test; `verwijderen.html` verwijst door)
 - [x] Google Play-ontwikkelaarsaccount → bestaat al (persoonlijk account), AdMob-account ook (niet gebruikt)
-- [x] Domeinnaam kiezen → eigen subdomein per app: `sudokukids.studiosedillo.com`
+- [x] Domeinnaam kiezen → alleen de hoofdsite `studiosedillo.com`; het plan voor een subdomein per app is op 2026-10-11 vervangen (`docs/lanceren.md`)
 - [x] KvK-inschrijving → Studio Sedillo, eenmanszaak, KvK 42122276 (staat in de footer, de privacyverklaring en de credits)
 - [x] Store-materiaal: teksten in 10 talen, icoon, feature graphic, screenshots telefoon en tablet → `store/`
 
@@ -374,27 +398,37 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [x] Het vangnet (`tools/no-private-data.py`, hooks, stap in de workflow) ook in de template `studio-sedillo-app-template` en in The Flush Factor (branch `sprint-9`); `Apps/tools/nieuwe-app.sh` zet het aan voor elke nieuwe app
 - [ ] Verandert de blocklist, dan het geheim `PRIVATE_BLOCKLIST` in alle vier de repo's opnieuw zetten (commando in `docs/bedrijf.md`)
 
-**Eigen domein**
-- [ ] J: DNS-records aanmaken bij Namecheap (tabel in `docs/studio-sedillo.md`); parkeer-records weghalen
+**Hoofdsite en domein (alleen studiosedillo.com; apps krijgen geen subdomein)**
+- [ ] J: DNS-records van de hoofdsite aanmaken bij Namecheap (tabel in `docs/studio-sedillo.md`); parkeer-records weghalen
+- [ ] J: de records `proefapp` en `test-proefapp` verwijderen bij Namecheap (wijzen naar GitHub zonder site erachter)
 - [ ] J: domein verifiëren bij GitHub (TXT-record `_github-pages-challenge-jmldewaal-sedillo`)
-- [ ] C: `tools/eigen-domein.sh check`, dan `site` en `test`; opnieuw naar test pushen; controleren op https://test-sudokukids.studiosedillo.com/
-- [ ] J: repository `sudoku-kids-live` en de deploy key aanmaken (vijf commando's in `docs/studio-sedillo.md`)
-- [ ] C: `tools/eigen-domein.sh live`, na akkoord mergen naar `main`, Pages aanzetten op `sudoku-kids-live`, `tools/eigen-domein.sh https`
-- [ ] C: controleren op het echte adres: `/privacy`, `/delete` (en dat `/verwijderen` doorverwijst), `/.well-known/assetlinks.json` (rechtstreeks, als JSON), HTTPS afgedwongen
-- [ ] C: daarna `NEW_HOME` in `script.js` invullen (verhuismelding op het oude adres), cache verhogen, testen, live
-- [ ] J: de verhuizing op je eigen telefoon doen vanaf het oude adres en kijken of je sterren meekomen
-- [ ] C: links op de hoofdsite controleren zodra het subdomein live is
+- [ ] C: `tools/eigen-domein.sh check`, dan `site` en `https`; controleren dat `https://studiosedillo.com/sudoku-kids/privacy` en `/delete` werken
+- [ ] J: de proefrepo's verwijderen (`gh auth refresh -h github.com -s delete_repo`, daarna `gh repo delete jmldewaal-sedillo/proef-app --yes` en `…/proef-app-test --yes`) en de map `Apps/proef-app` weghalen
+- [x] Privacy- en verwijderpagina van Sudoku Kids op de hoofdsite, 5 talen; de app linkt erheen; startpagina toont de spellen als "Binnenkort" zonder links
+- [x] Eigen domeinen van `proef-app` en `proef-app-test` afgehaald; `sudoku-kids` en `sudoku-kids-test` hadden er geen
+- [x] Webversie (test en straks live) op `noindex`
+- [ ] Na akkoord en merge: `noindex` staat dan ook op het oude github.io-adres van `main` (nu nog v6 zonder `noindex`)
+- [ ] The Flush Factor: `noindex` op de github.io-versie (daar ligt niet-gecommit werk van een andere sessie; niet aangeraakt)
 - [ ] Nieuwe lay-out voor studiosedillo.com (ontwerp volgt)
 - [ ] C: privacyverklaringen nalopen na de uitspraak van het Hof van Justitie over het EU-U.S. Data Privacy Framework (zaak C-703/25 P, loopt nog); vervalt het besluit, dan de alinea "Gegevens buiten de EU" aanpassen
 
-**Android-app (TWA)**
+**Android-app (Capacitor, uitleg in `docs/android.md`)**
+- [x] Capacitor-project `android-app/` (package `com.studiosedillo.sudokukids`, target-API 36, bestanden in de app, geen service worker, alleen INTERNET-permissie, geen back-up naar Google), build-script, iconen en startscherm
+- [x] Terugknop, tweede kopie van de opslag, links en "voortgang overzetten" voor Android, getest met een nagebootste Capacitor-brug (`tests/builds.py`)
+- [ ] J: Android Studio installeren (levert de SDK en JDK; je gaat zelf akkoord met de licenties) en `tools/build-android.sh` draaien
+- [ ] J: de app op je toestel testen met de lijst van 10 punten in `docs/android.md` (**de app is nog nooit op Android gestart**)
+- [ ] J: upload key maken en op twee plekken bewaren; `keystore.properties` aanmaken (nooit in Git)
 - [ ] J: app aanmaken in Play Console; ontwikkelaarsnaam Studio Sedillo, e-mail studio.sedillo@gmail.com; accounttype en aanmaakdatum nakijken
-- [ ] J: TWA bouwen met Bubblewrap en de upload key maken (`docs/twa.md`); keystore en wachtwoord op twee plekken bewaren, nooit in Git
-- [ ] C/J: in de build controleren: `targetSdkVersion` 36 of hoger, geen `AD_ID`-, locatie- of meldingspermissie, start offline
-- [ ] J: `.aab` uploaden naar Interne test; SHA-256 van de app signing key kopiëren
-- [ ] C: vingerafdruk in `.well-known/assetlinks.json` zetten en live zetten; J: controleren dat de app geen adresbalk toont
-- [ ] Beslissen over schermrotatie: `manifest.json` staat op `"orientation": "portrait"`, de TWA-instellingen op `default`. Android 16+ negeert portrait op tablets; landscape werkt.
-- [ ] Risico: het Families-beleid zegt dat een app niet alleen een webview van een website mag zijn. Wordt de TWA daarop afgewezen, dan een native schil met de bestanden in de app overwegen.
+- [ ] J: `tools/build-android.sh release` en de `.aab` uploaden naar Interne test; daarna de lijst nog een keer nalopen
+- [ ] Beslissen over schermrotatie: Android 16+ negeert een vaste stand op tablets; het spel werkt staand en liggend.
+- [ ] Overwegen: "Bewaar als bestand" in de Android-app via de deelfunctie van Android (nu verborgen; code kopiëren werkt)
+
+**Webportals (uitleg en advies in `docs/webportals.md`)**
+- [x] Upload-zip per portal uit dezelfde code (`node tools/build.mjs crazygames|poki`): zonder service worker, zonder links naar buiten, met hun SDK, zonder advertentie-aanroepen
+- [ ] J: beslissen of en waar: Poki eerst aanschrijven met de twee vragen (zonder advertenties? advertenties bij een kinderspel?); CrazyGames wijst spellen "targeted for kids" af
+- [ ] J: de zip testen in de Poki Inspector en als concept bij CrazyGames (de echte SDK's zijn hier niet getest)
+- [ ] Vóór publicatie op een portal: `docs/privacy-audit.md` aanvullen met wat de SDK van de portal verstuurt
+- [ ] Advertenties op een portal: alleen na uitdrukkelijk besluit van Jenn
 
 **Play Console (J, antwoorden in `docs/publiceren.md`)**
 - [ ] App-content: privacybeleid-URL, advertenties (nee), app-toegang (uitleg ouderslot)
@@ -418,10 +452,10 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
   - [ ] Indonesisch (id)
 
 ### Na publiceren
-- [ ] Elk jaar vóór 31 augustus: nieuwe target-API-eis van Google nakijken en zo nodig een nieuwe TWA-build uploaden
+- [ ] Elk jaar vóór 31 augustus: nieuwe target-API-eis van Google nakijken, Capacitor bijwerken naar de versie die daarbij hoort en een nieuwe `.aab` uploaden
 - [ ] Verwijzing naar eigen spellen van Studio Sedillo ("meer spellen"): achter het ouderslot, duidelijk te onderscheiden van het spel; eerst uitzoeken of de advertentieverklaring in Play Console dan op "ja" moet (Families-beleid rekent kruispromotie tot de advertentieregels), en `docs/privacy-audit.md` bijwerken
-- [ ] The Flush Factor toevoegen volgens `docs/studio-sedillo.md` (subdomein, test-subdomein, kaart op de hoofdsite). **Let op: Flush Factor en elke andere app met advertenties of aankopen pas publiceren nadat het zakelijke postadres geregeld is** (Google toont dan het volledige adres; zie `docs/bedrijf.md`).
-- [ ] Het oude github.io-adres uitzetten als niemand het meer gebruikt
+- [ ] The Flush Factor op dezelfde manier uitbrengen (één codebase, bouwdoelen android en webportals, privacy- en verwijderpagina op de hoofdsite onder `flush-factor/`). **Let op: Flush Factor en elke andere app met advertenties of aankopen pas publiceren nadat het zakelijke postadres geregeld is** (Google toont dan het volledige adres; zie `docs/bedrijf.md`).
+- [ ] Misschien veel later: een webversie op een eigen adres (`docs/lanceren.md`)
 - [ ] Meer levels per wereld, richting 500 (nu 50 per rastergrootte; aanvullen met `tools/generate-puzzles.js --levels`)
 - [ ] Meer werelden, richting 10 (nu 5)
 - [ ] Meer symboolthema's: cijfers, dieren, planten, groente, fruit (te kiezen per profiel)
@@ -467,8 +501,9 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 
 ## Bekende beperkingen
 
-- **De eigen domeinen staan nog niet aan** (stand 2026-10-11): `studiosedillo.com` wijst nog naar de parkeerpagina van Namecheap. Tot de DNS klopt draaien test en live op github.io, en bestaan `/privacy` en `/delete` alleen daar (als `…/sudoku-kids/privacy.html`).
-- **`assetlinks.json` bevat nog geen vingerafdruk.** Die bestaat pas nadat de app in Play Console is aangemaakt. Tot dan toont een TWA een adresbalk.
+- **De hoofdsite staat nog niet op studiosedillo.com** (stand 2026-10-11): er zijn nog geen DNS-records voor de root. Tot dan werken de links naar privacy en "gegevens verwijderen" in de app niet; de pagina's staan wel op https://jmldewaal-sedillo.github.io/studio-sedillo/sudoku-kids/privacy.
+- **De Android-app is nog niet gebouwd en niet op Android getest.** Op de ontwikkelcomputer staat geen Android-SDK. De Android-versie van de webbestanden is getest in een browser met een nagebootste Capacitor-brug; de echte terugknop, opslag en het geluid moet Jenn op een toestel nalopen (`docs/android.md`).
+- **De portal-versies zijn getest met nagebootste SDK's**, niet op CrazyGames of Poki zelf.
 - **Verhuizen naar een ander adres neemt de voortgang niet vanzelf mee** (opslag hangt aan het adres). Daarvoor is de verhuisknop of de overzet-code. Een snelkoppeling op het startscherm moet opnieuw geïnstalleerd worden.
 - **Test en live delen nu nog één domein** (`jmldewaal-sedillo.github.io`), net als Flush Factor. De opslag is gescheiden met de `test_`-prefix. De live versie van vóór deze review (cache v2) en Flush Factor ruimen bij een eigen update nog wel alle caches op het domein op; de testversie haalt zijn bestanden dan gewoon opnieuw op, maar is op dat moment even niet offline beschikbaar.
 - **Geen installatie of offline spelen via http://.** De service worker wordt alleen geactiveerd via `https://` of `http://localhost`. Via een lokaal IP-adres (bijv. `http://192.168.x.x:8000`) kun je de app wel testen, maar niet installeren en niet offline spelen. Dat werkt pas na HTTPS-hosting.
