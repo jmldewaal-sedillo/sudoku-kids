@@ -38,10 +38,10 @@ class Game:
         self.url = url
         self.ctx = browser.new_context(viewport={'width': w, 'height': h}, has_touch=True, locale=locale, **ctx_args)
         self.page = self.ctx.new_page()
-        self.errors, self.requests = [], []
+        self.errors, self.requests, self.methods = [], [], set()
         self.page.on('console', lambda m: self.errors.append(m.text) if m.type == 'error' else None)
         self.page.on('pageerror', lambda e: self.errors.append(str(e)))
-        self.page.on('request', lambda r: self.requests.append(r.url))
+        self.page.on('request', lambda r: (self.requests.append(r.url), self.methods.add(r.method)))
         if rules is False:        # the rules pop up at a child's very first level; most tests do not want that
             self.page.add_init_script('window.__noAutoRules = true;')
         if progress is not None:
@@ -1504,14 +1504,14 @@ def run():
         files = sorted({r.split('?')[0].split('#')[0].replace(url, '/') for r in g.requests})
         check(f'{len(g.requests)} verzoeken tijdens een hele speelronde, allemaal naar het eigen adres', hosts == [url.split('//')[1].rstrip('/')], hosts)
         check('alleen eigen bestanden, geen POST of andere verzending',
-              all(f == '/' or re.fullmatch(r'/[\w.-]+\.(html|js|css|json|png|svg)', f) or f.startswith('/icons/') for f in files), files)
+              g.methods == {'GET'} and all(f == '/' or re.fullmatch(r'/[\w.-]+\.(html|js|css|json|png|svg)', f) or f.startswith('/icons/') for f in files), [sorted(g.methods), files])
         storage = g.js('Object.fromEntries(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k).length]))')
         check('lokale opslag: alleen sudokuKids-sleutels', all(k.startswith('sudokuKids_') for k in storage) and len(storage) >= 5, storage)
         check('geen cookies, geen sessionStorage, geen IndexedDB',
               g.js('document.cookie') == '' and g.js('sessionStorage.length') == 0 and g.js('indexedDB.databases ? indexedDB.databases().then(d => d.length) : 0') == 0)
         check('geen toestemmingen gevraagd (camera, microfoon, locatie, meldingen)', g.js('''() => Promise.all(['camera', 'microphone', 'geolocation', 'notifications'].map(n =>
             navigator.permissions.query({ name: n }).then(s => s.state, () => 'n/a'))).then(s => s.every(x => x !== 'granted'))'''))
-        audit = {'requests': len(g.requests), 'hosts': hosts, 'files': files, 'storage': storage, 'caches': g.js('caches.keys()'),
+        audit = {'requests': len(g.requests), 'methods': sorted(g.methods), 'hosts': hosts, 'files': files, 'storage': storage, 'caches': g.js('caches.keys()'),
                  'cache_files': g.js('caches.keys().then(async ks => (await (await caches.open(ks[0])).keys()).length)')}
         (ROOT / 'tests' / 'out').mkdir(exist_ok=True)
         (ROOT / 'tests' / 'out' / 'privacy-audit.json').write_text(json.dumps(audit, indent=1))
@@ -1532,6 +1532,45 @@ def run():
         check('verhuizen naar een submap op hetzelfde subdomein (/ → /spelen/): voortgang blijft, want de opslag hangt aan het domein',
               g.js('getTotalStars()') == 15 and g.js('location.pathname') == '/spelen/')
         g.close()
+
+        # ------------------------------------------------------------
+        section('32. Eigen domein: privacy-URL, assetlinks, deploy en store-teksten (publiceren 4, 5)')
+        g = Game(browser, url)
+        for path, title in (('privacy', 'Privacyverklaring'), ('verwijderen', 'Gegevens verwijderen')):
+            g.page.goto(url + path + '?lang=nl')
+            check(f'/{path} (zonder .html, zoals op GitHub Pages) toont de pagina', g.js('document.querySelector("h1").textContent') == title)
+        links = g.js('fetch(".well-known/assetlinks.json").then(r => r.ok ? r.json() : null)')
+        check('/.well-known/assetlinks.json is geldige JSON met de package name com.studiosedillo.sudokukids',
+              isinstance(links, list) and links[0]['relation'] == ['delegate_permission/common.handle_all_urls'] and
+              links[0]['target']['namespace'] == 'android_app' and links[0]['target']['package_name'] == 'com.studiosedillo.sudokukids' and
+              all(re.fullmatch(r'([0-9A-F]{2}:){31}[0-9A-F]{2}', f) for f in links[0]['target']['sha256_cert_fingerprints']), links)
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+        assets = [a[2:] for a in re.findall(r"'(\./[^']+)'", (ROOT / 'sw.js').read_text()) if a != './']
+        for name in ('test-deploy.yml', 'live-deploy.yml'):
+            flow = (ROOT / '.github' / 'workflows' / name).read_text()
+            copied = re.search(r'cp -r (.+) site/', flow).group(1).split()
+            missing = [a for a in assets if a not in copied and a.split('/')[0] not in copied]
+            check(f'{name}: kopieert elk bestand uit de cache-lijst van sw.js, plus .well-known, .nojekyll en (met variabele) CNAME',
+                  not missing and '.well-known' in copied and 'touch site/.nojekyll' in flow and 'site/CNAME' in flow, missing)
+        live = (ROOT / '.github' / 'workflows' / 'live-deploy.yml').read_text()
+        check('live-deploy.yml draait alleen op main, alleen als LIVE_DOMAIN bestaat, en neemt de formaat-balk van de testversie niet mee',
+              'branches: [main]' in live and "vars.LIVE_DOMAIN != ''" in live and 'test-preview.js' not in live)
+        check('.nojekyll staat in de repo en er staat geen CNAME in de root (anders neemt de bron-repo het domein over)',
+              (ROOT / '.nojekyll').is_file() and not (ROOT / 'CNAME').exists())
+        twa = json.loads((ROOT / 'twa' / 'twa-manifest.json').read_text())
+        check('TWA-instellingen: package name, host, geen meldingen',
+              twa['packageId'] == 'com.studiosedillo.sudokukids' and twa['host'] == 'sudokukids.studiosedillo.com' and twa['enableNotifications'] is False)
+        ignore = (ROOT / '.gitignore').read_text()
+        check('signing keys kunnen niet per ongeluk in Git komen (.gitignore)', '*.keystore' in ignore and '*.jks' in ignore)
+        listing = json.loads((ROOT / 'store' / 'listing.json').read_text())
+        sizes = {k: (len(v['short']), len(v['full'])) for k, v in listing['listings'].items()}
+        banned = re.compile(r'\b(free|gratis|best|beste|#1|top|sale|new|nieuw)\b', re.I)
+        check('store-teksten: titel hoogstens 30 tekens, 10 talen, kort hoogstens 80 en lang hoogstens 4000 tekens',
+              len(listing['title']) <= 30 and len(sizes) == 10 and all(s <= 80 and 500 < f <= 4000 for s, f in sizes.values()), sizes)
+        check('store-teksten: geen prijs- of ranglijstwoorden in titel en korte beschrijving, geen emoji',
+              not banned.search(listing['title']) and not any(banned.search(v['short']) for k, v in listing['listings'].items() if k in ('en-US', 'nl-NL')) and
+              not re.search('[\U0001F000-\U0001FAFF\u2600-\u27BF]', json.dumps(listing, ensure_ascii=False)))
         browser.close()
 
     failed = results.count(False)

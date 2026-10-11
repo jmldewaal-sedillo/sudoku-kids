@@ -1,0 +1,65 @@
+name: Live versie
+
+# live = merge naar `main`  →  https://sudokukids.studiosedillo.com/
+#
+# Deze workflow zet de inhoud van `main` in de aparte repository
+# jmldewaal-sedillo/sudoku-kids-live (GitHub Pages vanaf main, met het eigen
+# domein). Hij doet niets zolang de repository-variabele LIVE_DOMAIN niet
+# bestaat (tools/eigen-domein.sh live zet die, pas als DNS klopt).
+#
+# Het oude adres https://jmldewaal-sedillo.github.io/sudoku-kids/ blijft
+# daarnaast rechtstreeks vanaf `main` draaien: alleen daar staat de voortgang
+# van bestaande spelers, en alleen een pagina op dat adres kan die meegeven
+# naar het nieuwe (zie docs/studio-sedillo.md).
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: liveversie
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.LIVE_DOMAIN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Levels controleren
+        run: node tests/validate-levels.js
+
+      - name: Live kopie klaarzetten
+        env:
+          LIVE_DOMAIN: ${{ vars.LIVE_DOMAIN }}
+        run: |
+          mkdir site
+          cp -r index.html privacy.html verwijderen.html style.css script.js storage.js puzzles.js puzzle-bank.js level-plan.js i18n.js badges.js icons.js sw.js manifest.json icons screenshots .well-known site/
+          printf '{"commit":"%s","built":"%s"}\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > site/version.json
+          # .nojekyll: anders slaat GitHub Pages de map .well-known over.
+          touch site/.nojekyll
+          printf '%s\n' "$LIVE_DOMAIN" > site/CNAME
+
+      - name: Naar de live-repository pushen
+        env:
+          LIVE_DEPLOY_KEY: ${{ secrets.LIVE_DEPLOY_KEY }}
+          LIVE_DOMAIN: ${{ vars.LIVE_DOMAIN }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$LIVE_DEPLOY_KEY" > ~/.ssh/live_deploy
+          chmod 600 ~/.ssh/live_deploy
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          cd site
+          git init -q -b main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Live versie @ ${GITHUB_SHA::7}"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/live_deploy -o IdentitiesOnly=yes" \
+            git push -q --force git@github.com:jmldewaal-sedillo/sudoku-kids-live.git main
+          echo "Live: https://${LIVE_DOMAIN}/ (${GITHUB_SHA::7})" >> "$GITHUB_STEP_SUMMARY"

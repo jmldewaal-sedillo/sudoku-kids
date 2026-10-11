@@ -4,26 +4,38 @@ Een sudoku-spel voor kinderen als PWA: 5 werelden, 450 levels, 3 soorten sudoku
 (standaard, X-Sudoku, fruit), 3.700 puzzels, tot 6 profielen per toestel, eigen
 kawaii-iconen, muziek, en 10 talen (NL, EN, DE, FR, ES, PT, IT, PL, TR, ID).
 
+Gemaakt door **Studio Sedillo** · support@studiosedillo.com · package name
+`com.studiosedillo.sudokukids`.
+
+| Onderwerp | Document |
+|---|---|
+| Alle eisen van Google Play, met status en to-do-lijst | `docs/publiceren.md` |
+| Domeinen, DNS-records, een nieuwe app toevoegen, verhuizen | `docs/studio-sedillo.md` |
+| Android-app (TWA) bouwen, signing key | `docs/twa.md` |
+| Wat de app bewaart en verstuurt (netwerktest) | `docs/privacy-audit.md` |
+
 ## Testen en live zetten
 
 **testen = push naar branch `test`, live = merge naar `main`.**
 
 | | Testversie | Live versie |
 |---|---|---|
-| Link | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ | https://jmldewaal-sedillo.github.io/sudoku-kids/ |
+| Link nu | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ | https://jmldewaal-sedillo.github.io/sudoku-kids/ |
+| Link met eigen domein (na DNS) | https://test-sudokukids.studiosedillo.com/ | https://sudokukids.studiosedillo.com/ (het github.io-adres blijft als "oud adres" bestaan) |
 | Bijwerken | `git push origin <jouw-branch>:test` | branch mergen naar `main` en pushen |
-| Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt rechtstreeks vanaf `main` |
+| Hoe | workflow `.github/workflows/test-deploy.yml` kopieert de branch naar de repository `sudoku-kids-test`; GitHub Pages zet die online | GitHub Pages bouwt het oude adres rechtstreeks vanaf `main`; `live-deploy.yml` kopieert `main` naar `sudoku-kids-live` zodra de variabele `LIVE_DOMAIN` bestaat |
 | Herkennen | rood label **TEST + commit-id** bovenin, titel "TEST · …" | geen label |
 | Opslag | sleutels met `test_` ervoor (`test_sudokuKids_progress`, …) | `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current` |
-| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v6-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v6` |
+| Service worker | scope `/sudoku-kids-test/`, cache `sudoku-kids-test-v7-<commit>` | scope `/sudoku-kids/`, cache `sudoku-kids-v7` |
 | TEST-strook | rode strook van 16 px bóven de app (valt nergens overheen) | bestaat niet |
 | Formaat-balk | op een pc: balk bovenin met telefoon- en tabletformaten | bestaat niet |
 
 Een testpush is na ongeveer een minuut online. Het commit-id in het label vertelt welke
 versie je ziet; staat er nog het oude, sluit de app dan en open hem opnieuw.
 
-De app ziet zelf dat hij een testkopie is: hij draait dan vanuit een map die `test` heet of
-op `-test` eindigt. In de code is er verder geen verschil, dus wat je test is wat live gaat.
+De app ziet zelf dat hij een testkopie is: de hostnaam begint met `test-` of `test.`
+(`test-sudokukids.studiosedillo.com`), of hij draait vanuit een map die `test` heet of op
+`-test` eindigt. In de code is er verder geen verschil, dus wat je test is wat live gaat.
 Sterren, instellingen en caches van test en live staan los van elkaar; `python3 tests/e2e.py`
 (onderdeel 11) bewijst dat spelen en wissen in de test de live-opslag niet verandert.
 
@@ -59,6 +71,14 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `storage.js` | Profielen en opslag; de enige plek die weet waar gegevens staan |
 | `test-preview.js` | Formaat-balk van de testversie |
 | `docs/account-koppelen.md` | Onderzoek en advies over inloggen/koppelen in een kinderapp |
+| `docs/publiceren.md`, `docs/studio-sedillo.md`, `docs/twa.md`, `docs/privacy-audit.md` | Publiceren: beleid, domeinen, Android-app, privacy-audit |
+| `verwijderen.html` | Uitleg over gegevens verwijderen in 5 talen (de link die Google Play vraagt); bereikbaar als `/verwijderen` |
+| `.well-known/assetlinks.json`, `.nojekyll` | Koppeling tussen de Android-app en dit (sub)domein; zonder `.nojekyll` slaat GitHub Pages de map over |
+| `store/` | Store-materiaal: teksten in 10 talen (`listing.json`, `teksten.md`), icoon, feature graphic, screenshots |
+| `twa/twa-manifest.json` | Instellingen voor Bubblewrap (Android-app) |
+| `tools/eigen-domein.sh` | Controleert de DNS-records en zet de eigen domeinen aan |
+| `.github/workflows/live-deploy.yml` | Zet `main` op het eigen subdomein (pas actief na `LIVE_DOMAIN`) |
+| `tests/store.py` | Maakt het store-materiaal en controleert het tegen de eisen van Google Play |
 | `docs/icon-opties.html` | Vergelijking van drie icoonsets (alleen op de testlink) |
 | `tools/generate-puzzles.js` | Nieuwe puzzels of levels maken met één commando (geen build-stap; resultaat staat in de repo) |
 | `i18n.js` | Alle teksten in NL / EN / DE / FR |
@@ -66,7 +86,7 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `manifest.json`, `sw.js` | PWA: installeren en offline spelen |
 | `icons/` | App-iconen (`any` en `maskable`) |
 | `screenshots/` | Twee screenshots van 1080×1920 voor het installatievenster |
-| `privacy.html` | Privacyverklaring (NL + EN), ook offline beschikbaar |
+| `privacy.html` | Privacyverklaring in 5 talen, ook offline beschikbaar; bereikbaar als `/privacy` |
 | `.github/workflows/test-deploy.yml` | Zet branch `test` op de testlink |
 | `tests/validate-levels.js` | Controleert alle levels automatisch |
 | `tests/difficulty.js` | Meet de moeilijkheid per level en per band van de voorraad |
@@ -202,7 +222,20 @@ puzzels, instellingen (ook taal, grootte, muziek, klik en geluid) en onafgemaakt
 
 Ouderslot: de knop twee keer achter elkaar 1,5 seconde ingedrukt houden, de tweede keer
 binnen 5 seconden; een ring laat de voortgang zien. Het zit vóór profiel verwijderen,
-voortgang wissen en account koppelen.
+voortgang wissen, alle gegevens verwijderen en voortgang overzetten.
+
+**Gegevens verwijderen** (Instellingen): "Reset alle voortgang" wist de sterren van het
+huidige profiel; "Alle gegevens van deze app verwijderen" wist alle profielen, alle
+`sudokuKids_`-sleutels, de cache en de service worker, waarna de app schoon start.
+"Profiel verwijderen" (profielpagina → potlood) wist één profiel met alles wat erbij hoort.
+
+**Voortgang overzetten** (Wie speelt er?): maakt van alle profielen één code (`SK1.…`) die je
+kopieert of als bestand bewaart, en importeert zo'n code weer. Importeren overschrijft niets:
+profielen komen erbij (een nog leeg beginprofiel wordt gevuld). Er wordt niets verstuurd.
+Een code van buiten wordt eerst opgeschoond (`cleanProfile` in `storage.js`).
+
+**Spelregels** (zes plaatjes): via de ?-knop in het spel, via Instellingen, en vanzelf bij het
+allereerste level. **Credits**: via Instellingen.
 
 | Sleutel in localStorage | Inhoud |
 |---|---|
@@ -248,6 +281,7 @@ python3 tests/e2e.py && python3 tests/screenshots.py
 | `node tests/difficulty.js` (`--all` voor elk level) | moeilijkheidscurve per blok levels |
 | `python3 tests/e2e.py` | spelregels, opslaan, terug-knop, talen, toetsenbord, snelheid (CPU ×4), offline, geen externe verzoeken, test en live naast elkaar, puzzelvarianten, profielen en migratie, zoomen/grootte, formaat-balk |
 | `python3 tests/screenshots.py [map]` | niets buiten beeld, alle knoppen ≥ 48×48 px, 0 console-errors; PNG's in `tests/out/` |
+| `python3 tests/store.py` (`--check` om alleen te controleren) | store-materiaal opnieuw maken; formaten, alfa en tekstlengtes volgens Google Play |
 
 De scripts starten zelf een lokale server; er hoeft niets te draaien.
 
@@ -263,26 +297,19 @@ python3 -m http.server 8000
 
 ## Naar de Google Play Store
 
-1. **Online zetten via HTTPS**, bijvoorbeeld GitHub Pages, Netlify of Cloudflare Pages.
-   De paden zijn relatief, dus een submap werkt ook.
-2. **Inpakken als Android-app (TWA)** met [PWABuilder](https://www.pwabuilder.com)
-   of Bubblewrap (`npx @bubblewrap/cli init --manifest https://jouw-domein/manifest.json`).
-   Dat levert een `.aab`-bestand en een signing key op. Bewaar die key goed.
-3. **`assetlinks.json` plaatsen** op `https://jouw-domein/.well-known/assetlinks.json`.
-   PWABuilder/Bubblewrap maakt dit bestand voor je. Zonder dit bestand toont de app een adresbalk.
-   **Let op bij GitHub Pages:** het bestand moet in de *root van het domein* staan, dus op
-   `https://jmldewaal-sedillo.github.io/.well-known/assetlinks.json` en niet onder
-   `/sudoku-kids/`. Dat kan alleen via een aparte repository `jmldewaal-sedillo.github.io`
-   (met een leeg bestand `.nojekyll` erin, anders slaat GitHub mappen met een punt over)
-   of met een eigen (sub)domein voor deze app.
-4. **Play Console**: je hebt een ontwikkelaarsaccount nodig. Omdat de app op kinderen
-   gericht is, gelden het *Families*-beleid en de vragenlijst over de doelgroep. De app
-   verzamelt geen gegevens en heeft geen advertenties, maar een privacyverklaring
-   is wel verplicht. Die staat in `privacy.html`; de link voor de Play Console is
-   `https://jouw-domein/privacy.html`. Lees hem na en vul eventueel je contactgegevens aan.
+Alles staat in `docs/publiceren.md` (eisen, antwoorden voor Play Console en de to-do-lijst in
+volgorde). In het kort:
+
+1. **Eigen domein**: DNS bij Namecheap, domeinverificatie bij GitHub en
+   `tools/eigen-domein.sh` (`docs/studio-sedillo.md`).
+2. **Android-app (TWA)** bouwen met Bubblewrap en de upload key veilig bewaren (`docs/twa.md`).
+3. **`assetlinks.json`**: de SHA-256 van de app signing key uit Play Console in
+   `.well-known/assetlinks.json` zetten. Het bestand staat per subdomein in de root van de app.
+4. **Play Console**: app-content, Data safety, IARC, doelgroep, store-pagina (`store/`),
+   gesloten test met 12 testers gedurende 14 dagen, daarna productie.
 5. **Bij elke update** verhoog je `CACHE_VERSION` in `sw.js`, zodat spelers de nieuwe versie krijgen.
    Staat de app open op het start- of wereldscherm, dan laadt hij de nieuwe versie vanzelf;
    midden in een puzzel gebeurt dat pas bij de volgende start.
 
-De screenshots voor de Play Store-pagina upload je apart in de Play Console;
-die in `screenshots/` zijn voor het installatievenster in de browser.
+De screenshots voor de Play Store-pagina staan in `store/screenshots/` en upload je in de
+Play Console; die in `screenshots/` zijn voor het installatievenster in de browser.

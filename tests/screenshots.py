@@ -14,6 +14,7 @@ import functools
 import http.server
 import json
 import pathlib
+import re
 import sys
 import threading
 
@@ -50,6 +51,7 @@ MEASURE_JS = """
     for (const el of scope.querySelectorAll(sel)) {
       const r = el.getBoundingClientRect();
       if (!r.width || !r.height) continue;
+      if (el.matches('#policy a')) continue;      // a link inside a sentence of the policy text (not a button)
       const cs = getComputedStyle(el);
       if (cs.visibility === 'hidden' || cs.display === 'none') continue;
       const name = (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) +
@@ -80,6 +82,10 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
             if path.startswith(prefix):
                 path = path[len(prefix) - 1:]
                 break
+        # GitHub Pages serves /privacy for privacy.html: do the same here.
+        clean = path.split('?', 1)[0].split('#', 1)[0]
+        if re.fullmatch(r'/[\w-]+', clean) and (ROOT / (clean[1:] + '.html')).is_file():
+            path = clean + '.html'
         return super().translate_path(path)
 
 
@@ -236,8 +242,37 @@ def run():
                 page.evaluate('goToWorlds()')
                 page.evaluate('document.getElementById("screen-worlds").scrollTop = 99999')
                 shot('26-werelden-onderaan')
+                # Publiceren: spelregels, credits, alles verwijderen, voortgang overzetten, verhuismelding
+                def parent():
+                    page.click('#btn-parent-hold', delay=1700)
+                    page.click('#btn-parent-hold', delay=1700)
+                page.evaluate('startLevel(0, true)')
+                page.click('#btn-rules')
+                shot('27-spelregels')
+                page.click('#btn-rules-ok')
+                page.evaluate('leaveGame(); goToSettings()')
+                page.evaluate('document.getElementById("screen-settings").scrollTop = 99999')
+                shot('28-instellingen-onderaan')
+                page.click('#btn-credits')
+                shot('29-credits')
+                page.click('#btn-credits-ok')
+                page.click('#btn-wipe-all')
+                parent()
+                shot('30-alles-verwijderen')
+                page.click('#btn-wipe-no')
+                page.evaluate('goToProfiles()')
+                page.click('#btn-transfer')
+                parent()
+                page.click('#btn-export')
+                shot('31-voortgang-overzetten')
+                page.click('#btn-transfer-ok')
+                page.evaluate('document.getElementById("move-url").textContent = "sudokukids.studiosedillo.com"; showModal("move")')
+                shot('32-verhuisd')
+                page.click('#btn-move-later')
                 page.goto(url + 'privacy.html')
-                shot('27-privacy')
+                shot('33-privacy')
+                page.goto(url + 'verwijderen.html')
+                shot('34-verwijderen')
             except Exception as exc:  # een knop is niet te bereiken: dat is zelf een bevinding
                 failed = True
                 report.append(f'{name:26} VASTGELOPEN: ' + str(exc).split('Call log')[0].strip()[:160]

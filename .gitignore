@@ -1,2 +1,6 @@
 __pycache__/
 tests/out/
+# Android signing keys and TWA build output: never in Git (see docs/twa.md)
+*.keystore
+*.jks
+twa/build/

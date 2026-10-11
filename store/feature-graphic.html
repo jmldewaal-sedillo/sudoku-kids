@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Feature graphic 1024x500 (bron voor store/feature-graphic.png, zie tests/store.py)</title>
+<style>
+  html, body { margin: 0; }
+  body { width: 1024px; height: 500px; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif;
+         background: linear-gradient(135deg, #FF8FB1 0%, #FF6B9D 45%, #C77DFF 100%); position: relative; }
+  .dot { position: absolute; border-radius: 50%; background: rgba(255,255,255,.16); }
+  .mid { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 44px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 104px); gap: 12px; padding: 16px; background: #fff; border-radius: 34px;
+          box-shadow: 0 14px 0 rgba(61,44,107,.22); transform: rotate(-4deg); }
+  .grid div { height: 104px; border-radius: 22px; display: flex; align-items: center; justify-content: center;
+              font-size: 68px; font-weight: 900; color: #3D2C6B; }
+  .grid svg { width: 82px; height: 82px; }
+  .a { background: #FFD93D; } .b { background: #6BCB9F; } .c { background: #7CC4FF; } .d { background: #FFB5D0; }
+  h1 { margin: 0; color: #fff; font-size: 78px; line-height: 1.02; font-weight: 900; letter-spacing: -1px; text-shadow: 0 5px 0 rgba(61,44,107,.28); }
+  h1 span { display: block; font-size: 50px; color: #FFF3B0; margin-top: 8px; }
+  .cat { position: absolute; right: 54px; bottom: 34px; width: 150px; height: 150px; transform: rotate(8deg); }
+  .cat svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+  <div class="dot" style="width:260px;height:260px;left:-70px;top:-90px"></div>
+  <div class="dot" style="width:180px;height:180px;right:120px;top:-70px"></div>
+  <div class="dot" style="width:320px;height:320px;left:330px;bottom:-220px"></div>
+  <div class="mid">
+    <div class="grid">
+      <div class="a">1</div><div class="b" data-icon="frog"></div>
+      <div class="c" data-icon="strawberry"></div><div class="d">4</div>
+    </div>
+    <h1>Sudoku Kids<span>&amp; Crazy Grids</span></h1>
+  </div>
+  <div class="cat" data-icon="cat"></div>
+  <script src="../icons.js"></script>
+  <script>document.querySelectorAll('[data-icon]').forEach(function (el) { el.innerHTML = window.KawaiiIcons.svg(el.dataset.icon); });</script>
+</body>
+</html>
