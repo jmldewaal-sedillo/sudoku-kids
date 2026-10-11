@@ -30,6 +30,7 @@ const STRINGS = {
     mLocked: 'Speel eerst de helft van de vorige wereld! ⭐',
     mReset: 'Voortgang gereset! Nieuwe start! 🚀',
     mTap: 'Tik eerst op een leeg vakje!',
+    profiles: 'Wie speelt er?', player: 'Speler', editProfile: 'Profiel aanpassen', newProfile: 'Nieuw profiel', namePlaceholder: 'Naam (mag leeg)', addProfile: 'Nieuw profiel', save: 'Opslaan', deleteProfile: '🗑️ Profiel verwijderen', deleteTitle: 'Profiel verwijderen?', deleteText: 'Alle sterren van dit profiel worden gewist.', deleteYes: 'Ja, verwijder', mProfileDeleted: 'Profiel verwijderd.', linkAccount: 'Account koppelen (voor ouders)', linkSoon: 'Binnenkort beschikbaar.\nNu wordt alles alleen op dit toestel bewaard.', parentTitle: 'Voor ouders', parentText: 'Houd de knop 3 seconden ingedrukt.', parentHold: 'Houd ingedrukt', ok: 'Oké', secSize: '📐 Grootte', sizeSmall: 'Klein', sizeNormal: 'Normaal', sizeLarge: 'Groot',
     back: 'Terug', row: 'rij', col: 'kolom', empty: 'leeg', privacy: 'Privacy (voor ouders)',
   },
   en: {
@@ -58,6 +59,7 @@ const STRINGS = {
     mLocked: 'Play half of the previous world first! ⭐',
     mReset: 'Progress reset! Fresh start! 🚀',
     mTap: 'Tap an empty square first!',
+    profiles: 'Who is playing?', player: 'Player', editProfile: 'Edit profile', newProfile: 'New profile', namePlaceholder: 'Name (optional)', addProfile: 'New profile', save: 'Save', deleteProfile: '🗑️ Delete profile', deleteTitle: 'Delete profile?', deleteText: 'All stars of this profile will be deleted.', deleteYes: 'Yes, delete', mProfileDeleted: 'Profile deleted.', linkAccount: 'Link account (for parents)', linkSoon: 'Coming soon.\nFor now everything is kept on this device only.', parentTitle: 'For parents', parentText: 'Hold the button for 3 seconds.', parentHold: 'Press and hold', ok: 'OK', secSize: '📐 Size', sizeSmall: 'Small', sizeNormal: 'Normal', sizeLarge: 'Large',
     back: 'Back', row: 'row', col: 'column', empty: 'empty', privacy: 'Privacy (for parents)',
   },
   de: {
@@ -86,6 +88,7 @@ const STRINGS = {
     mLocked: 'Spiele zuerst die Hälfte der vorigen Welt! ⭐',
     mReset: 'Fortschritt gelöscht! Neustart! 🚀',
     mTap: 'Tippe zuerst auf ein leeres Feld!',
+    profiles: 'Wer spielt?', player: 'Spieler', editProfile: 'Profil ändern', newProfile: 'Neues Profil', namePlaceholder: 'Name (optional)', addProfile: 'Neues Profil', save: 'Speichern', deleteProfile: '🗑️ Profil löschen', deleteTitle: 'Profil löschen?', deleteText: 'Alle Sterne dieses Profils werden gelöscht.', deleteYes: 'Ja, löschen', mProfileDeleted: 'Profil gelöscht.', linkAccount: 'Konto verknüpfen (für Eltern)', linkSoon: 'Bald verfügbar.\nIm Moment bleibt alles nur auf diesem Gerät.', parentTitle: 'Für Eltern', parentText: 'Halte den Knopf 3 Sekunden gedrückt.', parentHold: 'Gedrückt halten', ok: 'OK', secSize: '📐 Größe', sizeSmall: 'Klein', sizeNormal: 'Normal', sizeLarge: 'Groß',
     back: 'Zurück', row: 'Zeile', col: 'Spalte', empty: 'leer', privacy: 'Datenschutz (für Eltern)',
   },
   fr: {
@@ -114,6 +117,7 @@ const STRINGS = {
     mLocked: 'Joue d\'abord la moitié du monde précédent ! ⭐',
     mReset: 'Progression effacée ! Nouveau départ ! 🚀',
     mTap: 'Touche d\'abord une case vide !',
+    profiles: 'Qui joue ?', player: 'Joueur', editProfile: 'Modifier le profil', newProfile: 'Nouveau profil', namePlaceholder: 'Nom (facultatif)', addProfile: 'Nouveau profil', save: 'Enregistrer', deleteProfile: '🗑️ Supprimer le profil', deleteTitle: 'Supprimer le profil ?', deleteText: 'Toutes les étoiles de ce profil seront effacées.', deleteYes: 'Oui, supprimer', mProfileDeleted: 'Profil supprimé.', linkAccount: 'Associer un compte (pour les parents)', linkSoon: 'Bientôt disponible.\nPour l’instant, tout reste sur cet appareil.', parentTitle: 'Pour les parents', parentText: 'Maintiens le bouton 3 secondes.', parentHold: 'Maintenir appuyé', ok: 'OK', secSize: '📐 Taille', sizeSmall: 'Petit', sizeNormal: 'Normal', sizeLarge: 'Grand',
     back: 'Retour', row: 'ligne', col: 'colonne', empty: 'vide', privacy: 'Confidentialité (pour les parents)',
   },
 };

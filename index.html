@@ -174,6 +174,15 @@
         </label>
       </div>
 
+      <div class="settings-section">
+        <h3 class="settings-section-title" data-i18n="secSize">📐 Grootte</h3>
+        <div class="size-row" role="group" data-i18n-aria="secSize" aria-label="Grootte">
+          <button class="size-btn" data-size="small"><span class="size-pic size-pic-small" aria-hidden="true"></span><span data-i18n="sizeSmall">Klein</span></button>
+          <button class="size-btn" data-size="normal"><span class="size-pic size-pic-normal" aria-hidden="true"></span><span data-i18n="sizeNormal">Normaal</span></button>
+          <button class="size-btn" data-size="large"><span class="size-pic size-pic-large" aria-hidden="true"></span><span data-i18n="sizeLarge">Groot</span></button>
+        </div>
+      </div>
+
       <div class="settings-section danger-zone">
         <h3 class="settings-section-title" data-i18n="secProgress">⚠️ Voortgang</h3>
         <button class="btn-danger" id="btn-reset-progress" data-i18n="resetBtn">🗑️ Reset alle voortgang</button>
@@ -183,10 +192,27 @@
     </div>
   </div>
 
-  <!-- ===== MASCOT (worlds + levels) ===== -->
-  <div class="mascot-corner hidden" id="mascot" aria-live="polite">
-    <div class="mascot-bubble"></div>
-    <div class="mascot-emoji bounce-anim" aria-hidden="true">🐱</div>
+  <!-- ===== PROFILES ===== -->
+  <div id="screen-profiles" class="screen">
+    <div class="screen-header">
+      <button class="btn-icon" id="btn-profiles-back" data-i18n-aria="back" aria-label="Terug">⬅️</button>
+      <h2 class="screen-title" data-i18n="profiles">Wie speelt er?</h2>
+      <div class="header-spacer"></div>
+    </div>
+    <div class="profiles-container">
+      <div class="profiles-list" id="profiles-list"></div>
+      <button class="profile-add" id="btn-profile-add"><span aria-hidden="true">➕</span> <span data-i18n="addProfile">Nieuw profiel</span></button>
+      <button class="btn-link-account" id="btn-link-account" data-i18n="linkAccount">Account koppelen (voor ouders)</button>
+    </div>
+  </div>
+
+  <!-- ===== MASCOT (worlds + levels): tap the cat to choose who is playing ===== -->
+  <div class="mascot-corner hidden" id="mascot">
+    <div class="mascot-bubble" aria-live="polite"></div>
+    <button class="mascot-btn" id="btn-profile" data-i18n-aria="profiles" aria-label="Wie speelt er?">
+      <span class="mascot-emoji bounce-anim" aria-hidden="true">🐱</span>
+      <span class="mascot-avatar hidden" id="mascot-avatar" aria-hidden="true"></span>
+    </button>
   </div>
 
   <!-- ===== WIN ===== -->
@@ -237,6 +263,61 @@
     </div>
   </div>
 
+  <!-- ===== PARENT LOCK ===== -->
+  <div id="modal-parent" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="parent-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <h2 id="parent-title">🔒 <span data-i18n="parentTitle">Voor ouders</span></h2>
+      <p data-i18n="parentText">Houd de knop 3 seconden ingedrukt.</p>
+      <div class="win-buttons">
+        <button class="btn-hold" id="btn-parent-hold"><span class="hold-fill" id="hold-fill"></span><span class="hold-label" data-i18n="parentHold">Houd ingedrukt</span></button>
+        <button class="btn-win-home" id="btn-parent-cancel" data-i18n="confirmNo">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PROFILE: NEW / EDIT ===== -->
+  <div id="modal-profile" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <h2 id="profile-edit-title">Profiel</h2>
+      <div class="avatar-grid" id="avatar-grid"></div>
+      <input class="profile-name-input" id="profile-name" type="text" maxlength="12" autocomplete="off" data-i18n-aria="namePlaceholder" aria-label="Naam" />
+      <div class="win-buttons">
+        <button class="btn-win-next" id="btn-profile-save" data-i18n="save">Opslaan</button>
+        <button class="btn-win-home" id="btn-profile-cancel" data-i18n="confirmNo">Annuleren</button>
+        <button class="btn-text-danger" id="btn-profile-delete" data-i18n="deleteProfile">🗑️ Profiel verwijderen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PROFILE: CONFIRM DELETE ===== -->
+  <div id="modal-delete" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <h2 id="delete-title">⚠️ <span data-i18n="deleteTitle">Profiel verwijderen?</span></h2>
+      <p id="delete-text"></p>
+      <div class="win-buttons">
+        <button class="btn-danger btn-round" id="btn-delete-yes" data-i18n="deleteYes">Ja, verwijder</button>
+        <button class="btn-win-home" id="btn-delete-no" data-i18n="confirmNo">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== INFO ===== -->
+  <div id="modal-info" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="info-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <h2 id="info-title"></h2>
+      <p id="info-text"></p>
+      <div class="win-buttons">
+        <button class="btn-win-home" id="btn-info-ok" data-i18n="ok">Oké</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="storage.js"></script>
+  <script src="puzzle-bank.js"></script>
   <script src="puzzles.js"></script>
   <script src="i18n.js"></script>
   <script src="script.js"></script>

@@ -13,23 +13,24 @@ const MAX_HINTS = 3;
 const WORLD_COUNT = 3;
 const ROOT_SCREENS = ['splash', 'worlds'];   // "back" leaves the app from here
 
-// Test copy: the app runs from a folder called "test" or ending in "-test"
-// (e.g. …/sudoku-kids-test/). It then uses its own storage and shows a TEST
-// label, so testing can never touch the stars of the live version.
-const IS_TEST = /(^|\/)(test|[^/]+-test)(\/|$)/.test(location.pathname);
-const KEY_PREFIX = IS_TEST ? 'test_' : '';
+const Store = window.SudokuStorage;       // profiles + their data (see storage.js)
+const IS_TEST = Store.IS_TEST;            // true on the test copy (…-test folder)
 const TEST_BUILD = '';   // filled in by the test deploy (commit id), shown in the TEST label
-
-// localStorage keys – never rename these, players would lose their stars.
-const KEY_PROGRESS = KEY_PREFIX + 'sudokuKids_progress';
-const KEY_SETTINGS = KEY_PREFIX + 'sudokuKids_settings';
-const KEY_CURRENT  = KEY_PREFIX + 'sudokuKids_current';    // the game that is being played right now
+const PARENT_HOLD_MS = 3000;              // parent lock: hold the button this long
 
 // ============================================================
 // STATE
 // ============================================================
-let settings = { sound: true, language: 'nl', highlightErrors: true, displayMode: 'numbers' };
+const DEFAULT_SETTINGS = { sound: true, language: 'nl', highlightErrors: true, displayMode: 'numbers', size: 'normal' };
+const SIZES = {               // "Grootte" in the settings: how much of the screen the grid may use
+  small:  { factor: 0.78, cap: 440 },
+  normal: { factor: 1,    cap: 720 },
+  large:  { factor: 1,    cap: 1100 },
+};
+let profileId = 'p1';         // the profile that is playing
+let settings = { ...DEFAULT_SETTINGS };
 let progress = {};            // { 'w0_l0': { stars:3, time:45 }, ... }
+let played = {};              // { '<band id>': ['L0', '4-standard#12', ...] }  puzzles this profile has had
 let currentScreen = 'splash';
 let currentWorld = 0;
 let gameState = null;
@@ -55,33 +56,39 @@ function applyTranslations() {
 }
 
 // ============================================================
-// STORAGE (safe: private mode / blocked storage must not crash the game)
+// PROFILE DATA (every profile has its own progress, settings, played
+// puzzles and unfinished game – storage.js decides where they are kept)
 // ============================================================
-function storeGet(key, fallback) {
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-  catch (e) { return fallback; }
-}
-function storeSet(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* ignore */ }
-}
-function storeRemove(key) {
-  try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
-}
 function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
-function saveProgress() { storeSet(KEY_PROGRESS, progress); }
-function saveSettings() { storeSet(KEY_SETTINGS, settings); }
-function loadAll() {
-  const savedProgress = storeGet(KEY_PROGRESS, {});
+function saveProgress() { Store.write(profileId, 'progress', progress); }
+function saveSettings() { Store.write(profileId, 'settings', settings); }
+function savePlayed()   { Store.write(profileId, 'played', played); }
+
+// Loads a profile. `inherit` = settings a brand-new profile starts with.
+function loadProfile(id, inherit) {
+  profileId = id;
+  const savedProgress = Store.read(id, 'progress');
   progress = isPlainObject(savedProgress) ? savedProgress : {};
-  const savedSettings = storeGet(KEY_SETTINGS, {});
-  if (isPlainObject(savedSettings)) settings = { ...settings, ...savedSettings };
+  const savedPlayed = Store.read(id, 'played');
+  played = isPlainObject(savedPlayed) ? savedPlayed : {};
+  const savedSettings = Store.read(id, 'settings');
+  settings = { ...DEFAULT_SETTINGS, ...(inherit || {}), ...(isPlainObject(savedSettings) ? savedSettings : {}) };
   // First start: follow the language of the device.
-  if (!isPlainObject(savedSettings) || !savedSettings.language) {
+  if (!inherit && (!isPlainObject(savedSettings) || !savedSettings.language)) {
     const device = String(navigator.language || 'nl').slice(0, 2).toLowerCase();
     settings.language = STRINGS[device] ? device : 'en';
   }
   if (!STRINGS[settings.language]) settings.language = 'nl';
   if (settings.displayMode !== 'animals') settings.displayMode = 'numbers';
+  if (!SIZES[settings.size]) settings.size = 'normal';
+  applySize();
+}
+function applySize() {
+  document.body.classList.remove('ui-small', 'ui-normal', 'ui-large');
+  document.body.classList.add('ui-' + settings.size);
+}
+function starsIn(prog) {
+  return isPlainObject(prog) ? Object.values(prog).reduce((s, v) => s + ((v && v.stars) || 0), 0) : 0;
 }
 
 function levelKey(w, i)     { return `w${w}_l${i}`; }
@@ -141,6 +148,10 @@ function showMascotMessage(text) {
 }
 function updateMascotVisibility() {
   document.getElementById('mascot').classList.toggle('hidden', !['worlds', 'levels'].includes(currentScreen));
+  const me = Store.profile(profileId);
+  document.getElementById('mascot-avatar').textContent = me ? me.avatar : '';
+  // The cat itself is the mascot; the small badge shows who is playing (not needed if that is the cat too).
+  document.getElementById('mascot-avatar').classList.toggle('hidden', !me || (me.avatar === '🐱' && Store.profiles().length === 1));
 }
 
 // Restart a short CSS animation on an element.
@@ -178,6 +189,10 @@ function goToSettings() {
   showScreen('settings');
   syncSettingsUI();
 }
+function goToProfiles() {
+  showScreen('profiles');
+  buildProfiles();
+}
 function leaveGame() {
   saveCurrent();
   goToLevels(gameState.lv.world);
@@ -196,11 +211,11 @@ function goBack() {
   const modal = document.querySelector('.modal:not(.hidden)');
   if (modal) {
     hideModals();
-    if (modal.id !== 'modal-confirm') goToLevels(gameState.lv.world);
+    if (modal.id === 'modal-win' || modal.id === 'modal-gameover') goToLevels(gameState.lv.world);
     return true;
   }
   if (currentScreen === 'game') { leaveGame(); return true; }
-  if (currentScreen === 'levels' || currentScreen === 'settings') { goToWorlds(); return true; }
+  if (currentScreen === 'levels' || currentScreen === 'settings' || currentScreen === 'profiles') { goToWorlds(); return true; }
   return false;
 }
 
@@ -266,15 +281,50 @@ function buildLevelsGrid(w) {
 // ============================================================
 function mistakeLimit(lv) { return lv.size === 4 ? Infinity : MAX_MISTAKES; }
 
-// `fresh` = start from scratch (replay button); otherwise an unfinished game
+// ---------- Which puzzle? ----------
+// Every level has its own first puzzle ('L<level>', the one it always had).
+// After that, each new start gives another puzzle from the level's difficulty
+// band, one this profile has not had yet. Only when the band is used up do
+// puzzles come back.
+function legacyId(globalIndex) { return 'L' + globalIndex; }
+function puzzleById(pid, globalIndex) {
+  return (pid && pid !== legacyId(globalIndex) && E.getVariant(pid)) || E.getPuzzle(globalIndex);
+}
+function nextPuzzleId(globalIndex) {
+  const lv = LEVELS[globalIndex];
+  const band = E.levelBand(globalIndex);
+  const own = legacyId(globalIndex);
+  if (!Array.isArray(played[band])) played[band] = [];
+  const had = played[band];
+  // Finished before profiles kept track of puzzles: the level's own puzzle has been played.
+  if (getLevelStars(lv.world, lv.indexInWorld) > 0 && !had.includes(own)) had.push(own);
+  let pid = own;
+  if (had.includes(own)) {
+    const pool = E.bankOf(band).map(p => p.id);
+    let fresh = pool.filter(id => !had.includes(id));
+    if (!fresh.length && pool.length) {            // band used up: start again, but not with the last one
+      const last = had[had.length - 1];
+      played[band] = had.filter(id => id[0] === 'L');
+      fresh = pool.length > 1 ? pool.filter(id => id !== last) : pool;
+    }
+    if (fresh.length) pid = fresh[Math.floor(Math.random() * fresh.length)];
+  }
+  if (!played[band].includes(pid)) played[band].push(pid);
+  savePlayed();
+  return pid;
+}
+
+// `fresh` = start a new puzzle (replay button); otherwise an unfinished game
 // of this level is continued where the player left it.
 function startLevel(globalIndex, fresh) {
   const lv = LEVELS[globalIndex];
-  const puzzle = E.getPuzzle(globalIndex);
+  const saved = fresh ? null : savedGameFor(globalIndex);
+  const pid = saved ? saved.pid : nextPuzzleId(globalIndex);
+  const puzzle = puzzleById(pid, globalIndex);
   const n = lv.size * lv.size;
   stopTimer();
   gameState = {
-    lv, size: lv.size, type: lv.type,
+    lv, size: lv.size, type: lv.type, pid,
     given: puzzle.given, solution: puzzle.solution,
     grid: puzzle.given.slice(),
     notes: Array.from({ length: n }, () => new Set()),
@@ -286,7 +336,7 @@ function startLevel(globalIndex, fresh) {
     rcbPeers: E.getUnits(lv.size, false).peers,           // row/col/box (for highlighting)
     allPeers: E.getUnits(lv.size, lv.type === 'xsudoku').peers, // incl. diagonals (for notes)
   };
-  if (fresh) clearCurrent(); else restoreCurrent();
+  if (saved) restoreCurrent(saved); else clearCurrent();
 
   showScreen('game');
   document.getElementById('screen-game').className = `screen active size-${lv.size}`;
@@ -327,28 +377,36 @@ function updateStats() {
 function saveCurrent() {
   const gs = gameState;
   if (!gs || gs.isComplete || !gs.dirty) return;
-  storeSet(KEY_CURRENT, {
-    i: gs.lv.globalIndex, grid: gs.grid,
+  Store.write(profileId, 'current', {
+    i: gs.lv.globalIndex, pid: gs.pid, grid: gs.grid,
     notes: gs.notes.map(s => [...s]), tried: gs.tried.map(s => [...s]),
     mistakes: gs.mistakes, hintsUsed: gs.hintsUsed, secs: gs.timerSecs,
   });
 }
-function clearCurrent() { storeRemove(KEY_CURRENT); }
-function restoreCurrent() {
-  const gs = gameState, s = storeGet(KEY_CURRENT, null);
-  const n = gs.grid.length;
+function clearCurrent() { Store.remove(profileId, 'current'); }
+// The saved unfinished game of this level, or null if there is none (or it is damaged).
+function savedGameFor(globalIndex) {
+  const lv = LEVELS[globalIndex], s = Store.read(profileId, 'current');
+  if (!isPlainObject(s) || s.i !== globalIndex) return null;
+  const pid = typeof s.pid === 'string' ? s.pid : legacyId(globalIndex);   // saved before puzzle variants existed
+  const given = puzzleById(pid, globalIndex).given;
+  const n = given.length;
   const isList = a => Array.isArray(a) && a.length === n;
-  const inRange = v => Number.isInteger(v) && v >= 0 && v <= gs.size;
-  if (!isPlainObject(s) || s.i !== gs.lv.globalIndex) return;
-  if (!isList(s.grid) || !isList(s.notes) || !isList(s.tried)) return;
-  if (!s.grid.every((v, i) => inRange(v) && (gs.given[i] === 0 || v === gs.given[i]))) return;
-  if (![...s.notes, ...s.tried].every(a => Array.isArray(a) && a.every(inRange))) return;
+  const inRange = v => Number.isInteger(v) && v >= 0 && v <= lv.size;
+  if (pid !== legacyId(globalIndex) && !E.getVariant(pid)) return null;
+  if (!isList(s.grid) || !isList(s.notes) || !isList(s.tried)) return null;
+  if (!s.grid.every((v, i) => inRange(v) && (given[i] === 0 || v === given[i]))) return null;
+  if (![...s.notes, ...s.tried].every(a => Array.isArray(a) && a.every(inRange))) return null;
   const mistakes = Number.isInteger(s.mistakes) && s.mistakes >= 0 ? s.mistakes : 0;
-  if (mistakes >= gs.maxMistakes) return;
+  if (mistakes >= mistakeLimit(lv)) return null;
+  return { ...s, pid, mistakes };
+}
+function restoreCurrent(s) {
+  const gs = gameState;
   gs.grid = s.grid.slice();
   gs.notes = s.notes.map(a => new Set(a));
   gs.tried = s.tried.map(a => new Set(a));
-  gs.mistakes = mistakes;
+  gs.mistakes = s.mistakes;
   gs.hintsUsed = Math.min(MAX_HINTS, Math.max(0, s.hintsUsed | 0));
   gs.timerSecs = Math.max(0, s.secs | 0);
   gs.dirty = true;
@@ -365,13 +423,25 @@ function buildGrid() {
 
   // Measure the free space the layout leaves for the grid.
   gridEl.style.width = gridEl.style.height = '0px';
+  container.style.width = '';
   const box = container.getBoundingClientRect();
-  const avail = Math.max(160, Math.min(box.width - 16, box.height - 16, 720));
+  const pad = 2 * parseFloat(getComputedStyle(container).paddingLeft);
+  let freeWidth = box.width;
+  const sideBySide = window.matchMedia('(orientation: landscape)').matches;
+  if (sideBySide) {
+    // Side by side: the grid may use what the button column (min. 300 px) leaves over.
+    const screen = document.getElementById('screen-game');
+    const cs = getComputedStyle(screen);
+    freeWidth = screen.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 300 - 3 * (parseFloat(cs.columnGap) || 0);
+  }
+  const { factor, cap } = SIZES[settings.size] || SIZES.normal;
+  const avail = Math.max(160, Math.min((freeWidth - pad) * factor, (box.height - pad) * factor, cap));
   const cellSize = Math.floor(avail / size);
 
   gridEl.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
   gridEl.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
   gridEl.style.width = gridEl.style.height = (cellSize * size) + 'px';
+  container.style.width = sideBySide ? (cellSize * size + pad) + 'px' : '';   // its column is exactly this wide
   gridEl.style.setProperty('--cell-font', Math.max(14, Math.floor(cellSize * (size === 9 ? 0.6 : 0.5))) + 'px');
   gridEl.style.setProperty('--note-font', Math.max(7, Math.floor(cellSize / (size === 4 ? 4 : 3.6))) + 'px');
   gridEl.style.setProperty('--note-cols', size === 4 ? 2 : 3);
@@ -744,6 +814,165 @@ function syncSettingsUI() {
   document.getElementById('setting-sound').checked = settings.sound;
   document.getElementById('setting-language').value = settings.language;
   document.getElementById('setting-highlight-errors').checked = settings.highlightErrors;
+  document.querySelectorAll('.size-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.size === settings.size);
+    b.setAttribute('aria-pressed', String(b.dataset.size === settings.size));
+  });
+}
+
+// ============================================================
+// PARENT LOCK – hold the button for 3 seconds. Too long and too boring for
+// a young child, no reading or sums needed for the parent.
+// ============================================================
+let parentAction = null;
+let holdTimer = null;
+function askParent(action) {
+  parentAction = action;
+  document.getElementById('hold-fill').style.width = '0%';
+  showModal('parent');
+}
+function startHold() {
+  if (holdTimer) return;
+  const fill = document.getElementById('hold-fill');
+  const t0 = performance.now();
+  holdTimer = setInterval(() => {
+    const part = Math.min(1, (performance.now() - t0) / PARENT_HOLD_MS);
+    fill.style.width = (part * 100) + '%';
+    if (part < 1) return;
+    cancelHold();
+    const action = parentAction;
+    parentAction = null;
+    hideModals();
+    playPlace();
+    if (action) action();
+  }, 50);
+}
+function cancelHold() {
+  clearInterval(holdTimer);
+  holdTimer = null;
+  document.getElementById('hold-fill').style.width = '0%';
+}
+
+// ============================================================
+// PROFILES
+// ============================================================
+let editingProfile = null;     // id of the profile in the edit window, or 'new'
+let pickedAvatar = null;
+
+function profileLabel(p) { return p.name || t('player'); }
+
+function buildProfiles() {
+  const list = document.getElementById('profiles-list');
+  list.innerHTML = '';
+  Store.profiles().forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'profile-card' + (p.id === profileId ? ' active' : '');
+    row.dataset.id = p.id;
+    const stars = p.id === profileId ? getTotalStars() : starsIn(Store.read(p.id, 'progress'));
+
+    const pick = document.createElement('button');
+    pick.className = 'profile-pick';
+    pick.setAttribute('aria-label', `${profileLabel(p)}, ${stars} ⭐`);
+    pick.setAttribute('aria-pressed', String(p.id === profileId));
+    pick.innerHTML = '<span class="profile-avatar" aria-hidden="true"></span><span class="profile-name"></span><span class="profile-stars" aria-hidden="true"></span>';
+    pick.children[0].textContent = p.avatar;
+    pick.children[1].textContent = profileLabel(p);      // textContent: a name can never become HTML
+    pick.children[2].textContent = '⭐ ' + stars;
+    pick.addEventListener('click', () => { playBloop(); switchProfile(p.id); });
+
+    const edit = document.createElement('button');
+    edit.className = 'profile-edit';
+    edit.textContent = '✏️';
+    edit.setAttribute('aria-label', `${t('editProfile')}: ${profileLabel(p)}`);
+    edit.addEventListener('click', () => { playBloop(); openProfileEditor(p.id); });
+
+    row.append(pick, edit);
+    list.appendChild(row);
+  });
+  const add = document.getElementById('btn-profile-add');
+  add.classList.toggle('hidden', Store.profiles().length >= Store.MAX_PROFILES);
+}
+
+function switchProfile(id) {
+  if (id !== profileId) {
+    gameState = null;
+    loadProfile(id);
+    applyTranslations();
+    Store.setActive(id);
+  }
+  goToWorlds();
+}
+
+function openProfileEditor(id) {
+  editingProfile = id;
+  const p = id === 'new' ? null : Store.profile(id);
+  const used = Store.profiles().map(q => q.avatar);
+  pickedAvatar = p ? p.avatar : (Store.AVATARS.find(a => !used.includes(a)) || Store.AVATARS[0]);
+  document.getElementById('profile-edit-title').textContent = t(p ? 'editProfile' : 'newProfile');
+  document.getElementById('profile-name').value = p ? p.name : '';
+  document.getElementById('profile-name').placeholder = t('namePlaceholder');
+  document.getElementById('btn-profile-delete').classList.toggle('hidden', !p || Store.profiles().length <= 1);
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = '';
+  Store.AVATARS.forEach(a => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'avatar-btn' + (a === pickedAvatar ? ' active' : '');
+    b.textContent = a;
+    b.setAttribute('aria-label', a);
+    b.setAttribute('aria-pressed', String(a === pickedAvatar));
+    b.addEventListener('click', () => {
+      pickedAvatar = a;
+      playBloop();
+      grid.querySelectorAll('.avatar-btn').forEach(x => {
+        x.classList.toggle('active', x === b);
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+    });
+    grid.appendChild(b);
+  });
+  showModal('profile');
+}
+
+function saveProfileEditor() {
+  const name = document.getElementById('profile-name').value.trim().slice(0, 12);
+  hideModals();
+  if (editingProfile === 'new') {
+    // A new profile starts with the language and sound of whoever made it.
+    const p = Store.createProfile(name, pickedAvatar);
+    if (!p) return;
+    const inherit = { language: settings.language, sound: settings.sound, size: settings.size };
+    gameState = null;
+    loadProfile(p.id, inherit);
+    saveSettings();
+    Store.setActive(p.id);
+    applyTranslations();
+    goToWorlds();
+    return;
+  }
+  Store.updateProfile(editingProfile, { name, avatar: pickedAvatar });
+  updateMascotVisibility();
+  buildProfiles();
+}
+
+function deleteEditedProfile() {
+  const id = editingProfile;
+  if (!Store.deleteProfile(id)) return;
+  if (id === profileId) {
+    gameState = null;
+    loadProfile(Store.activeId());
+    applyTranslations();
+  }
+  showScreen('profiles');
+  buildProfiles();
+  showMascotMessage(t('mProfileDeleted'));
+}
+
+function linkAccount() {
+  // No cloud provider yet (see docs/account-koppelen.md): only tell it is coming.
+  document.getElementById('info-title').textContent = t('linkAccount');
+  document.getElementById('info-text').textContent = t(Store.canLinkAccount() ? 'linkSoon' : 'linkSoon');
+  showModal('info');
 }
 
 // ============================================================
@@ -787,9 +1016,45 @@ function initEventListeners() {
   on('setting-language', 'change', e => { settings.language = e.target.value; saveSettings(); applyTranslations(); });
   on('setting-highlight-errors', 'change', e => { settings.highlightErrors = e.target.checked; saveSettings(); });
 
-  on('btn-reset-progress', 'click', () => { playBloop(); showModal('confirm'); });
+  document.querySelectorAll('.size-btn').forEach(b => b.addEventListener('click', () => {
+    settings.size = b.dataset.size;
+    saveSettings(); applySize(); syncSettingsUI(); playBloop();
+    relayoutGame();
+  }));
+
+  // Profiles (tap the cat in the corner)
+  on('btn-profile', 'click', () => { playBloop(); goToProfiles(); });
+  on('btn-profiles-back', 'click', () => { playBloop(); goToWorlds(); });
+  on('btn-profile-add', 'click', () => { playBloop(); openProfileEditor('new'); });
+  on('btn-profile-save', 'click', () => { playBloop(); saveProfileEditor(); });
+  on('btn-profile-cancel', 'click', () => { playBloop(); hideModals(); });
+  on('btn-profile-delete', 'click', () => {
+    playBloop();
+    askParent(() => {
+      const p = Store.profile(editingProfile);
+      document.getElementById('delete-text').textContent = `${p.avatar} ${profileLabel(p)}\n${t('deleteText')}`;
+      showModal('delete');
+    });
+  });
+  on('btn-delete-yes', 'click', () => { hideModals(); playBloop(); deleteEditedProfile(); });
+  on('btn-delete-no', 'click', () => { hideModals(); playBloop(); });
+  on('btn-link-account', 'click', () => { playBloop(); askParent(linkAccount); });
+  on('btn-info-ok', 'click', () => { hideModals(); playBloop(); });
+
+  // Parent lock
+  const hold = document.getElementById('btn-parent-hold');
+  ['pointerdown', 'keydown'].forEach(ev => hold.addEventListener(ev, e => {
+    if (ev === 'keydown' && e.key !== ' ' && e.key !== 'Enter') return;
+    e.preventDefault();
+    startHold();
+  }));
+  ['pointerup', 'pointerleave', 'pointercancel', 'keyup', 'blur'].forEach(ev => hold.addEventListener(ev, cancelHold));
+  hold.addEventListener('contextmenu', e => e.preventDefault());
+  on('btn-parent-cancel', 'click', () => { cancelHold(); parentAction = null; hideModals(); playBloop(); });
+
+  on('btn-reset-progress', 'click', () => { playBloop(); askParent(() => showModal('confirm')); });
   on('btn-confirm-yes', 'click', () => {
-    progress = {}; saveProgress(); clearCurrent(); hideModals(); playBloop();
+    progress = {}; saveProgress(); played = {}; savePlayed(); clearCurrent(); hideModals(); playBloop();
     goToWorlds();
     setTimeout(() => showMascotMessage(t('mReset')), 600);
   });
@@ -806,13 +1071,18 @@ function initEventListeners() {
   document.addEventListener('visibilitychange', () => { if (document.hidden && currentScreen === 'game') saveCurrent(); });
   window.addEventListener('pagehide', () => { if (currentScreen === 'game') saveCurrent(); });
 
-  window.addEventListener('resize', debounce(() => {
-    if (currentScreen === 'game' && gameState) {
-      buildGrid();
-      document.querySelectorAll('#sudoku-grid > *').forEach(c => { c._html = c._label = undefined; });
-      renderGrid();
-    }
-  }, 150));
+  // The grid follows the window right away (once per frame, no waiting).
+  let resizeFrame = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(relayoutGame);
+  });
+}
+
+function relayoutGame() {
+  if (currentScreen !== 'game' || !gameState) return;
+  buildGrid();
+  renderGrid();
 }
 
 function onKeyDown(e) {
@@ -837,11 +1107,6 @@ function onKeyDown(e) {
   renderGrid();
 }
 
-function debounce(fn, delay) {
-  let timer;
-  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
-}
-
 // ============================================================
 // SERVICE WORKER
 // ============================================================
@@ -859,7 +1124,8 @@ function registerSW() {
 }
 
 // ============================================================
-// TEST LABEL (only on the test copy, see IS_TEST)
+// TEST COPY ONLY (see storage.js: IS_TEST) – a visible TEST label, and on a
+// pc a bar with phone/tablet sizes (test-preview.js). Never on the live app.
 // ============================================================
 function showTestLabel() {
   const badge = document.createElement('div');
@@ -868,13 +1134,33 @@ function showTestLabel() {
   document.body.appendChild(badge);
   document.title = 'TEST · ' + document.title;
 }
+// Should this page be the outer page that shows the app in a frame of a chosen size?
+function wantsTestPreview() {
+  if (!IS_TEST) return false;
+  let framed = true;
+  try { framed = window.self !== window.top; } catch (e) { /* cross-origin parent: framed */ }
+  const params = new URLSearchParams(location.search);
+  if (framed || params.has('frame')) return false;            // we are the app inside the frame
+  if (params.get('preview') === 'off') return false;
+  if (params.get('preview') === 'on') return true;
+  const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  return !isTouch && !navigator.webdriver;                      // real phones and automated tests: no bar
+}
 
 // ============================================================
 // INIT
 // ============================================================
 function init() {
+  if (wantsTestPreview()) {
+    // Outer page: only the size bar. The game itself runs inside the frame.
+    registerSW();
+    const s = document.createElement('script');
+    s.src = 'test-preview.js';
+    document.head.appendChild(s);
+    return;
+  }
   if (IS_TEST) showTestLabel();
-  loadAll();
+  loadProfile(Store.activeId());
   applyTranslations();
   initEventListeners();
   registerSW();
