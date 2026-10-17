@@ -411,7 +411,8 @@
       <hr />
       <p data-i18n="importHelp">Plak hier een code, of kies een bestand.</p>
       <textarea class="transfer-box" id="transfer-input" rows="3" data-i18n-aria="importHelp" aria-label="Code"></textarea>
-      <input class="transfer-file" id="transfer-file" type="file" accept=".txt,text/plain" data-i18n-aria="importHelp" aria-label="Bestand" />
+      <input class="transfer-file" id="transfer-file" type="file" accept=".txt,text/plain" hidden />
+      <button class="btn-win-home transfer-choose" id="btn-choose-file" data-i18n="chooseFile">Kies een bestand</button>
       <button class="btn-win-next" id="btn-import"><span class="ki" data-icon="check"></span><span data-i18n="importBtn">Importeer</span></button>
       <p class="transfer-msg" id="transfer-msg" aria-live="polite"></p>
       <div class="win-buttons">

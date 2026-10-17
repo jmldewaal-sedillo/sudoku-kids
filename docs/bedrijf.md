@@ -105,7 +105,7 @@ Kanttekeningen:
   zichtbaar maken, staat er niet letterlijk. Ga er voor de zekerheid van uit dat het adres
   geregeld moet zijn vóór de eerste app met advertenties (wettelijk is het dan ook nodig).
 
-**Omzetten van persoonlijk naar organisatie:** kan binnen hetzelfde account. Je maakt een
+**Omzetten van persoonlijk naar organisatie:** kan binnen hetzelfde account (uitgewerkt in 1e). Je maakt een
 nieuw betalingsprofiel van het type organisatie (met D-U-N-S-nummer), verifieert het en
 koppelt het. Andersom (organisatie naar persoonlijk) kan niet. Een persoonlijk account dat
 al geld verdient, kan niet rechtstreeks omgezet worden: dan is een nieuw account nodig en
@@ -151,6 +151,61 @@ Kanttekeningen:
 
 Een organisatie-account is pas zinvol als er een zakelijk adres is: het toont altijd een
 adres en een telefoonnummer.
+
+## 1e. Zakelijk account: omzetten of een nieuw account? (17 oktober 2026)
+
+*Jenn overweegt op 17 oktober 2026 het account zakelijk te maken (organisatie-account) of een
+nieuw account te maken. Nagekeken op 17 oktober 2026; bronnen onderaan.*
+
+**Omzetten kan, binnen hetzelfde account** ([Convert a personal developer account][play-convert]).
+De stappen volgens Google:
+1. Het persoonlijke account is volledig geverifieerd, zonder openstaande waarschuwingen op de
+   startpagina van Play Console.
+2. De **website van de organisatie** opslaan en "Send verification request" kiezen. De optie
+   om het accounttype te wijzigen verschijnt pas als de website geverifieerd is.
+   → **Dus eerst moet studiosedillo.com werken** (DNS van de hoofdsite, zie de roadmap).
+3. Over jou → Accounttype wijzigen → een betalingsprofiel van het type organisatie maken of
+   kiezen. Een nieuw profiel vraagt een **D-U-N-S-nummer**.
+4. Type en grootte van de organisatie en een **telefoonnummer** invullen; contactgegevens
+   bevestigen met een eenmalige code; zo nodig identiteitsverificatie.
+5. Het geverifieerde betalingsprofiel koppelen, bevestigen en opslaan.
+6. **Minstens 72 uur wachten** voordat je een nieuwe app indient.
+- Het is eenrichtingsverkeer: terug naar persoonlijk kan niet.
+
+**Een nieuw account** kan ook. Volgens [Accountgegevens actueel houden][play-update-2] is de
+route voor een account zonder apps: een nieuw account maken en het oude opzeggen; een account
+met apps verhuist ze met de checklist voor app-overdracht. Er staan nog geen apps in het
+account, dus beide wegen zijn open. Omzetten houdt de verificatie die al gedaan is; een nieuw
+account betekent opnieuw registreren, betalen en verifiëren.
+
+**Wat een organisatie-account publiek toont** ([Vereiste gegevens][play-required]): "legal name,
+legal address, developer email address, and developer phone number". Dat betekent voor Studio Sedillo:
+
+| Punt | Gevolg | Eerst regelen |
+|---|---|---|
+| **Adres** | Komt uit het betalingsprofiel / D-U-N-S. Zolang het bezoekadres bij de KVK het huisadres is, wordt dat het publieke adres | Postadres regelen en het bezoekadres afschermen (1b); bij Dun & Bradstreet navragen welk adres ze vastleggen |
+| **Telefoonnummer** | Staat op elke store-pagina | Een zakelijk nummer dat niet je privénummer is |
+| **E-mailadres** | Google: het contactadres "should match the domain of your organization's website". studio.sedillo@gmail.com past daar niet bij | Een adres op studiosedillo.com (bijvoorbeeld via doorsturen bij Namecheap), dan ook de vaste gegevens in `Apps/CLAUDE.md` aanpassen |
+| **D-U-N-S** | Gratis bij Dun & Bradstreet, kan tot 30 dagen duren | Vroeg aanvragen |
+
+**Gesloten test (12 testers, 14 dagen):** Google noemt de eis alleen voor "personal accounts
+created after November 13, 2023" ([Testeisen][play-testing]). Bronnen buiten Google zeggen dat
+organisatie-accounts er niet onder vallen. Wat er gebeurt na omzetten van een persoonlijk
+account, staat nergens; dat is na het omzetten in Play Console zelf te zien (Dashboard).
+
+**Advies:**
+- Alleen voor Sudoku Kids (gratis, geen advertenties, geen aankopen) laat een **persoonlijk**
+  account het minst zien: naam, land en e-mail. Een organisatie-account is pas beter als
+  adres, telefoon en e-mail zakelijk geregeld zijn.
+- Voordeel van een organisatie-account: waarschijnlijk geen gesloten test van 14 dagen, en
+  geen eigen naam op de store-pagina. Voor Flush Factor (advertenties) moet het adres toch
+  geregeld zijn.
+- Kies je voor zakelijk, dan in deze volgorde: (1) DNS van studiosedillo.com, (2) postadres
+  en afschermen bij de KVK, (3) zakelijk telefoonnummer, (4) e-mailadres op het eigen domein,
+  (5) D-U-N-S aanvragen met het zakelijke adres, (6) omzetten in Play Console, (7) 72 uur
+  wachten, (8) pas dan de app aanmaken.
+- **Maak de app in Play Console pas aan als de keuze gemaakt is.** Bij een nieuw account
+  zou de app anders moeten verhuizen.
 
 ---
 
@@ -207,7 +262,10 @@ je de lijst later, draai dit dan opnieuw. Een nieuwe app krijgt het geheim vanze
 
 ---
 
-## Bronnen (geraadpleegd op 11 oktober 2026)
+## Bronnen (geraadpleegd op 11 oktober 2026; 1e op 17 oktober 2026)
+
+- [Convert a personal developer account to an organization account][play-convert] – Play Console Help (17 oktober 2026)
+- [Keeping your developer account information up to date][play-update-2] – Play Console Help (17 oktober 2026)
 
 - [Regels voor bedrijfscorrespondentie][corr] – Ondernemersplein (KVK en Rijksoverheid)
 - [Bedrijfsgegevens vermelden][acm] – ACM
@@ -237,5 +295,7 @@ adres zichtbaar maken in Google Play.
 [play-manage]: https://support.google.com/googleplay/android-developer/answer/13634081?hl=en
 [play-update]: https://support.google.com/googleplay/android-developer/answer/13634888?hl=en
 [play-testing]: https://support.google.com/googleplay/android-developer/answer/14151465?hl=en
+[play-convert]: https://support.google.com/googleplay/android-developer/answer/16260648?hl=en
+[play-update-2]: https://support.google.com/googleplay/android-developer/answer/13634081?hl=en
 [admob-pin]: https://support.google.com/admob/answer/2772302?hl=en
 [admob-pay]: https://support.google.com/admob/answer/12835021?hl=en

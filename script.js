@@ -513,6 +513,8 @@ function buildLevelsGrid(w) {
   const grid = $('levels-grid');
   grid.innerHTML = '';
   let lastSize = 0;
+  const saved = Store.read(profileId, 'current');
+  const resumeAt = isPlainObject(saved) && savedGameFor(saved.i) ? saved.i : -1;
   orderedLevels(w).forEach((lv, pos) => {
     const i = lv.indexInWorld;
     if (lv.size !== lastSize) {                 // a new run of one grid size: show which
@@ -530,14 +532,25 @@ function buildLevelsGrid(w) {
     btn.setAttribute('aria-label', `${t('level')} ${pos + 1}` + (stars ? `, ${stars}/3` : ''));
 
     if (!unlocked) {
+      // Not disabled: a tap shakes the button and the cat explains, like a locked world.
       btn.classList.add('locked');
-      btn.disabled = true;
+      btn.setAttribute('aria-disabled', 'true');
       btn.innerHTML = `<span class="level-lock-icon">${K.svg('lock')}</span>`;
+      btn.addEventListener('click', () => {
+        playError();
+        flash(btn, 'shake');
+        showMascotMessage(t('mLevelLocked'));
+      });
     } else {
       btn.classList.add(stars > 0 ? 'completed' : 'current');
       const mark = lv.type === 'shapes' ? K.svg('strawberry') : lv.type === 'xsudoku' ? '<b>X</b>' : '';
       btn.innerHTML = `<span class="level-type-mark">${mark}</span><span class="level-number">${pos + 1}</span>` +
         `<span class="level-stars-small" data-stars="${stars}">${stars > 0 ? icon('star').repeat(stars) : ''}</span>`;
+      if (lv.globalIndex === resumeAt) {             // the unfinished game is here
+        btn.classList.add('resume');
+        btn.insertAdjacentHTML('afterbegin', `<span class="level-resume-mark">${K.svg('play')}</span>`);
+        btn.setAttribute('aria-label', btn.getAttribute('aria-label') + ', ' + t('resumeLevel'));
+      }
       btn.addEventListener('click', () => { startLevel(lv.globalIndex); firstTimeRules(); });
     }
     grid.appendChild(btn);
@@ -1856,6 +1869,7 @@ function initEventListeners() {
   on('btn-export', 'click', exportToBox);
   on('btn-copy', 'click', copyCode);
   on('btn-file', 'click', saveCodeFile);
+  on('btn-choose-file', 'click', () => $('transfer-file').click());
   on('btn-import', 'click', () => { $('transfer-msg').textContent = importCode($('transfer-input').value); });
   on('transfer-file', 'change', e => {
     const file = e.target.files && e.target.files[0];

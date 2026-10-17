@@ -145,6 +145,18 @@ def run():
         check('na herladen: level 1 gehaald, level 2 open, level 3 dicht',
               g.js('[...document.querySelectorAll(".level-btn")].slice(0, 3).map(b => b.className.match(/completed|current|locked/)[0]).join()')
               == 'completed,current,locked')
+        g.page.click('.level-btn.locked >> nth=0', force=True)  # aria-disabled: Playwright tikt anders niet
+        g.page.wait_for_timeout(100)
+        check('tik op een dicht level: blijft op het levelscherm, schudt, en de kat zegt waarom',
+              g.screen() == 'levels' and g.js('document.querySelector(".level-btn.locked").getAttribute("aria-disabled")') == 'true' and
+              g.js('document.querySelector(".level-btn.locked").classList.contains("shake")') and
+              g.js('document.querySelector("#mascot .mascot-bubble").textContent') == 'Speel eerst het level hiervoor!')
+        check('zonder onafgemaakt spel staat er nergens een ▶', g.js('document.querySelectorAll(".level-btn.resume").length') == 0)
+        g.js('startLevel(LEVELS.find(l => l.world === 0 && l.indexInWorld === 1).globalIndex, true); gameState.dirty = true; saveCurrent(); goToLevels(0)')
+        check('onafgemaakt spel: alleen dat level krijgt een ▶ en "verder spelen" in de naam voor schermlezers',
+              g.js('[...document.querySelectorAll(".level-btn.resume")].map(b => b.dataset.level).join()') == '1' and
+              g.js('document.querySelector(".level-btn.resume").getAttribute("aria-label")').endswith(', verder spelen') and
+              g.js('!!document.querySelector(".level-btn.resume .level-resume-mark svg")'))
         check('geen console-errors', not g.errors, g.errors)
         g.close()
 
@@ -1365,7 +1377,11 @@ def run():
         g.js('SudokuStorage.wipeAll(); loadProfile(SudokuStorage.activeId()); goToProfiles()')
         g.page.click('#btn-transfer')
         g.parent_hold()
-        g.page.set_input_files('#transfer-file', {'name': 'sudoku-kids-voortgang.txt', 'mimeType': 'text/plain', 'buffer': code.encode()})
+        check('eigen knop "Kies een bestand" in de stijl van de app; het veld van de browser is verborgen',
+              g.js('document.getElementById("transfer-file").hidden') and g.js('document.getElementById("btn-choose-file").textContent.trim()') == 'Kies een bestand')
+        with g.page.expect_file_chooser() as fc:
+            g.page.click('#btn-choose-file')
+        fc.value.set_files({'name': 'sudoku-kids-voortgang.txt', 'mimeType': 'text/plain', 'buffer': code.encode()})
         g.page.wait_for_function('document.getElementById("transfer-msg").textContent !== ""')
         check('importeren via een bestand', g.js('document.getElementById("transfer-msg").textContent') == 'Gelukt! Profielen toegevoegd: 2' and g.js('getTotalStars()') == 60)
         evil = g.js('''() => { const bad = { app: 'sudoku-kids', v: 1, profiles: [{ name: '<img src=x onerror=alert(1)>AAAAAAAAAAAA', avatar: 'hacker',

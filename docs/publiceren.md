@@ -8,7 +8,8 @@ Uitgangspunten (besloten op 11 oktober 2026):
 
 - **Geen advertenties.** Later eventueel een verwijzing naar eigen spellen van Studio Sedillo
   (zie eis 1d).
-- **Persoonlijk Play Console-account, en dat blijft zo** (bevestigd in `docs/bedrijf.md`, 1c en 1d):
+- **Persoonlijk Play Console-account** (`docs/bedrijf.md`, 1c en 1d). *17 oktober 2026: Jenn
+  overweegt een organisatie-account; gevolgen en volgorde in `docs/bedrijf.md`, 1e.*
   zonder betaalde apps of aankopen toont Google alleen de wettelijke naam, het land en het
   ontwikkelaars-e-mailadres, geen adres. Een organisatie-account toont altijd een adres en
   een telefoonnummer. De verplichte gesloten test geldt, tenzij het account van vóór
@@ -32,7 +33,7 @@ staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
 | # | Wat | Waar | Waarom nu |
 |---|---|---|---|
 | 1 | De testversie nalopen (verwijderen, voortgang overzetten, spelregels, credits, privacy- en verwijderpagina) en akkoord geven | testlink | Niets gaat naar `main` zonder akkoord |
-| 2 | DNS-records van de **hoofdsite** aanmaken en de records `proefapp` en `test-proefapp` verwijderen (tabel in `docs/studio-sedillo.md`) | Namecheap → Advanced DNS | Zonder DNS werken de privacy- en verwijder-URL niet op studiosedillo.com |
+| 2 | DNS-records van de **hoofdsite** aanmaken (tabel in `docs/studio-sedillo.md`; `proefapp` en `test-proefapp` zijn al weg) | Namecheap → Advanced DNS | Zonder DNS werken de privacy- en verwijder-URL niet op studiosedillo.com |
 | 3 | Domein verifiëren bij GitHub (TXT-record) | GitHub → Settings → Pages | Beschermt tegen domeinkaping |
 | 4 | Claude Code laten draaien: `tools/eigen-domein.sh check`, daarna `site` en `https` | terminal | Zet studiosedillo.com en HTTPS aan (kan pas na stap 2 en 3) |
 | 5 | In Play Console nakijken: accounttype en aanmaakdatum; ontwikkelaarsnaam op **Studio Sedillo** zetten; ontwikkelaars-e-mail op studio.sedillo@gmail.com | Play Console → Instellingen → Ontwikkelaarsaccount | Bepaalt of de gesloten test geldt; bij een persoonlijk account toont Google ook je wettelijke naam en land |
