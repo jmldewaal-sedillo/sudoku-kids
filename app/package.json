@@ -1,0 +1,23 @@
+{
+  "name": "sudoku-kids-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capacitor-app (Android en iOS) van Sudoku Kids & Crazy Grids. De webbestanden komen uit ../dist/app (node ../tools/build.mjs app).",
+  "scripts": {
+    "sync": "cap sync",
+    "sync:android": "cap sync android",
+    "sync:ios": "cap sync ios",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/preferences": "8.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}

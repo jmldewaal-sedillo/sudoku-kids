@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 
-// Ondertekenen met de upload key. De gegevens staan in android-app/android/keystore.properties,
+// Ondertekenen met de upload key. De gegevens staan in app/android/keystore.properties,
 // een bestand dat NIET in Git staat (zie docs/android.md). Zonder dat bestand lukt alleen een
 // debug-build.
 def keystoreFile = rootProject.file('keystore.properties')

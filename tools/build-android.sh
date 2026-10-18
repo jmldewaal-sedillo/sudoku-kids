@@ -9,7 +9,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-debug}"
-APP=android-app
+APP=app
 
 # De Android-SDK: van Android Studio, of uit ANDROID_HOME.
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
@@ -21,7 +21,7 @@ for jbr in "$HOME/android-studio/jbr" /opt/android-studio/jbr /usr/local/android
 done
 
 echo "== 1. Webbestanden voor de app (zonder service worker)"
-node tools/build.mjs android
+node tools/build.mjs app
 
 echo "== 2. Capacitor: bestanden en plug-ins naar het Android-project"
 ( cd "$APP" && { [ -d node_modules ] || npm ci; } && npx cap sync android )

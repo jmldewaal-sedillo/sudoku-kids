@@ -1,68 +1,38 @@
 # Studio Sedillo: de hoofdsite en het domein
 
-*Bijgewerkt op 11 oktober 2026. Het eerdere plan (elke app op een eigen subdomein) is
-vervangen; zie `docs/lanceren.md`.*
+*Bijgewerkt op 18 oktober 2026. Domein, DNS en het register van alle subdomeinen staan sinds
+die dag in `Projecten/studio-sedillo-infra/`; deze pagina zegt alleen wat er voor Sudoku Kids
+bij hoort.*
 
 | Wat | Waar |
 |---|---|
-| Hoofdsite | repo `jmldewaal-sedillo/studio-sedillo` (lokaal `Apps/studio-sedillo`), GitHub Pages vanaf `main` |
-| Adres | **https://studiosedillo.com** (na DNS); tot dan https://jmldewaal-sedillo.github.io/studio-sedillo/ |
-| Pagina's per app | `studiosedillo.com/<app>/privacy` en `/<app>/delete`; voor Sudoku Kids: `sudoku-kids/` |
-| Apps op de startpagina | als "Binnenkort", zonder links |
-| Subdomeinen voor apps | **geen** (besluit van 11 oktober 2026) |
+| Hoofdsite | **https://studiosedillo.com**, repo `jmldewaal-sedillo/studio-sedillo` (lokaal `Apps/studio-sedillo`), GitHub Pages vanaf `main`, HTTPS afgedwongen |
+| Pagina's van deze app (voor Google Play en de App Store) | https://studiosedillo.com/sudoku-kids/privacy en https://studiosedillo.com/sudoku-kids/delete (5 talen, `?lang=` kiest de taal) |
+| Bron van die pagina's | `sudoku-kids/privacy.html` en `sudoku-kids/delete.html` in de repo `studio-sedillo` |
+| DNS | Cloudflare (registratie bij Namecheap). Stappen en uitleg: `studio-sedillo-infra/README.md` en `docs/` daar |
+| Subdomein van deze app | `sudokukids.studiosedillo.com`, **gereserveerd** in `studio-sedillo-infra/domeinen.json`: er hoort geen DNS-record te bestaan tot "lanceren web" |
+| Op de startpagina van de hoofdsite | als "Binnenkort", zonder link; na de lancering met de link naar Google Play (en later de App Store) |
 
-## DNS bij Namecheap (Advanced DNS)
-
-Alleen de hoofdsite heeft records nodig. Haal eerst de twee parkeer-records weg (CNAME `www`
-→ `parkingpage.namecheap.com` en de URL Redirect op `@`).
-
-| Type | Host | Value |
-|---|---|---|
-| A | `@` | `185.199.108.153` |
-| A | `@` | `185.199.109.153` |
-| A | `@` | `185.199.110.153` |
-| A | `@` | `185.199.111.153` |
-| AAAA | `@` | `2606:50c0:8000::153` |
-| AAAA | `@` | `2606:50c0:8001::153` |
-| AAAA | `@` | `2606:50c0:8002::153` |
-| AAAA | `@` | `2606:50c0:8003::153` |
-| CNAME | `www` | `jmldewaal-sedillo.github.io.` |
-| TXT | `_github-pages-challenge-jmldewaal-sedillo` | de code die GitHub je geeft |
-
-**Verwijderen** (records naar GitHub zonder site erachter kunnen door iemand anders
-geclaimd worden): `proefapp` en `test-proefapp`. Maak geen records voor `sudokukids` of
-`test-sudokukids`, en geen wildcard (`*`).
-
-**Domein verifiëren:** GitHub → Settings van je account → Pages → Add a domain →
-`studiosedillo.com`. GitHub toont een TXT-record; zet het bij Namecheap en laat het daarna
-staan. Het beschermt het domein en alle subdomeinen tegen kaping.
-
-**E-mail:** het contactadres is `studio.sedillo@gmail.com`; bij Namecheap hoeft daarvoor
-niets ingesteld te worden.
-
-## Het domein aanzetten
+## Controleren
 
 ```bash
-tools/eigen-domein.sh check    # staat alles goed? verandert niets
-tools/eigen-domein.sh site     # zet studiosedillo.com op de repo studio-sedillo (weigert zonder goede DNS)
-tools/eigen-domein.sh https    # HTTPS afdwingen, zodra GitHub het certificaat heeft
+cd /home/maggiesedd/Documents/Projecten/studio-sedillo-infra
+python3 tools/controleer-dns.py          # register, nameservers, verificatie, alle hostnamen
 ```
 
-`check` meldt ook als er nog een record voor een app-subdomein bestaat dat weg moet.
-Daarna controleren: `https://studiosedillo.com/sudoku-kids/privacy` en `/delete` openen in
-vijf talen, en `python3 tests/no-private-data.py --online` in de repo `studio-sedillo`.
+`sudokukids` moet daar "gereserveerd, geen record" tonen. In deze repo:
+`python3 tests/no-private-data.py --online` controleert ook de twee pagina's op de hoofdsite.
 
-## Een app toevoegen aan de hoofdsite
+## Iets veranderen aan de pagina's van deze app
 
-1. Map `<app>/` in de repo `studio-sedillo` met `privacy.html` en `delete.html` (neem
-   `sudoku-kids/` als voorbeeld; talen van de app).
-2. Een kaart op de startpagina, als "Binnenkort" zolang er niets te spelen of te
-   downloaden is. Later: een link naar Google Play, niet naar een github.io-adres.
-3. Een regel in de privacyverklaring van de site ("Elk spel heeft een eigen verklaring").
-4. `python3 tests/pages.py` uitbreiden met de nieuwe pagina's.
+De hoofdsite staat live vanaf `main`, dus alleen na akkoord van Jenn. De pagina's worden met
+de hand bijgehouden in de repo `studio-sedillo` (deze app is ouder dan
+`Apps/tools/hoofdsite-toevoegen.sh`); test daar met `python3 tests/pages.py`.
 
-## Later, misschien: een webversie op een eigen adres
+Nog open (`ROADMAP.md`): de doorverwijzing `/sudoku-kids/verwijderen` → `/delete`
+(`Apps/CLAUDE.md`, sectie 5) bestaat nog niet.
 
-Niet gepland. Als het er ooit van komt: opslag in de browser hoort bij het adres, dus kies
-het adres één keer goed, en gebruik "Voortgang overzetten" voor wie al op een ander adres
-speelde. Zet nooit een eigen domein op een repo voordat de DNS klopt.
+## Later, misschien: een webversie op het eigen subdomein
+
+Pas na "lanceren web" (`Apps/CLAUDE.md`, sectie 4). Opslag in de browser hoort bij het adres:
+wie al op github.io speelde, neemt de voortgang mee met "Voortgang overzetten".

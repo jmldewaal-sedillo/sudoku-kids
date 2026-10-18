@@ -1444,9 +1444,20 @@ def run():
               all(v.count('.') == 1 and 'Studio Sedillo' in v for v in own.values()) and len(set(own.values())) == 10, own)
         g.page.click('#btn-credits-ok')
         site = 'https://studiosedillo.com/sudoku-kids/'
-        links_js = '[...document.querySelectorAll(".settings-link")].map(a => [a.href, a.target, a.rel, a.hidden].join(" ")).join()'
+        links_js = '[...document.querySelectorAll("a.settings-link")].map(a => [a.href, a.target, a.rel, a.hidden].join(" ")).join()'
         check('links naar privacy en "gegevens verwijderen" in Instellingen gaan naar de hoofdsite, in de taal van de app, in een nieuw venster',
               g.js(links_js) == f'{site}privacy?lang=nl _blank noopener false,{site}delete?lang=nl _blank noopener false', g.js(links_js))
+        check('elke link die de app verlaat staat in het venster "Voor ouders" (Families-beleid, Kids-categorie van Apple)',
+              g.js('[...document.querySelectorAll("a[href]")].filter(a => /^(https?:|mailto:)/.test(a.getAttribute("href"))).every(a => a.closest("#modal-links"))') and
+              g.js('document.querySelectorAll("#modal-links a").length') == 2)
+        g.js('goToSettings()')
+        g.page.click('#btn-parent-links')
+        check('"Voor ouders" in Instellingen vraagt eerst het ouderslot', g.js('!document.getElementById("modal-parent").classList.contains("hidden")') and
+              g.js('document.getElementById("modal-links").classList.contains("hidden")'))
+        g.parent_hold()
+        check('na het ouderslot: venster met de links naar privacy en "gegevens verwijderen"', g.js('!document.getElementById("modal-links").classList.contains("hidden")') and
+              g.page.is_visible('#link-privacy') and g.page.is_visible('#link-delete'))
+        g.page.click('#btn-links-ok')
         g.js('settings.language = "pt"; applyTranslations()')
         check('andere taal in de app: de links volgen (Portugees)', g.js(links_js).count('?lang=pt') == 2)
         g.js('settings.language = "nl"; applyTranslations()')

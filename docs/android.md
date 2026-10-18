@@ -2,15 +2,15 @@
 
 *Opgesteld op 11 oktober 2026. Bronnen (geraadpleegd op die datum) staan onderaan.*
 
-De Android-app is een **Capacitor-app**: een Android-project (`android-app/android/`) met de
+De Android-app is een **Capacitor-app**: een Android-project (`app/android/`) met de
 bestanden van het spel **ín de app**. Er is geen website nodig om te spelen en de app werkt
 vanaf de eerste start zonder internet.
 
 | | |
 |---|---|
 | Package name | `com.studiosedillo.sudokukids` (kan na de eerste upload nooit meer veranderen) |
-| Capacitor | 8 (`android-app/package.json`); target-API 36, minimaal Android 7 (API 24) |
-| Webbestanden | `node tools/build.mjs android` → `dist/android/` (zonder service worker) |
+| Capacitor | 8 (`app/package.json`); target-API 36, minimaal Android 7 (API 24) |
+| Webbestanden | `node tools/build.mjs app` → `dist/app/` (zonder service worker) |
 | Plug-ins | `@capacitor/app` (terugknop), `@capacitor/preferences` (tweede kopie van de opslag) |
 | Permissies | alleen `INTERNET` (nodig voor de WebView); geen reclame-id, locatie of meldingen |
 | Back-up naar Google | uit (`allowBackup="false"`): de privacyverklaring zegt dat niets het toestel verlaat |
@@ -42,7 +42,7 @@ dat elke wijziging aan het spel een nieuwe release in Google Play is. De oude TW
 2. Controleer dat de SDK in `~/Android/Sdk` staat (de standaardplek). Staat hij ergens anders,
    zet dan `ANDROID_HOME` op die map.
 3. Proefbuild: `tools/build-android.sh`. Uitkomst: een debug-APK in
-   `android-app/android/app/build/outputs/apk/debug/`.
+   `app/android/app/build/outputs/apk/debug/`.
 
 Het script zoekt de JDK van Android Studio zelf. De JDK van het systeem (25) is nieuwer dan
 Gradle verwacht; gebruik die niet.
@@ -69,7 +69,7 @@ keytool -genkeypair -v -keystore ~/.studio-sedillo/sudokukids-upload.keystore \
 ```
 
 Kies een lang wachtwoord dat je nergens anders gebruikt. Maak daarna het bestand
-`android-app/android/keystore.properties` (staat in `.gitignore`):
+`app/android/keystore.properties` (staat in `.gitignore`):
 
 ```properties
 storeFile=/home/JOUW-GEBRUIKERSNAAM/.studio-sedillo/sudokukids-upload.keystore
@@ -89,19 +89,26 @@ tools/build-android.sh            # debug-APK, om te proberen
 tools/build-android.sh release    # ondertekende .aab voor Google Play
 ```
 
-Wat het script doet: `node tools/build.mjs android` (spelbestanden naar `dist/android/`, met
-`platforms/android.js` als `platform.js`), `npx cap sync android` (bestanden en plug-ins naar
+Wat het script doet: `node tools/build.mjs app` (spelbestanden naar `dist/app/`, met
+`platforms/app.js` als `platform.js`), `npx cap sync android` (bestanden en plug-ins naar
 het Android-project) en daarna Gradle. De `.aab` staat in
-`android-app/android/app/build/outputs/bundle/release/app-release.aab`.
+`app/android/app/build/outputs/bundle/release/app-release.aab`.
+
+**Zonder Android Studio:** bij elke push naar `test` bouwt GitHub de debug-APK
+(`.github/workflows/app-build.yml`). Download hem op github.com → repo `sudoku-kids` → Actions →
+"App bouwen (Android en iOS)" → de laatste run → onder Artifacts `sudoku-kids-android-debug`
+(een zip met `app-debug.apk`). Zet de APK op je telefoon en open hem; Android vraagt dan één
+keer of je apps uit deze bron wilt toestaan. Een debug-APK is alleen om te proberen: voor
+Google Play is een ondertekende `.aab` nodig (hieronder).
 
 Op je toestel proberen: zet "USB-foutopsporing" aan, sluit het toestel aan en draai
-`adb install -r android-app/android/app/build/outputs/apk/debug/app-debug.apk`. Of open het
-project in Android Studio (`cd android-app && npx cap open android`) en start een emulator.
+`adb install -r app/android/app/build/outputs/apk/debug/app-debug.apk`. Of open het
+project in Android Studio (`cd app && npx cap open android`) en start een emulator.
 
 ## Een update uitbrengen
 
 1. Wijzig het spel, tests groen, akkoord op de testlink.
-2. Verhoog in `android-app/android/app/build.gradle` de `versionCode` met 1 (en zo nodig
+2. Verhoog in `app/android/app/build.gradle` de `versionCode` met 1 (en zo nodig
    `versionName`).
 3. `tools/build-android.sh release` en de `.aab` uploaden in Play Console.
 
@@ -149,7 +156,7 @@ gestart. Loop dit na op je eigen toestel, na `tools/build-android.sh`:
 10. **Grootte:** noteer de grootte van de `.aab` en van de geïnstalleerde app.
 
 Werkt de terugknop of de tweede kopie niet zoals beschreven, meld het: dat zijn de twee
-plekken waar de app de Capacitor-brug gebruikt (`platforms/android.js`).
+plekken waar de app de Capacitor-brug gebruikt (`platforms/app.js`).
 
 ## Bronnen
 

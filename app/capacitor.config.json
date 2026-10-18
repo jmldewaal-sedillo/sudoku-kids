@@ -1,10 +1,15 @@
 {
   "appId": "com.studiosedillo.sudokukids",
   "appName": "Sudoku Kids",
-  "webDir": "../dist/android",
+  "webDir": "../dist/app",
   "android": {
     "backgroundColor": "#FF6B9D",
     "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "backgroundColor": "#FF6B9D",
+    "contentInset": "never",
     "webContentsDebuggingEnabled": false
   }
 }

@@ -1,0 +1,79 @@
+name: App bouwen (Android en iOS)
+
+# Bouwt de Capacitor-app uit dezelfde bestanden als de testversie, op de computers van GitHub:
+#   android  debug-APK om op je eigen telefoon te zetten (artifact "sudoku-kids-android-debug")
+#   ios      app voor de iOS-simulator (zonder ondertekening), gestart in de simulator, met een
+#            schermafbeelding als bewijs (artifact "sudoku-kids-ios-simulator")
+#
+# Niets wordt ondertekend of naar een store gestuurd: daarvoor zijn de upload key (Android) en
+# het Apple-certificaat nodig, en die beheert Jenn zelf (docs/android.md, docs/ios.md).
+# Draait bij elke push naar `test` en met de hand (Actions → App bouwen → Run workflow).
+
+on:
+  push:
+    branches: [test]
+  workflow_dispatch:
+
+concurrency:
+  group: app-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Debug-APK bouwen
+        run: tools/build-android.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sudoku-kids-android-debug
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: App voor de simulator bouwen
+        run: tools/build-ios.sh simulator
+
+      - name: Starten in de simulator en een schermafbeelding maken
+        run: |
+          # De nieuwste iPhone die op deze Mac als simulator beschikbaar is.
+          UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS" in rt for d in ds if d["name"].startswith("iPhone")]
+          print(devs[-1]["udid"])')"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID"
+          xcrun simctl install "$UDID" app/ios/build/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$UDID" com.studiosedillo.sudokukids
+          sleep 20
+          mkdir -p out
+          xcrun simctl io "$UDID" screenshot out/ios-start.png
+          # Draait de app nog? (een crash bij het starten valt hier op)
+          xcrun simctl spawn "$UDID" launchctl list | grep -q com.studiosedillo.sudokukids
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sudoku-kids-ios-simulator
+          path: out/
+          retention-days: 14

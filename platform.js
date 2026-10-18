@@ -3,7 +3,7 @@
    Where this copy of the game runs. One codebase, several build targets:
 
      web          this file as it stands (the test copy on github.io)
-     android      platforms/android.js     – the app for Google Play (Capacitor)
+     app          platforms/app.js         – the app for Google Play and the App Store (Capacitor)
      crazygames   platforms/crazygames.js  – upload for the CrazyGames portal
      poki         platforms/poki.js        – upload for the Poki portal
 

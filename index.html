@@ -167,9 +167,8 @@
         <button class="btn-danger btn-danger-dark" id="btn-wipe-all"><span class="ki" data-icon="trash"></span><span data-i18n="wipeBtn">Alle gegevens van deze app verwijderen</span></button>
       </div>
 
-      <!-- these two pages are on the Studio Sedillo website; script.js adds the language and hides them on a games portal -->
-      <a class="settings-link" id="link-privacy" href="https://studiosedillo.com/sudoku-kids/privacy" target="_blank" rel="noopener" data-i18n="privacy">Privacy (voor ouders)</a>
-      <a class="settings-link" id="link-delete" href="https://studiosedillo.com/sudoku-kids/delete" target="_blank" rel="noopener" data-i18n="deleteData">Gegevens verwijderen (uitleg)</a>
+      <!-- links that leave the app only behind the parent lock (Google Families, Apple Kids category); hidden on a games portal -->
+      <button class="settings-link" id="btn-parent-links"><span class="ki" data-icon="lockpad"></span><span data-i18n="parentTitle">Voor ouders</span></button>
     </div>
   </div>
 
@@ -300,6 +299,20 @@
       <div class="win-buttons">
         <button class="btn-danger btn-round" id="btn-confirm-yes" data-i18n="confirmYes">Ja, reset!</button>
         <button class="btn-win-home" id="btn-confirm-no" data-i18n="confirmNo">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOR PARENTS: the links that leave the app (opened after the parent lock) ===== -->
+  <div id="modal-links" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="links-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-content confirm-modal">
+      <h2 id="links-title" data-i18n="parentTitle">Voor ouders</h2>
+      <!-- these two pages are on the Studio Sedillo website; script.js adds the language -->
+      <a class="settings-link" id="link-privacy" href="https://studiosedillo.com/sudoku-kids/privacy" target="_blank" rel="noopener" data-i18n="privacy">Privacy (voor ouders)</a>
+      <a class="settings-link" id="link-delete" href="https://studiosedillo.com/sudoku-kids/delete" target="_blank" rel="noopener" data-i18n="deleteData">Gegevens verwijderen (uitleg)</a>
+      <div class="win-buttons">
+        <button class="btn-win-home" id="btn-links-ok" data-i18n="ok">Oké</button>
       </div>
     </div>
   </div>

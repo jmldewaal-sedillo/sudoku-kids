@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Bouwt uit dezelfde code de versie voor één bouwdoel (zie platform.js en docs/lanceren.md).
 //
-//   node tools/build.mjs android       -> dist/android/            (webbestanden voor de Capacitor-app)
+//   node tools/build.mjs app           -> dist/app/                (webbestanden voor de Capacitor-app: Android én iOS)
+//   node tools/build.mjs android | ios -> hetzelfde (dist/app/); beide apps krijgen dezelfde bestanden
 //   node tools/build.mjs crazygames    -> dist/crazygames/ + dist/sudoku-kids-crazygames.zip
 //   node tools/build.mjs poki          -> dist/poki/       + dist/sudoku-kids-poki.zip
-//   node tools/build.mjs all           -> alle drie
+//   node tools/build.mjs all           -> app en de twee portals
 //
 // Elk bouwdoel krijgt: de spelbestanden, de eigen platform.js uit platforms/, GEEN service
 // worker, geen manifest en geen testbalk. De portals krijgen hun SDK in index.html en geen
@@ -24,7 +25,7 @@ const FILES = ['index.html', 'style.css', 'storage.js', 'icons.js', 'puzzle-bank
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 const TARGETS = {
-  android: { zip: false },
+  app: { zip: false },
   crazygames: { zip: true, sdk: 'https://sdk.crazygames.com/crazygames-sdk-v3.js' },
   poki: { zip: true, sdk: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js' },
 };
@@ -73,10 +74,10 @@ function build(target) {
   console.log(`✅ ${target}: ${all.length} bestanden, ${(bytes / 1024).toFixed(0)} kB in dist/${target}/${zipInfo}`);
 }
 
-const asked = process.argv[2];
+const asked = ['android', 'ios'].includes(process.argv[2]) ? 'app' : process.argv[2];
 const list = asked === 'all' ? Object.keys(TARGETS) : [asked];
 if (!asked || list.some(t => !TARGETS[t])) {
-  console.error('Gebruik: node tools/build.mjs android | crazygames | poki | all');
+  console.error('Gebruik: node tools/build.mjs app | android | ios | crazygames | poki | all');
   process.exit(2);
 }
 list.forEach(build);

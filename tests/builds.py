@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test van de bouwdoelen: android, crazygames en poki (tools/build.mjs).
+"""Test van de bouwdoelen: app (Android en iOS), crazygames en poki (tools/build.mjs).
 
   python3 tests/builds.py
 
@@ -8,7 +8,8 @@ de portals en de Capacitor-brug van Android worden nagebootst, zodat te zien is 
 aanroepen het spel doet. Controleert onder meer: geen service worker, geen links naar buiten
 op de portals, de goede SDK-aanroepen in de goede volgorde, GEEN enkele advertentie-aanroep,
 de terugknop van Android, de tweede kopie van de opslag, en dat opslag, geluid, ouderslot en
-"voortgang overzetten" werken in de Android-versie.
+"voortgang overzetten" werken in de app-versie. Daarna de instellingen van het Android- en het
+iOS-project (pakketnaam, permissies, icoon, ondertekenen buiten Git).
 """
 import functools
 import http.server
@@ -119,7 +120,7 @@ def run():
     if built.returncode:
         return 1
     assets = sorted({a[2:] for a in re.findall(r"'(\./[^']+)'", (ROOT / 'sw.js').read_text()) if a != './' and a != './manifest.json'})
-    for target in ('android', 'crazygames', 'poki'):
+    for target in ('app', 'crazygames', 'poki'):
         files = sorted(str(f.relative_to(DIST / target)) for f in (DIST / target).rglob('*') if f.is_file())
         html = (DIST / target / 'index.html').read_text()
         platform = (DIST / target / 'platform.js').read_text()
@@ -160,8 +161,8 @@ def run():
                   calls == ['gameplayStart', 'gameplayStop', 'gameplayStart', 'gameplayStop'], calls)
             check('GEEN enkele advertentie-aanroep (requestAd, banners, commercialBreak, rewardedBreak)', not [c for c in g.js('window.__calls') if c.startswith('AD')], g.js('window.__calls'))
             g.js('goToSettings()')
-            check('geen links naar buiten: privacy- en verwijderlink zijn verborgen',
-                  g.js('[...document.querySelectorAll(".settings-link")].every(a => a.hidden && a.offsetParent === null)') and g.js('document.querySelectorAll(".settings-link").length') == 2)
+            check('geen links naar buiten: de knop "Voor ouders" en de privacy- en verwijderlink zijn verborgen',
+                  g.js('[...document.querySelectorAll(".settings-link")].every(a => a.hidden && a.offsetParent === null)') and g.js('document.querySelectorAll(".settings-link").length') == 3)
             check('voortgang blijft bewaard in localStorage (zelfde sleutels)', g.js('JSON.parse(localStorage.getItem("sudokuKids_progress")).w0_l0.stars') >= 1)
             check('alle verzoeken blijven op het eigen adres, behalve de SDK', sorted(set(g.outside)) == [SDK[target]], sorted(set(g.outside)))
             check('geen console-errors', not g.errors, g.errors)
@@ -180,10 +181,13 @@ def run():
             server.shutdown()
 
         section('Android (Capacitor), met een nagebootste brug')
-        server, url = serve(DIST / 'android')
+        alias = subprocess.run(['node', str(ROOT / 'tools' / 'build.mjs'), 'ios'], capture_output=True, text=True)
+        check('"build.mjs android" en "ios" maken dezelfde map dist/app/ (één set bestanden voor beide apps)',
+              alias.returncode == 0 and 'in dist/app/' in alias.stdout and not (DIST / 'ios').exists(), alias.stdout + alias.stderr)
+        server, url = serve(DIST / 'app')
         g = Game(browser, url, init=FAKE_CAPACITOR)
         check('platform android; geen service worker; links naar de hoofdsite in de taal van de app',
-              g.js('SudokuPlatform.target') == 'android' and g.js('navigator.serviceWorker.getRegistrations().then(r => r.length)') == 0 and
+              g.js('SudokuPlatform.target') == 'app' and g.js('navigator.serviceWorker.getRegistrations().then(r => r.length)') == 0 and
               g.js('document.getElementById("link-privacy").href').startswith(SITE + 'privacy?lang=') and g.js('document.getElementById("link-privacy").target') == '_blank')
         check('de terugknop van Android is aangemeld bij Capacitor', g.js('typeof window.__cap.listeners.backButton') == 'function')
         g.js('window.__cap.listeners.backButton({ canGoBack: false })')
@@ -240,13 +244,13 @@ def run():
         server.shutdown()
 
         section('Android-project (Capacitor)')
-        app = ROOT / 'android-app'
+        app = ROOT / 'app'
         config = json.loads((app / 'capacitor.config.json').read_text())
         gradle = (app / 'android' / 'app' / 'build.gradle').read_text()
         manifest = (app / 'android' / 'app' / 'src' / 'main' / 'AndroidManifest.xml').read_text()
         variables = (app / 'android' / 'variables.gradle').read_text()
-        check('package com.studiosedillo.sudokukids; de webbestanden komen uit dist/android (ze zitten ín de app)',
-              config['appId'] == 'com.studiosedillo.sudokukids' and config['webDir'] == '../dist/android' and 'server' not in config and
+        check('package com.studiosedillo.sudokukids; de webbestanden komen uit dist/app (ze zitten ín de app)',
+              config['appId'] == 'com.studiosedillo.sudokukids' and config['webDir'] == '../dist/app' and 'server' not in config and
               'applicationId "com.studiosedillo.sudokukids"' in gradle)
         check('target-API 36 of hoger (eis van Google Play)', int(re.search(r'targetSdkVersion = (\d+)', variables).group(1)) >= 36)
         permissions = re.findall(r'<uses-permission android:name="([^"]+)"(?! tools:node="remove")', manifest)
@@ -254,9 +258,32 @@ def run():
               permissions == ['android.permission.INTERNET'] and 'com.google.android.gms.permission.AD_ID" tools:node="remove"' in manifest and 'android:allowBackup="false"' in manifest, permissions)
         check('ondertekenen leest keystore.properties (niet in Git); er staat geen wachtwoord of sleutel in de repo',
               "rootProject.file('keystore.properties')" in gradle and not list(app.rglob('*.keystore')) and not list(app.rglob('*.jks')) and not (app / 'android' / 'keystore.properties').exists())
-        ignored = subprocess.run(['git', 'check-ignore', 'android-app/android/keystore.properties', 'android-app/x.keystore', 'android-app/android/app/release.aab', 'dist/android/index.html'],
+        ignored = subprocess.run(['git', 'check-ignore', 'app/android/keystore.properties', 'app/x.keystore', 'app/android/app/release.aab', 'dist/app/index.html',
+                                  'app/ios/App/App/public/index.html', 'app/ios/build/x', 'app/x.ipa'],
                                  cwd=ROOT, capture_output=True, text=True).stdout.split()
-        check('.gitignore houdt keystore.properties, keystores, .aab en dist/ buiten Git', len(ignored) == 4, ignored)
+        check('.gitignore houdt keystore.properties, keystores, .aab, .ipa, de iOS-build en dist/ buiten Git', len(ignored) == 7, ignored)
+
+        section('iOS-project (Capacitor)')
+        import plistlib
+        ios = app / 'ios' / 'App'
+        pbx = (ios / 'App.xcodeproj' / 'project.pbxproj').read_text()
+        plist = plistlib.loads((ios / 'App' / 'Info.plist').read_bytes())
+        package = json.loads((app / 'package.json').read_text())
+        check('bundle-ID com.studiosedillo.sudokukids (zelfde als Android); naam "Sudoku Kids"; iPhone en iPad',
+              set(re.findall(r'PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);', pbx)) == {'com.studiosedillo.sudokukids'} and plist['CFBundleDisplayName'] == 'Sudoku Kids' and
+              set(re.findall(r'TARGETED_DEVICE_FAMILY = "([^"]+)";', pbx)) == {'1,2'})
+        check('@capacitor/ios heeft dezelfde versie als @capacitor/android en @capacitor/core',
+              package['dependencies']['@capacitor/ios'] == package['dependencies']['@capacitor/android'] == package['dependencies']['@capacitor/core'])
+        check('geen toestemmingen gevraagd (geen camera, microfoon, locatie, foto\'s, tracking) en geen export-vraag over versleuteling',
+              not [k for k in plist if k.startswith('NS') and k.endswith('UsageDescription')] and plist.get('ITSAppUsesNonExemptEncryption') is False)
+        assets = ios / 'App' / 'Assets.xcassets'
+        info = subprocess.run(['magick', 'identify', '-format', '%w %h %[channels]\n', str(assets / 'AppIcon.appiconset' / 'AppIcon-512@2x.png')], capture_output=True, text=True).stdout.split()
+        check('app-icoon 1024x1024 zonder doorzichtigheid (eis van Apple)', info[:2] == ['1024', '1024'] and 'a' not in info[2], info)
+        splash = sorted(p.name for p in (assets / 'Splash.imageset').glob('*.png'))
+        sizes = {subprocess.run(['magick', 'identify', '-format', '%[pixel:p{20,20}]', str(assets / 'Splash.imageset' / n)], capture_output=True, text=True).stdout for n in splash}
+        check('startscherm: eigen roze achtergrond (niet het logo van Capacitor)', len(splash) == 3 and len(sizes) == 1 and 'srgb(255,142,180)' in sizes, sizes)
+        check('de webbestanden zitten in de app: geen server-adres, geen live-reload',
+              'server' not in config and config['ios'].get('webContentsDebuggingEnabled') is False)
         browser.close()
 
     failed = results.count(False)

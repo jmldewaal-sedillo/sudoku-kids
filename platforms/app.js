@@ -1,10 +1,11 @@
 /* ============================================================
-   SUDOKU KIDS & CRAZY GRIDS – platform.js for the Android app (Capacitor)
-   Copied over platform.js by `node tools/build.mjs android`.
+   SUDOKU KIDS & CRAZY GRIDS – platform.js for the app (Capacitor), the same
+   files for Android and iOS. Copied over platform.js by `node tools/build.mjs app`.
 
    - All files are inside the app: no service worker.
    - The back button of Android goes one step back in the game; on the start
-     screens it puts the app in the background.
+     screens it puts the app in the background. iOS has no back button, so
+     there this part never runs.
    - Saved data lives in localStorage of the app's WebView, under the same
      sudokuKids_ keys as everywhere else. Capacitor advises not to rely on
      that alone, so every write is also copied to the native Preferences
@@ -61,10 +62,11 @@ window.SudokuPlatform = (function () {
   }
 
   return {
-    target: 'android',
+    target: 'app',
+    os: (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || 'web',   // 'android' or 'ios'
     serviceWorker: false,
     links: true,
-    fileExport: false,        // a WebView does not download; copying the code works
+    fileExport: false,        // a WebView does not download; copying the code works (Android and iOS)
     site: 'https://studiosedillo.com/sudoku-kids/',
     loaded() {},
     gameplayStart() {},

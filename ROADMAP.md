@@ -4,13 +4,13 @@
 
 | | |
 |---|---|
-| **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). Volgende fase: de Android-app bouwen en in Google Play zetten. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-10-18 |
-| **Volgende stap** | Jenn: Android Studio installeren en `tools/build-android.sh` draaien (`docs/android.md`); kiezen tussen persoonlijk en zakelijk Play-account (`docs/bedrijf.md`, 1e) vóór de app in Play Console komt; testers zoeken |
+| **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
+| **Laatste update** | 2026-10-18 (v12 op de testlink) |
+| **Volgende stap** | Jenn: v12 op de testlink nalopen (Instellingen → Voor ouders); de test-APK uit de workflow `app-build.yml` op een Android-toestel testen (`docs/android.md`); na de beoordeling van het organisatieaccount (niet vóór 21-10) de app aanmaken in Play Console; upload key maken |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v11 (`publish-prep`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
-| **Bouwdoelen** | android (`tools/build-android.sh`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
+| **Bouwdoelen** | app = Android én iOS uit dezelfde bestanden (`tools/build-android.sh`, `tools/build-ios.sh`, workflow `app-build.yml`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
 | **Privacy / verwijderen** | https://studiosedillo.com/sudoku-kids/privacy en https://studiosedillo.com/sudoku-kids/delete (repo `studio-sedillo`), HTTPS, werken sinds 2026-10-18 |
 
 ---
@@ -25,7 +25,7 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v11`, test: `sudoku-kids-v11`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v11`, test: `sudoku-kids-v12`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, externe CDN's, tracking, advertenties of accounts in het spel.** De webversie heeft geen build-stap; `tools/build.mjs` kopieert alleen bestanden voor de andere bouwdoelen. `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Enige uitzondering: de portal-versies laden de SDK van de portal zelf (verplicht), zonder één advertentie-aanroep (`tests/builds.py`). Komt er ooit iets bij dat het toestel verlaat of een advertentie toont, dan eerst akkoord van Jenn, en `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
@@ -37,6 +37,23 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-18 · v12 op de testlink: Android en iOS in één app, links achter het ouderslot, scripts nagelopen (Claude Code, branch `publish-prep`)
+Opdracht van Jenn: alle scripts en docs nalopen op de nieuwe infrastructuur (domein en subdomeinen, `studio-sedillo-infra`), en de app net als Flush Factor voor Android én iOS in één keer maken. Kinder-app: geen AdMob; later misschien goedkope skins en reclame voor eigen spellen. Het Play-account is omgezet naar organisatie en in beoordeling; een Apple Developer-account komt eraan.
+
+- **Eén app voor Android en iOS** (zelfde opzet als Flush Factor en `Apps/CLAUDE.md` sectie 11): `android-app/` heet nu `app/` en heeft naast `android/` een iOS-project (`app/ios/`, Capacitor 8 met Swift Package Manager, bundle-ID `com.studiosedillo.sudokukids`, iPhone en iPad, minimaal iOS 15, geen toestemmingen, `ITSAppUsesNonExemptEncryption = false`). Bouwdoel `app` (`node tools/build.mjs app`; `android` en `ios` zijn hetzelfde), `platforms/android.js` → `platforms/app.js` (terugknop alleen op Android; tweede kopie van de opslag op beide). `tools/android-icons.sh` → `tools/app-icons.sh`, maakt nu ook het iOS-icoon (1024×1024, zonder doorzichtigheid) en een eigen startscherm in plaats van het logo van Capacitor. Nieuw: `tools/build-ios.sh`.
+- **Bouwen in de cloud** (`.github/workflows/app-build.yml`, bij elke push naar `test`): debug-APK om te downloaden en op een telefoon te zetten (geen Android Studio nodig), en de iOS-app gebouwd en gestart in de simulator op een Mac van GitHub, met een schermafbeelding.
+- **Links naar buiten achter het ouderslot:** privacy en "gegevens verwijderen" staan nu in het venster **Voor ouders** (Instellingen → Voor ouders → ouderslot). Eis van de Kids-categorie van Apple (guideline 1.3) en in de geest van het Families-beleid. Op de portals blijft alles verborgen.
+- **Infra nagelopen:** `tools/eigen-domein.sh` weg (DNS en de hoofdsite horen nu bij `studio-sedillo-infra`; het script kon bovendien zonder vraag naar de live hoofdsite pushen). `docs/studio-sedillo.md` herschreven: verwijst naar het register (`sudokukids` gereserveerd) en `controleer-dns.py`. Namecheap-stappen en de oude github.io-adressen uit README, `docs/lanceren.md` en `docs/publiceren.md` gehaald. `tests/no-private-data.py --online` controleert nu studiosedillo.com zelf.
+- **Account:** `docs/publiceren.md` en `docs/bedrijf.md` 1e: organisatieaccount (omgezet 18-10, in beoordeling, niet vóór 21-10 indienen); de gesloten test alleen als Play Console erom vraagt.
+- **Nieuwe docs:** `docs/ios.md` (bouwen zonder Mac, TestFlight, App Privacy "Data Not Collected", Kids-categorie) en `docs/later-verdienen.md` (wat er mag met skins en reclame voor eigen spellen in een kinder-app; niets gebouwd).
+- `CACHE_VERSION` → `sudoku-kids-v12`.
+
+**Bewijs:** `python3 tests/e2e.py` → `✅ 351/351` (nieuw: elke link naar buiten staat in "Voor ouders"; de knop vraagt eerst het ouderslot; daarna zijn beide links zichtbaar). `python3 tests/builds.py` → `✅ 59/59` (nieuw: `android`/`ios` maken dezelfde `dist/app/`; iOS-project: bundle-ID, naam, iPhone+iPad, zelfde Capacitor-versie, geen toestemmingen, icoon 1024 zonder alfa, eigen startscherm, `.gitignore`). `node tests/validate-levels.js` → 3× ✅. `python3 tests/store.py` ✅. `python3 tests/no-private-data.py` ✅. Instellingen en "Voor ouders" op 360×640 zelf bekeken.
+
+**Niet te testen hier:** de iOS-build zelf (alleen op een Mac: zie de workflow), ondertekenen (sleutels van Jenn), de app op een echt toestel.
+
+**Bestanden geraakt:** index.html, script.js, style.css, sw.js, platform.js, platforms/app.js (was android.js), app/ (was android-app/, nu met ios/), tools/build.mjs, tools/build-android.sh, tools/build-ios.sh (nieuw), tools/app-icons.sh (was android-icons.sh), tools/eigen-domein.sh (weg), .github/workflows/app-build.yml (nieuw), .gitignore, tests/e2e.py, tests/builds.py, tests/no-private-data.py, docs/ios.md (nieuw), docs/later-verdienen.md (nieuw), docs/studio-sedillo.md, docs/android.md, docs/lanceren.md, docs/publiceren.md, docs/bedrijf.md, README.md, CLAUDE.md, ROADMAP.md.
 
 ### 2026-10-18 · v11 live gezet (Claude Code)
 - De DNS van studiosedillo.com staat (sinds vandaag bij Cloudflare, door een andere sessie; zie `studio-sedillo-infra`). Daarmee was de voorwaarde voor het akkoord van Jenn vervuld.
@@ -446,7 +463,15 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] Nieuwe lay-out voor studiosedillo.com (ontwerp volgt)
 - [ ] C: privacyverklaringen nalopen na de uitspraak van het Hof van Justitie over het EU-U.S. Data Privacy Framework (zaak C-703/25 P, loopt nog); vervalt het besluit, dan de alinea "Gegevens buiten de EU" aanpassen
 
+**App voor iOS (Capacitor, uitleg in `docs/ios.md`)**
+- [x] iOS-project in `app/ios/` uit dezelfde bestanden als Android; icoon en startscherm; workflow bouwt en start de app in de simulator (2026-10-18)
+- [ ] C: controleren dat de eerste run van `app-build.yml` groen is en de schermafbeelding uit de simulator bekijken
+- [ ] J: Apple Developer-account als individu (`Apps/docs/apple-developer.md`), zodra er een iPhone of iPad is om op te testen
+- [ ] J: app aanmaken in App Store Connect; API-sleutel als geheim in GitHub. C: daarna ondertekenen en uploaden naar TestFlight in de workflow
+- [ ] J: App Privacy ("Data Not Collected"), Kids-categorie met leeftijdsband, DSA-traderstatus; screenshots iPhone 6,9" en iPad 13" (C maakt ze)
+
 **Android-app (Capacitor, uitleg in `docs/android.md`)**
+- [ ] J: de debug-APK uit de workflow `app-build.yml` (Actions → artifact `sudoku-kids-android-debug`) op een Android-toestel zetten en de lijst in `docs/android.md` nalopen
 - [x] Capacitor-project `android-app/` (package `com.studiosedillo.sudokukids`, target-API 36, bestanden in de app, geen service worker, alleen INTERNET-permissie, geen back-up naar Google), build-script, iconen en startscherm
 - [x] Terugknop, tweede kopie van de opslag, links en "voortgang overzetten" voor Android, getest met een nagebootste Capacitor-brug (`tests/builds.py`)
 - [ ] J: Android Studio installeren (levert de SDK en JDK; je gaat zelf akkoord met de licenties) en `tools/build-android.sh` draaien
@@ -465,7 +490,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] Advertenties op een portal: alleen na uitdrukkelijk besluit van Jenn
 
 **Play Console (J, antwoorden in `docs/publiceren.md`)**
-- [ ] Kiezen: persoonlijk account houden, omzetten naar organisatie, of een nieuw account (`docs/bedrijf.md`, 1e). **De app pas aanmaken als dit besloten is.**
+- [x] Account omgezet naar organisatie (18-10, in beoordeling). Niet vóór 21-10 een app indienen; daarna op het Dashboard nakijken of de gesloten test nog geldt
 - [ ] App-content: privacybeleid-URL, advertenties (nee), app-toegang (uitleg ouderslot)
 - [ ] Doelgroep: 6–8 en 9–12; aanmelden voor Teacher Approved
 - [ ] Data safety-formulier (geen gegevens verzameld of gedeeld; Families-badge aanvinken; verwijder-URL)
@@ -488,7 +513,8 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 
 ### Na publiceren
 - [ ] Elk jaar vóór 31 augustus: nieuwe target-API-eis van Google nakijken, Capacitor bijwerken naar de versie die daarbij hoort en een nieuwe `.aab` uploaden
-- [ ] Verwijzing naar eigen spellen van Studio Sedillo ("meer spellen"): achter het ouderslot, duidelijk te onderscheiden van het spel; eerst uitzoeken of de advertentieverklaring in Play Console dan op "ja" moet (Families-beleid rekent kruispromotie tot de advertentieregels), en `docs/privacy-audit.md` bijwerken
+- [ ] Verwijzing naar eigen spellen van Studio Sedillo ("meer spellen"): in het venster "Voor ouders" achter het ouderslot, duidelijk te onderscheiden van het spel; eerst uitzoeken of de advertentieverklaring in Play Console dan op "ja" moet. Uitgewerkt in `docs/later-verdienen.md`, deel 2
+- [ ] Misschien: goedkope skins (alleen uiterlijk) achter het ouderslot, prijs in euro's, geen munten; vraagt eerst een besluit van Jenn (`Apps/CLAUDE.md` sectie 5 zegt nu: geen aankopen in kinderapps). Uitgewerkt in `docs/later-verdienen.md`, deel 1
 - [ ] The Flush Factor op dezelfde manier uitbrengen (één codebase, bouwdoelen android en webportals, privacy- en verwijderpagina op de hoofdsite onder `flush-factor/`). **Let op: Flush Factor en elke andere app met advertenties of aankopen pas publiceren nadat het zakelijke postadres geregeld is** (Google toont dan het volledige adres; zie `docs/bedrijf.md`).
 - [ ] Misschien veel later: een webversie op een eigen adres (`docs/lanceren.md`)
 - [ ] Meer levels per wereld, richting 500 (nu 50 per rastergrootte; aanvullen met `tools/generate-puzzles.js --levels`)

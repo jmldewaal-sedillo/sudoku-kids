@@ -105,8 +105,9 @@ function applyTranslations() {
   syncPlatformUI();
 }
 // The privacy and delete pages live on studiosedillo.com and open in the language of the
-// app. A games portal allows no links that leave it, so there they are hidden.
+// app, behind the parent lock. A games portal allows no links that leave it, so there they are hidden.
 function syncPlatformUI() {
+  $('btn-parent-links').hidden = !Platform.links;
   [['link-privacy', 'privacy'], ['link-delete', 'delete']].forEach(([id, page]) => {
     $(id).hidden = !Platform.links;
     $(id).href = Platform.site + page + '?lang=' + settings.language;
@@ -1882,6 +1883,8 @@ function initEventListeners() {
   on('btn-rules-ok', 'click', hideModals);
   on('btn-credits', 'click', showCredits);
   on('btn-credits-ok', 'click', hideModals);
+  on('btn-parent-links', 'click', () => askParent(() => showModal('links')));
+  on('btn-links-ok', 'click', hideModals);
   on('btn-wipe-all', 'click', () => askParent(() => showModal('wipe')));
   on('btn-wipe-yes', 'click', () => { hideModals(); wipeAllData(); });
   on('btn-wipe-no', 'click', hideModals);

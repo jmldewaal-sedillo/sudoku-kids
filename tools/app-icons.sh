@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Maakt de iconen en het startscherm van de Android-app uit icons/ (ImageMagick nodig).
+# Maakt de iconen en het startscherm van de app (Android en iOS) uit icons/ (ImageMagick nodig).
 #
-#   tools/android-icons.sh
+#   tools/app-icons.sh
 #
 # Draai dit opnieuw als het icoon van het spel verandert. De uitkomst staat in de repo
-# (android-app/android/app/src/main/res), dus voor een gewone build is het niet nodig.
+# (app/android/app/src/main/res en app/ios/App/App/Assets.xcassets), dus voor een gewone build
+# is het niet nodig.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-RES=android-app/android/app/src/main/res
+RES=app/android/app/src/main/res
 BG='#FF8EB4'          # de randkleur van icons/icon-maskable-512.png
 
 for spec in mdpi:48:108 hdpi:72:162 xhdpi:96:216 xxhdpi:144:324 xxxhdpi:192:432; do
@@ -28,3 +29,14 @@ for file in "$RES"/drawable*/splash.png; do
   magick -size "$size" "xc:$BG" \( icons/icon-512.png -resize "${icon}x${icon}" \) -gravity center -composite "$file"
 done
 echo "Iconen en startscherm bijgewerkt in $RES"
+
+# iOS: één icoon van 1024x1024 (iOS rondt de hoeken zelf af). Apple weigert een icoon met
+# doorzichtigheid, dus het maskable icoon (vol vierkant) op de achtergrondkleur, zonder alfakanaal.
+XC=app/ios/App/App/Assets.xcassets
+magick -background none -density 400 icons/icon-maskable.svg -resize 1024x1024 -background "$BG" -alpha remove -alpha off \
+  "PNG24:$XC/AppIcon.appiconset/AppIcon-512@2x.png"
+# Startscherm: hetzelfde als op Android (effen roze, icoon in het midden), in plaats van het logo van Capacitor.
+for file in "$XC"/Splash.imageset/splash-*.png; do
+  magick -size 2732x2732 "xc:$BG" \( icons/icon-512.png -resize 1092x1092 \) -gravity center -composite "PNG24:$file"
+done
+echo "Icoon en startscherm bijgewerkt in $XC"

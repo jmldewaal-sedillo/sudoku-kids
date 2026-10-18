@@ -4,7 +4,7 @@
 
 **Er gaan nog geen app-websites live.** De volgorde is:
 
-1. de **Android-app** in Google Play;
+1. de **Android-app** in Google Play (en daarna dezelfde app voor iOS in de App Store);
 2. **webportals** zoals Poki en CrazyGames;
 3. *misschien veel later:* een webversie op een eigen (sub)domein.
 
@@ -18,20 +18,21 @@ portal-versie van de code. Het enige dat per bouwdoel verschilt is `platform.js`
 
 | Bouwdoel | `platform.js` komt uit | Maken | Uitkomst | Uitleg |
 |---|---|---|---|---|
-| **android** | `platforms/android.js` | `tools/build-android.sh [release]` | `.apk` of `.aab` | `docs/android.md` |
+| **app**: Android | `platforms/app.js` | `tools/build-android.sh [release]` | `.apk` of `.aab` | `docs/android.md` |
+| **app**: iOS | `platforms/app.js` (dezelfde bestanden) | `tools/build-ios.sh`, daarna Xcode op een Mac of de workflow `app-build.yml` | build voor App Store Connect | `docs/ios.md` |
 | **webportals**: crazygames | `platforms/crazygames.js` | `node tools/build.mjs crazygames` | `dist/sudoku-kids-crazygames.zip` | `docs/webportals.md` |
 | **webportals**: poki | `platforms/poki.js` | `node tools/build.mjs poki` | `dist/sudoku-kids-poki.zip` | `docs/webportals.md` |
 | **web** (optioneel, later) | `platform.js` in de root | geen build: de repo zelf | testkopie op github.io | README |
 
 Wat `platform.js` regelt:
 
-| | web | android | portals |
+| | web | app (Android en iOS) | portals |
 |---|---|---|---|
 | Service worker (`sw.js`) | aan | uit | uit |
-| Links naar privacy en verwijderen (hoofdsite) | aan | aan | verborgen |
+| Links naar privacy en verwijderen (hoofdsite) | achter het ouderslot | achter het ouderslot | verborgen |
 | "Bewaar als bestand" | aan | verborgen | aan |
 | SDK van de portal | – | – | geladen, alleen de verplichte aanroepen |
-| Terugknop en tweede kopie van de opslag | – | via Capacitor | – |
+| Terugknop (alleen Android) en tweede kopie van de opslag | – | via Capacitor | – |
 | Advertenties | nee | nee | nee (niets vraagt een advertentie) |
 
 Regels:
@@ -61,19 +62,19 @@ De ingebouwde verhuismelding (`NEW_HOME` in `script.js`) blijft uit.
 | Privacyverklaring (5 talen) | `https://studiosedillo.com/sudoku-kids/privacy` | repo `studio-sedillo`, `sudoku-kids/privacy.html` |
 | Gegevens verwijderen (5 talen) | `https://studiosedillo.com/sudoku-kids/delete` | repo `studio-sedillo`, `sudoku-kids/delete.html` |
 
-De app linkt erheen met `?lang=<taal van de app>`. Dit zijn ook de adressen voor Play Console.
-**Ze werken pas op dat adres als de DNS van studiosedillo.com is ingesteld**
-(`docs/studio-sedillo.md`); tot dan staan ze op
-`https://jmldewaal-sedillo.github.io/studio-sedillo/sudoku-kids/privacy`.
+De app linkt erheen met `?lang=<taal van de app>`, in het venster "Voor ouders" achter het
+ouderslot (Instellingen). Dit zijn ook de adressen voor Play Console en App Store Connect.
+Ze werken sinds 18 oktober 2026 (`docs/studio-sedillo.md`).
 
 ## Volgorde voor Sudoku Kids
 
-1. DNS van de hoofdsite instellen en het domein aanzetten (`docs/studio-sedillo.md`).
-2. Android Studio installeren, de upload key maken, de app bouwen en op een toestel testen
-   (`docs/android.md`).
+1. ~~DNS van de hoofdsite instellen en het domein aanzetten~~ (klaar, 18 oktober 2026).
+2. De app op een toestel testen: de debug-APK uit de workflow `app-build.yml`, of zelf bouwen
+   met Android Studio; de upload key maken (`docs/android.md`).
 3. Play Console: app aanmaken, interne test, app-content invullen, gesloten test, productie
    (`docs/publiceren.md`).
-4. Daarna de portals: eerst Poki aanschrijven met de twee vragen uit `docs/webportals.md`.
+4. iOS: Apple Developer-account (individu), TestFlight, App Store in de Kids-categorie (`docs/ios.md`).
+5. Daarna de portals: eerst Poki aanschrijven met de twee vragen uit `docs/webportals.md`.
 
 ## Een andere app van Studio Sedillo
 
@@ -83,8 +84,8 @@ bestond al en volgt dezelfde opzet met eigen namen:
 
 | In de template | In Sudoku Kids |
 |---|---|
-| `tools/bouw.mjs` | `tools/build.mjs` (android, portals) en `tools/build-android.sh` |
-| `platform/` | `platform.js` (web) en `platforms/` (android, crazygames, poki) |
+| `tools/bouw.mjs` | `tools/build.mjs` (app, portals), `tools/build-android.sh` en `tools/build-ios.sh` |
+| `platform/` | `platform.js` (web) en `platforms/` (app, crazygames, poki) |
 | `docs/portals.md` | `docs/webportals.md` |
 | `studiosedillo.com/<slug>/…` | `studiosedillo.com/sudoku-kids/…` (door Jenn zo vastgelegd) |
 | opslagprefix `<slug>.` | `sudokuKids_` (bestaande sleutels veranderen nooit) |

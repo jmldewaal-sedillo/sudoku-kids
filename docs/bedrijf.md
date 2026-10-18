@@ -154,6 +154,11 @@ adres en een telefoonnummer.
 
 ## 1e. Zakelijk account: omzetten of een nieuw account? (17 oktober 2026)
 
+> **Besluit (18 oktober 2026):** het account is **omgezet naar organisatie** (website
+> geverifieerd via Google Search Console, D-U-N-S via Altares; zie `Apps/CLAUDE.md`, sectie 1, en
+> `the-flush-factor/docs/publiceren.md`). Op 18 oktober in beoordeling. Wat hieronder staat, is het
+> onderzoek dat daaraan voorafging.
+
 *Jenn overweegt op 17 oktober 2026 het account zakelijk te maken (organisatie-account) of een
 nieuw account te maken. Nagekeken op 17 oktober 2026; bronnen onderaan.*
 

@@ -73,13 +73,13 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `storage.js` | Profielen en opslag; de enige plek die weet waar gegevens staan |
 | `test-preview.js` | Formaat-balk van de testversie |
 | `docs/account-koppelen.md` | Onderzoek en advies over inloggen/koppelen in een kinderapp |
-| `docs/publiceren.md`, `docs/lanceren.md`, `docs/android.md`, `docs/webportals.md`, `docs/studio-sedillo.md`, `docs/privacy-audit.md` | Publiceren: beleid, bouwdoelen, Android-app, webportals, hoofdsite, privacy-audit |
-| `platform.js`, `platforms/` | Waar deze kopie draait: web (standaard), `android.js`, `crazygames.js`, `poki.js`. Het enige dat per bouwdoel verschilt |
-| `tools/build.mjs` | Maakt `dist/android/` en de upload-zips voor de portals (zonder service worker) |
-| `android-app/` | Het Capacitor-project (Android-schil); `tools/build-android.sh` bouwt de `.apk`/`.aab`, `tools/android-icons.sh` maakt de iconen |
-| `tests/builds.py` | Speelt de drie bouwdoelen met een nagebootste SDK en Capacitor-brug |
+| `docs/publiceren.md`, `docs/lanceren.md`, `docs/android.md`, `docs/ios.md`, `docs/webportals.md`, `docs/studio-sedillo.md`, `docs/privacy-audit.md`, `docs/later-verdienen.md` | Publiceren: beleid, bouwdoelen, Android-app, iOS-app, webportals, hoofdsite, privacy-audit, regels voor later geld verdienen |
+| `platform.js`, `platforms/` | Waar deze kopie draait: web (standaard), `app.js` (Android en iOS), `crazygames.js`, `poki.js`. Het enige dat per bouwdoel verschilt |
+| `tools/build.mjs` | Maakt `dist/app/` en de upload-zips voor de portals (zonder service worker) |
+| `app/` | Het Capacitor-project met `android/` en `ios/`; `tools/build-android.sh` bouwt de `.apk`/`.aab`, `tools/build-ios.sh` het Xcode-project, `tools/app-icons.sh` maakt de iconen en startschermen |
+| `.github/workflows/app-build.yml` | Bouwt bij elke push naar `test` de Android-app (debug-APK om te downloaden) en de iOS-app (gestart in de simulator op een Mac van GitHub) |
+| `tests/builds.py` | Speelt de bouwdoelen met een nagebootste SDK en Capacitor-brug, en controleert het Android- en het iOS-project |
 | `store/` | Store-materiaal: teksten in 10 talen (`listing.json`, `teksten.md`), icoon, feature graphic, screenshots |
-| `tools/eigen-domein.sh` | Controleert de DNS-records van de hoofdsite en zet studiosedillo.com aan |
 | `tools/no-private-data.py` | Vangnet: controleert bestanden, commits, geschiedenis en online pagina's op privégegevens uit `~/.studio-sedillo/blocklist.txt` (uitleg: `docs/bedrijf.md`) |
 | `tools/install-hooks.sh` | Zet dat vangnet aan als pre-commit en commit-msg hook |
 | `tests/no-private-data.py` | Test: zelftest van het vangnet + alle bestanden van de repo (`--online`: ook de gepubliceerde pagina's) |
@@ -306,15 +306,17 @@ python3 -m http.server 8000
 Alles staat in `docs/publiceren.md` (eisen, antwoorden voor Play Console en de to-do-lijst in
 volgorde). In het kort:
 
-1. **Hoofdsite**: DNS van studiosedillo.com bij Namecheap, domeinverificatie bij GitHub en
-   `tools/eigen-domein.sh` (`docs/studio-sedillo.md`). Daar staan de privacy- en verwijderpagina.
+1. **Hoofdsite**: https://studiosedillo.com staat (DNS bij Cloudflare, `Projecten/studio-sedillo-infra/`).
+   Daar staan de privacy- en verwijderpagina (`docs/studio-sedillo.md`).
 2. **Android-app (Capacitor)**: Android Studio installeren, de upload key maken en veilig
    bewaren, `tools/build-android.sh` (`docs/android.md`). De bestanden van het spel zitten in de app.
 3. **Testen op een toestel** met de lijst in `docs/android.md`.
-4. **Play Console**: app-content, Data safety, IARC, doelgroep, store-pagina (`store/`),
-   gesloten test met 12 testers gedurende 14 dagen, daarna productie.
+4. **Play Console** (zakelijk account): app-content, Data safety, IARC, doelgroep, store-pagina
+   (`store/`), zo nodig de gesloten test met 12 testers gedurende 14 dagen, daarna productie.
+4b. **App Store** (later): `docs/ios.md`.
 5. **Bij elke update** verhoog je `CACHE_VERSION` in `sw.js` (webversie) en `versionCode` in
-   `android-app/android/app/build.gradle` (Android), en upload je een nieuwe `.aab`.
+   `app/android/app/build.gradle` (Android) en `CURRENT_PROJECT_VERSION` in Xcode (iOS), en upload je
+   een nieuwe `.aab` en een nieuwe build voor App Store Connect.
    Staat de app open op het start- of wereldscherm, dan laadt hij de nieuwe versie vanzelf;
    midden in een puzzel gebeurt dat pas bij de volgende start.
 

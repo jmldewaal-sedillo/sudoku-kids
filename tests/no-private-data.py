@@ -15,7 +15,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TOOL = [sys.executable, str(ROOT / 'tools' / 'no-private-data.py')]
 ONLINE = ['https://jmldewaal-sedillo.github.io/sudoku-kids-test/', 'https://jmldewaal-sedillo.github.io/sudoku-kids/',
-          'https://jmldewaal-sedillo.github.io/studio-sedillo/']
+          'https://studiosedillo.com/', 'https://studiosedillo.com/sudoku-kids/privacy', 'https://studiosedillo.com/sudoku-kids/delete']
 
 runs = [['--selftest'], [] + [a for a in sys.argv[1:] if a == '--ci']]
 if '--online' in sys.argv:

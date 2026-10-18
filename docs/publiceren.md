@@ -8,8 +8,9 @@ Uitgangspunten (besloten op 11 oktober 2026):
 
 - **Geen advertenties.** Later eventueel een verwijzing naar eigen spellen van Studio Sedillo
   (zie eis 1d).
-- **Persoonlijk Play Console-account** (`docs/bedrijf.md`, 1c en 1d). *17 oktober 2026: Jenn
-  overweegt een organisatie-account; gevolgen en volgorde in `docs/bedrijf.md`, 1e.*
+- **Organisatie-account** (omgezet op 18 oktober 2026, D-U-N-S via Altares; in beoordeling).
+  Gevolgen in `docs/bedrijf.md`, 1e. De rest van dit document is geschreven voor een persoonlijk
+  account; waar dat verschil maakt, staat het erbij.
   zonder betaalde apps of aankopen toont Google alleen de wettelijke naam, het land en het
   ontwikkelaars-e-mailadres, geen adres. Een organisatie-account toont altijd een adres en
   een telefoonnummer. De verplichte gesloten test geldt, tenzij het account van vóór
@@ -33,18 +34,16 @@ staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
 | # | Wat | Waar | Waarom nu |
 |---|---|---|---|
 | 1 | De testversie nalopen (verwijderen, voortgang overzetten, spelregels, credits, privacy- en verwijderpagina) en akkoord geven | testlink | Niets gaat naar `main` zonder akkoord |
-| 2 | DNS-records van de **hoofdsite** aanmaken (tabel in `docs/studio-sedillo.md`; `proefapp` en `test-proefapp` zijn al weg) | Namecheap → Advanced DNS | Zonder DNS werken de privacy- en verwijder-URL niet op studiosedillo.com |
-| 3 | Domein verifiëren bij GitHub (TXT-record) | GitHub → Settings → Pages | Beschermt tegen domeinkaping |
-| 4 | Claude Code laten draaien: `tools/eigen-domein.sh check`, daarna `site` en `https` | terminal | Zet studiosedillo.com en HTTPS aan (kan pas na stap 2 en 3) |
-| 5 | In Play Console nakijken: accounttype en aanmaakdatum; ontwikkelaarsnaam op **Studio Sedillo** zetten; ontwikkelaars-e-mail op studio.sedillo@gmail.com | Play Console → Instellingen → Ontwikkelaarsaccount | Bepaalt of de gesloten test geldt; bij een persoonlijk account toont Google ook je wettelijke naam en land |
+| 2–4 | ~~DNS van de hoofdsite, domeinverificatie, HTTPS~~ **klaar** (18 oktober 2026; DNS bij Cloudflare, `docs/studio-sedillo.md`) | | |
+| 5 | Het account is omgezet naar **organisatie** (18 oktober 2026; nu in beoordeling). Na de beoordeling nakijken: ontwikkelaarsnaam **Studio Sedillo**, e-mail studio.sedillo@gmail.com, en op het Dashboard of de gesloten test (stap 12) nog geldt. Niet vóór 21 oktober 2026 een app indienen (72 uur na het omzetten) | Play Console → Instellingen → Ontwikkelaarsaccount | Een organisatieaccount toont naam, adres, e-mail en telefoon publiek (`docs/bedrijf.md`, 1e) |
 | 5b | De stappen uit `docs/bedrijf.md` ("Wat Jenn zelf moet doen"): blocklist invullen, bezoekadres afschermen bij de KVK, btw-id doorgeven | zie daar | Het KvK-nummer staat online; het adres hoort dat niet te zijn |
 | 6 | App aanmaken in Play Console: naam "Sudoku Kids & Crazy Grids", type Game, gratis | Play Console → App maken | Nodig voor de signing key |
-| 7 | Android Studio installeren, de **upload key** maken en veilig opbergen, de app bouwen (`tools/build-android.sh`) en op je toestel testen (lijst in `docs/android.md`) | eigen pc en telefoon | De key heb je bij elke update nodig; de app is nog niet op Android getest |
+| 7 | De debug-APK uit de workflow `app-build.yml` op je toestel testen (lijst in `docs/android.md`); Android Studio installeren en de **upload key** maken en veilig opbergen | eigen pc en telefoon | De key heb je bij elke update nodig; de app is nog niet op een echt toestel getest |
 | 8 | `tools/build-android.sh release` en de `.aab` uploaden naar **Interne test** | Play Console → Testen en releasen | Eerste upload legt de package name vast |
 | 9 | De app uit de interne test installeren en de lijst uit `docs/android.md` nog een keer nalopen | eigen telefoon | Dit is de versie die spelers krijgen (ondertekend door Google) |
 | 10 | App-content invullen met de antwoorden uit dit document: privacybeleid-URL, advertenties (nee), app-toegang, doelgroep, Data safety, contentclassificatie (IARC) | Play Console → Beleid → App-content | Verplicht voor elke track behalve interne test |
 | 11 | Store-pagina vullen met het materiaal uit `store/` | Play Console → Groei → Store-vermelding | |
-| 12 | Gesloten test starten met **minstens 12 testers die 14 dagen aaneengesloten** aangemeld blijven | Play Console → Testen → Gesloten test | Verplicht voor productietoegang |
+| 12 | Alleen als Play Console het vraagt (eis voor nieuwe persoonlijke accounts; bij een organisatieaccount waarschijnlijk niet): gesloten test met **minstens 12 testers die 14 dagen aaneengesloten** aangemeld blijven | Play Console → Testen → Gesloten test | Dan verplicht voor productietoegang |
 | 13 | Productietoegang aanvragen (vragenlijst over de test), daarna de productierelease | Play Console → Dashboard | Beoordeling duurt meestal tot 7 dagen |
 | 14 | Privacyverklaring en vertalingen laten nakijken (staat al op de roadmap) | | Vóór productie |
 
@@ -207,7 +206,7 @@ Bron: [target-API-eisen][targetapi]. Sinds 31 augustus 2026 moeten nieuwe apps e
 | `targetSdkVersion` is 36 (Capacitor 8); `tests/builds.py` controleert dat het 36 of hoger blijft | Claude Code | klaar (nog te bouwen) |
 | Elk jaar opnieuw: Google verhoogt de eis elke augustus; dan een nieuwe build uploaden | Jenn | terugkerend (roadmap) |
 
-Capacitor 8 zet de target-API vast op 36 (`android-app/android/variables.gradle`; `tests/builds.py` controleert dat). Eisen aan eigen native bibliotheken spelen niet: de app gebruikt alleen Capacitor en twee officiële plug-ins.
+Capacitor 8 zet de target-API vast op 36 (`app/android/variables.gradle`; `tests/builds.py` controleert dat). Eisen aan eigen native bibliotheken spelen niet: de app gebruikt alleen Capacitor en twee officiële plug-ins.
 
 ### 9. Gesloten test voor nieuwe persoonlijke accounts
 

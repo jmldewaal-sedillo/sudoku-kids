@@ -25,7 +25,12 @@ inloggen, en het Families-beleid geldt (sectie 11, punt 5). Slug `sudokukids`, p
 
 - Deze app is ouder dan de template en heeft eigen namen voor dezelfde opzet: de laag per
   bouwdoel staat in `platform.js` en `platforms/`, het bouwen doet `tools/build.mjs`, en de
-  Android-schil staat in `android-app/`.
+  Capacitor-app (Android én iOS, dezelfde bestanden) staat in `app/` (bouwdoel `app`, zoals
+  bij The Flush Factor).
+- **Kinder-app in beide stores:** elke link die de app verlaat en (later) elke aankoop zit
+  achter het ouderslot (`askParent`). Dat eisen het Families-beleid van Google en de
+  Kids-categorie van Apple (guideline 1.3); `tests/e2e.py` bewaakt het. Plannen voor later geld
+  verdienen: eerst `docs/later-verdienen.md`.
 - De opslag gebruikt de sleutels `sudokuKids_…` (niet de prefix `sudokukids.` uit
   `Apps/CLAUDE.md`, sectie 2). Dat is bewust: de sleutels bestonden al en veranderen nooit
   (ROADMAP.md, Vaste regels).

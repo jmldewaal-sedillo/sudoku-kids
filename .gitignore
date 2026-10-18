@@ -1,7 +1,7 @@
 __pycache__/
 tests/out/
 node_modules/
-# Build output of tools/build.mjs (android, crazygames, poki)
+# Build output of tools/build.mjs (app, crazygames, poki)
 dist/
 # Android: build output and signing keys never in Git (see docs/android.md)
 *.keystore
@@ -9,9 +9,15 @@ dist/
 *.aab
 *.apk
 keystore.properties
-android-app/android/app/build/
-android-app/android/build/
-android-app/android/.gradle/
-android-app/android/local.properties
-android-app/android/app/src/main/assets/public/
-android-app/android/capacitor-cordova-android-plugins/
+app/android/app/build/
+app/android/build/
+app/android/.gradle/
+app/android/local.properties
+app/android/app/src/main/assets/public/
+app/android/capacitor-cordova-android-plugins/
+# iOS: build output, never in Git (see docs/ios.md)
+app/ios/build/
+app/ios/App/App/public/
+app/ios/DerivedData/
+*.ipa
+*.xcarchive
