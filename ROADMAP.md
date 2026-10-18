@@ -465,7 +465,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 
 **App voor iOS (Capacitor, uitleg in `docs/ios.md`)**
 - [x] iOS-project in `app/ios/` uit dezelfde bestanden als Android; icoon en startscherm; workflow bouwt en start de app in de simulator (2026-10-18)
-- [ ] C: controleren dat de eerste run van `app-build.yml` groen is en de schermafbeelding uit de simulator bekijken
+- [x] C: eerste groene run van `app-build.yml` (5827fb6, 2026-10-18): Android-APK 5,7 MB gebouwd; iOS gebouwd en gestart in de iPhone-simulator, startscherm zelf bekeken op de schermafbeelding. (De eerste run faalde: `tools/build-ios.sh` was niet uitvoerbaar.)
 - [ ] J: Apple Developer-account als individu (`Apps/docs/apple-developer.md`), zodra er een iPhone of iPad is om op te testen
 - [ ] J: app aanmaken in App Store Connect; API-sleutel als geheim in GitHub. C: daarna ondertekenen en uploaden naar TestFlight in de workflow
 - [ ] J: App Privacy ("Data Not Collected"), Kids-categorie met leeftijdsband, DSA-traderstatus; screenshots iPhone 6,9" en iPad 13" (C maakt ze)
