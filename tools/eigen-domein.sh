@@ -22,20 +22,20 @@ bad() { say "  ONTBREEKT  $*"; ok=0; }
 check() {
   say "DNS van $APEX"
   local a got
-  a="$(dig +short A "$APEX" | sort | tr '\n' ' ')"
+  a="$(dig @1.1.1.1 +short A "$APEX" | sort | tr '\n' ' ')"
   for ip in $PAGES_IPS; do
     case " $a " in *" $ip "*) good "A @ $ip" ;; *) bad "A @ $ip" ;; esac
   done
   for ip in $a; do
     case " $PAGES_IPS " in *" $ip "*) ;; *) bad "A @ $ip hoort er niet (meer) te staan: verwijder dit record" ;; esac
   done
-  if [ "$(dig +short AAAA "$APEX" | grep -c '^2606:50c0:800[0-3]::153$')" = 4 ]; then good "AAAA @ (4 adressen)"; else bad "AAAA @ 2606:50c0:8000::153 t/m 8003::153"; fi
-  got="$(dig +short CNAME "www.$APEX" | tr 'A-Z' 'a-z')"
+  if [ "$(dig @1.1.1.1 +short AAAA "$APEX" | grep -c '^2606:50c0:800[0-3]::153$')" = 4 ]; then good "AAAA @ (4 adressen)"; else bad "AAAA @ 2606:50c0:8000::153 t/m 8003::153"; fi
+  got="$(dig @1.1.1.1 +short CNAME "www.$APEX" | tr 'A-Z' 'a-z')"
   if [ "$got" = "$USER_GH.github.io." ]; then good "CNAME www -> $got"; else bad "CNAME www -> $USER_GH.github.io. (nu: ${got:-niets})"; fi
-  if dig +short TXT "_github-pages-challenge-$USER_GH.$APEX" | grep -q .; then good "TXT _github-pages-challenge-$USER_GH (domeinverificatie)"; else bad "TXT _github-pages-challenge-$USER_GH (domeinverificatie, zie docs/studio-sedillo.md)"; fi
+  if dig @1.1.1.1 +short TXT "_github-pages-challenge-$USER_GH.$APEX" | grep -q .; then good "TXT _github-pages-challenge-$USER_GH (domeinverificatie)"; else bad "TXT _github-pages-challenge-$USER_GH (domeinverificatie, zie docs/studio-sedillo.md)"; fi
   # Subdomeinen van apps horen er niet te zijn: een record naar GitHub zonder site erachter kan gekaapt worden.
   for host in sudokukids test-sudokukids proefapp test-proefapp; do
-    if dig +short "$host.$APEX" | grep -q .; then say "  WEGHALEN   record $host (wijst naar GitHub, maar er hoort geen site meer bij)"; ok=0; fi
+    if dig @1.1.1.1 +short "$host.$APEX" | grep -q .; then say "  WEGHALEN   record $host (wijst naar GitHub, maar er hoort geen site meer bij)"; ok=0; fi
   done
   if [ "$ok" = 1 ]; then say "Alles staat goed."; else say "Nog niet alles staat goed. DNS-wijzigingen kunnen tot 24 uur duren."; fi
 }
