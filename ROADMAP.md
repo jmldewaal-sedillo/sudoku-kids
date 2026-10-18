@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v6 staat op het oude github.io-adres; **v11 staat op de testlink** en wacht op akkoord. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-10-17 |
+| **Huidige fase** | v6 staat op het oude github.io-adres; **v11 staat op de testlink en is goedgekeurd** (2026-10-18); de merge naar `main` wacht op de DNS van studiosedillo.com. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
+| **Laatste update** | 2026-10-18 |
 | **Volgende stap** | Jenn: DNS van de hoofdsite afmaken (studiosedillo.com geeft nu geen antwoord); kiezen tussen persoonlijk en zakelijk Play-account (`docs/bedrijf.md`, 1e) vóór de app in Play Console komt; testlink nalopen; testers zoeken; Android Studio installeren (`docs/android.md`) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v11 (`publish-prep`). Testkopie: `noindex`, geen eigen domein |
@@ -37,6 +37,13 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-18 · v11 goedgekeurd voor productie (Claude Code)
+- Jenn heeft v11 op de testlink nagelopen: "helemaal ready om te publiceren". Nieuwe levels en eventueel skins komen later.
+- **Besluit:** `publish-prep` (v11, `e874c70`) gaat pas naar `main` als https://studiosedillo.com/sudoku-kids/privacy werkt. Tot dan blijft v6 op het oude github.io-adres staan; die heeft de privacypagina nog in de app. Gemeten op 2026-10-18: geen A-record en geen verificatierecord, de privacy-URL geeft geen antwoord.
+- Zodra de DNS staat: `tools/eigen-domein.sh check`, `site`, `https`; privacy- en delete-URL controleren; dan mergen naar `main`, taggen als `v11` en de Android-build uit `main` maken.
+
+**Bestanden geraakt:** ROADMAP.md.
 
 ### 2026-10-17 · v11 op de testlink: stand na een paar dagen, kleine verbeteringen, onderzoek zakelijk account (Claude Code, branch `publish-prep`)
 **Stand gemeten:** sinds 11 oktober niets veranderd in deze repo. Testlink v10, live v6 (`sw.js` online nagekeken). Alle tests groen. DNS (`dig`, bij Namecheap zelf en via 1.1.1.1/8.8.8.8): `proefapp` en `test-proefapp` zijn weg, de repo's `proef-app` en `proef-app-test` ook. De parkeerrecords van de root zijn weg, maar de records voor GitHub staan er nog niet: **studiosedillo.com geeft nu geen antwoord** (ook `/sudoku-kids/privacy` en `/delete` niet); alleen een SPF-record van het e-maildoorsturen staat er nog. Geen Android Studio of SDK op deze computer, nog geen `.apk`/`.aab`.
@@ -392,6 +399,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [x] Store-materiaal: teksten in 10 talen, icoon, feature graphic, screenshots telefoon en tablet → `store/`
 
 **Testen (J)**
+- [x] v11 (en daarmee v7 t/m v10) nagelopen en goedgekeurd voor productie (2026-10-18)
 - [ ] v7 op de testlink: Instellingen → Spelregels en Credits; ?-knop in het spel; een nieuw profiel maken en kijken of de spelregels vanzelf komen
 - [ ] v7: Wie speelt er? → Voortgang overzetten → code maken, kopiëren, als bestand bewaren; op een ander toestel of in een privévenster importeren
 - [ ] v7: een testprofiel verwijderen; daarna "Alle gegevens van deze app verwijderen" (alleen op de testlink!) en kijken of de app schoon start
@@ -417,6 +425,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] J: het SPF-record van het e-maildoorsturen op de root (`v=spf1 include:spf.efwd.registrar-servers.com`) laten staan als je e-mail op studiosedillo.com wilt (nodig voor een organisatie-account, `docs/bedrijf.md` 1e), anders weghalen
 - [ ] J: domein verifiëren bij GitHub (TXT-record `_github-pages-challenge-jmldewaal-sedillo`)
 - [ ] C: `tools/eigen-domein.sh check`, dan `site` en `https`; controleren dat `https://studiosedillo.com/sudoku-kids/privacy` en `/delete` werken
+- [ ] C: daarna `publish-prep` mergen naar `main` en taggen als `v11` (akkoord van Jenn op 2026-10-18, wacht alleen op de DNS)
 - [x] J: de proefrepo's `proef-app` en `proef-app-test` en de map `Apps/proef-app` zijn weg (gecontroleerd op 2026-10-17)
 - [x] Privacy- en verwijderpagina van Sudoku Kids op de hoofdsite, 5 talen; de app linkt erheen; startpagina toont de spellen als "Binnenkort" zonder links
 - [x] Eigen domeinen van `proef-app` en `proef-app-test` afgehaald; `sudoku-kids` en `sudoku-kids-test` hadden er geen
