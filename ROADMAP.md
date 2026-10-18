@@ -4,14 +4,14 @@
 
 | | |
 |---|---|
-| **Huidige fase** | v6 staat op het oude github.io-adres; **v11 staat op de testlink en is goedgekeurd** (2026-10-18); de merge naar `main` wacht op de DNS van studiosedillo.com. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
+| **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). Volgende fase: de Android-app bouwen en in Google Play zetten. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
 | **Laatste update** | 2026-10-18 |
-| **Volgende stap** | Jenn: DNS van de hoofdsite afmaken (studiosedillo.com geeft nu geen antwoord); kiezen tussen persoonlijk en zakelijk Play-account (`docs/bedrijf.md`, 1e) vóór de app in Play Console komt; testlink nalopen; testers zoeken; Android Studio installeren (`docs/android.md`) |
+| **Volgende stap** | Jenn: Android Studio installeren en `tools/build-android.sh` draaien (`docs/android.md`); kiezen tussen persoonlijk en zakelijk Play-account (`docs/bedrijf.md`, 1e) vóór de app in Play Console komt; testers zoeken |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v11 (`publish-prep`). Testkopie: `noindex`, geen eigen domein |
-| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v6` (live sinds 2026-10-11; v3 stond live van 's ochtends tot 's middags) |
+| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
 | **Bouwdoelen** | android (`tools/build-android.sh`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
-| **Privacy / verwijderen** | https://studiosedillo.com/sudoku-kids/privacy en `/delete` (repo `studio-sedillo`); werken op dat adres zodra de DNS van de hoofdsite staat. Tot dan: https://jmldewaal-sedillo.github.io/studio-sedillo/sudoku-kids/privacy |
+| **Privacy / verwijderen** | https://studiosedillo.com/sudoku-kids/privacy en https://studiosedillo.com/sudoku-kids/delete (repo `studio-sedillo`), HTTPS, werken sinds 2026-10-18 |
 
 ---
 
@@ -25,7 +25,7 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v6`, test: `sudoku-kids-v11`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v11`, test: `sudoku-kids-v11`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, externe CDN's, tracking, advertenties of accounts in het spel.** De webversie heeft geen build-stap; `tools/build.mjs` kopieert alleen bestanden voor de andere bouwdoelen. `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Enige uitzondering: de portal-versies laden de SDK van de portal zelf (verplicht), zonder één advertentie-aanroep (`tests/builds.py`). Komt er ooit iets bij dat het toestel verlaat of een advertentie toont, dan eerst akkoord van Jenn, en `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
@@ -37,6 +37,15 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-18 · v11 live gezet (Claude Code)
+- De DNS van studiosedillo.com staat (sinds vandaag bij Cloudflare, door een andere sessie; zie `studio-sedillo-infra`). Daarmee was de voorwaarde voor het akkoord van Jenn vervuld.
+- Gecontroleerd vooraf: `https://studiosedillo.com/`, `/sudoku-kids/privacy`, `/sudoku-kids/privacy?lang=en` en `/sudoku-kids/delete` → 200 via HTTPS; http en www sturen door naar https://studiosedillo.com/; GitHub Pages van `studio-sedillo`: eigen domein, HTTPS afgedwongen. `studio-sedillo-infra/tools/controleer-dns.py` → "Alles in orde" (`sudokukids` gereserveerd, geen record).
+- Tests op `99f9361`: `python3 tests/e2e.py` → `✅ 348/348`; `python3 tests/builds.py` → `✅ 52/52`; `node tests/validate-levels.js` → 3× ✅; `python3 tests/no-private-data.py --online` → ✅.
+- `publish-prep` fast-forward naar `main` (live gaat in één keer van v6 naar v11), tag `v11`, gepusht. Nagekeken: Pages-build van `main` "built", online `CACHE_VERSION = 'sudoku-kids-v11'` en `noindex` op het oude github.io-adres.
+- Android Studio staat nog niet op deze computer: de Android-build is nog niet gemaakt.
+
+**Bestanden geraakt:** ROADMAP.md.
 
 ### 2026-10-18 · v11 goedgekeurd voor productie (Claude Code)
 - Jenn heeft v11 op de testlink nagelopen: "helemaal ready om te publiceren". Nieuwe levels en eventueel skins komen later.
@@ -420,18 +429,19 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] Verandert de blocklist, dan het geheim `PRIVATE_BLOCKLIST` in alle vier de repo's opnieuw zetten (commando in `docs/bedrijf.md`)
 
 **Hoofdsite en domein (alleen studiosedillo.com; apps krijgen geen subdomein)**
-- [ ] J: DNS-records van de hoofdsite aanmaken bij Namecheap (tabel in `docs/studio-sedillo.md`). De parkeerrecords zijn al weg (17-10), dus studiosedillo.com geeft nu geen antwoord
+- [x] J: DNS van de hoofdsite: sinds 2026-10-18 bij Cloudflare, studiosedillo.com live met HTTPS (`studio-sedillo-infra`)
 - [x] J: de records `proefapp` en `test-proefapp` verwijderd bij Namecheap (gecontroleerd met `dig` op 2026-10-17)
 - [ ] J: het SPF-record van het e-maildoorsturen op de root (`v=spf1 include:spf.efwd.registrar-servers.com`) laten staan als je e-mail op studiosedillo.com wilt (nodig voor een organisatie-account, `docs/bedrijf.md` 1e), anders weghalen
-- [ ] J: domein verifiëren bij GitHub (TXT-record `_github-pages-challenge-jmldewaal-sedillo`)
-- [ ] C: `tools/eigen-domein.sh check`, dan `site` en `https`; controleren dat `https://studiosedillo.com/sudoku-kids/privacy` en `/delete` werken
-- [ ] C: daarna `publish-prep` mergen naar `main` en taggen als `v11` (akkoord van Jenn op 2026-10-18, wacht alleen op de DNS)
+- [x] J: domein geverifieerd bij GitHub (gecontroleerd met `controleer-dns.py`, 2026-10-18)
+- [x] C: `https://studiosedillo.com/sudoku-kids/privacy` en `/delete` werken via HTTPS (2026-10-18)
+- [x] C: `publish-prep` gemerged naar `main`, tag `v11` (2026-10-18)
+- [ ] `studiosedillo.com/sudoku-kids/verwijderen` geeft 404; `Apps/CLAUDE.md` (sectie 5) vraagt een doorverwijzing naar `/delete`. Hoort in de repo `studio-sedillo` (live site, dus na akkoord). Niet nodig voor Google Play
 - [x] J: de proefrepo's `proef-app` en `proef-app-test` en de map `Apps/proef-app` zijn weg (gecontroleerd op 2026-10-17)
 - [x] Privacy- en verwijderpagina van Sudoku Kids op de hoofdsite, 5 talen; de app linkt erheen; startpagina toont de spellen als "Binnenkort" zonder links
 - [x] Eigen domeinen van `proef-app` en `proef-app-test` afgehaald; `sudoku-kids` en `sudoku-kids-test` hadden er geen
 - [x] Webversie (test en straks live) op `noindex`
 - [ ] Opruimen: de branches `feature-2026-10-11` en `review-2026-10-09` zitten helemaal in `main` en kunnen weg (`git branch -d …` en `git push origin --delete …`; de beveiliging van Claude Code laat dat alleen met akkoord toe)
-- [ ] Na akkoord en merge: `noindex` staat dan ook op het oude github.io-adres van `main` (nu nog v6 zonder `noindex`)
+- [x] `noindex` staat ook op het oude github.io-adres van `main` (v11, 2026-10-18)
 - [ ] The Flush Factor: `noindex` op de github.io-versie (het niet-gecommitte werk is er niet meer; dit hoort in de roadmap van Flush Factor)
 - [ ] Nieuwe lay-out voor studiosedillo.com (ontwerp volgt)
 - [ ] C: privacyverklaringen nalopen na de uitspraak van het Hof van Justitie over het EU-U.S. Data Privacy Framework (zaak C-703/25 P, loopt nog); vervalt het besluit, dan de alinea "Gegevens buiten de EU" aanpassen
@@ -526,7 +536,6 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 
 ## Bekende beperkingen
 
-- **De hoofdsite staat nog niet op studiosedillo.com** (stand 2026-10-17): de parkeerrecords zijn weg, de records voor GitHub staan er nog niet, dus het domein geeft geen antwoord. Tot dan werken de links naar privacy en "gegevens verwijderen" in de app niet; de pagina's staan wel op https://jmldewaal-sedillo.github.io/studio-sedillo/sudoku-kids/privacy.
 - **De Android-app is nog niet gebouwd en niet op Android getest.** Op de ontwikkelcomputer staat geen Android-SDK. De Android-versie van de webbestanden is getest in een browser met een nagebootste Capacitor-brug; de echte terugknop, opslag en het geluid moet Jenn op een toestel nalopen (`docs/android.md`).
 - **De portal-versies zijn getest met nagebootste SDK's**, niet op CrazyGames of Poki zelf.
 - **Verhuizen naar een ander adres neemt de voortgang niet vanzelf mee** (opslag hangt aan het adres). Daarvoor is de verhuisknop of de overzet-code. Een snelkoppeling op het startscherm moet opnieuw geïnstalleerd worden.
