@@ -143,7 +143,7 @@ kunnen uitoefenen.
 |---|---|---|---|
 | In de app: één profiel verwijderen | Profiel → potlood → "Profiel verwijderen", dubbel ouderslot, bevestiging | Claude Code | klaar op test |
 | In de app: alles verwijderen | Instellingen → "Alle gegevens van deze app verwijderen", dubbel ouderslot, bevestiging; wist alle sleutels, de cache en de service worker | Claude Code | klaar op test |
-| Webpagina met uitleg, zonder dat je de app hoeft te openen, met de naam van de app en ontwikkelaar | `https://studiosedillo.com/sudoku-kids/delete` (5 talen) | Claude Code | klaar op test, URL wacht op DNS |
+| Webpagina met uitleg, zonder dat je de app hoeft te openen, met de naam van de app en ontwikkelaar | `https://studiosedillo.com/sudoku-kids/delete` (5 talen) | Claude Code | klaar (live sinds 18 oktober 2026) |
 | De link in Play Console invullen | Data safety → gegevens verwijderen | Jenn | open |
 
 ### 5. Leeftijdsclassificatie (IARC)
@@ -207,12 +207,10 @@ Bronnen: [previewmateriaal][assets], [metadatabeleid][metadata].
 | Contact: e-mail verplicht, website aanbevolen | studio.sedillo@gmail.com, https://studiosedillo.com | open (Jenn) |
 | Categorie en tags | Game → Puzzel; tag "Sudoku" | open (Jenn) |
 
-**Let op bij een persoonlijk account:** Google toont op de store-pagina naast de
-ontwikkelaarsnaam ook je **wettelijke naam, je land en het ontwikkelaars-e-mailadres**; je
-volledige adres alleen als je geld gaat verdienen (betaalde apps of aankopen). De wettelijke
-naam is je eigen naam, niet "Studio Sedillo". Vul in Play Console nergens een adres in dat
-getoond wordt, en zet geen betaalde apps of aankopen aan. Bron: [accounttype kiezen][accounttype];
-uitgewerkt in `docs/bedrijf.md` (1c).
+**Organisatieaccount (sinds 21 oktober 2026):** Google toont op de store-pagina de naam
+Studio Sedillo, het adres en telefoonnummer uit het betaalprofiel en het ontwikkelaars-e-mailadres.
+Bij "Contactgegevens" van de app alleen e-mail en website invullen; telefoon leeg laten.
+Zie `docs/bedrijf.md` (1e).
 
 ### 8. Target-API voor de Android-app
 
