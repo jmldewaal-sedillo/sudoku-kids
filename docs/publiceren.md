@@ -52,6 +52,23 @@ staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
 
 ## Checklist per eis
 
+### 0. Verklaringen bij App maken
+
+Vaste regels: `Apps/CLAUDE.md`, sectie 11, punt 8. Nagekeken op 21 oktober 2026.
+
+| Verklaring | Stand | Status |
+|---|---|---|
+| Programmabeleid: inhoud | Sudoku voor kinderen, geen geweld, gokken of echt geld | klaar |
+| Programmabeleid: eigen of vrij materiaal | Eigen werk (iconen met de hand getekend, `icons.js`); geen materiaal van anderen | klaar |
+| Programmabeleid: geen misleiding, geen knoppen zonder werking | Geen inloggen, aankopen of advertenties; alle knoppen werken | klaar op test (v12) |
+| Programmabeleid: echte offline app | Capacitor met de spelbestanden in de app; geen verzoeken naar andere domeinen (`tests/e2e.py`) | klaar op test (v12) |
+| Programmabeleid: gegevens, kinderen | Zie 1 t/m 4 en 11 hieronder | klaar op test; Play Console-antwoorden nog in te vullen |
+| Amerikaanse exportwetten | Geen eigen versleuteling; `ITSAppUsesNonExemptEncryption = false` in `app/ios/App/App/Info.plist` | klaar |
+
+Conclusie: de twee vinkjes bij "App maken" kunnen aan. Vóór het indienen moeten de open punten
+hieronder nog klaar zijn; de beoordeling door Google gebeurt pas bij het indienen.
+
+
 ### 1. Families-beleid
 
 Geldt zodra een kindergroep in de doelgroep zit. Bron: [Families-beleid][families].
@@ -107,7 +124,7 @@ hebben.
 | Welke gegevens de app benadert, verzamelt, gebruikt en deelt | "Wat er wordt bewaard, en waar", "Wat de app niet doet", "Delen met anderen" | klaar op test |
 | Hoe gegevens veilig worden verwerkt | "Delen met anderen": alleen HTTPS, niets verlaat het toestel; "Als je ons mailt" en "Gegevens buiten de EU" voor e-mail en hosting | klaar op test |
 | Bewaar- en verwijderbeleid | "Hoe lang gegevens bewaard blijven", "Hoe je gegevens verwijdert" | klaar op test |
-| Op een actieve, openbare URL, niet per land afgeschermd, geen pdf, niet door bezoekers te bewerken | `https://studiosedillo.com/sudoku-kids/privacy` | open (wacht op DNS) |
+| Op een actieve, openbare URL, niet per land afgeschermd, geen pdf, niet door bezoekers te bewerken | `https://studiosedillo.com/sudoku-kids/privacy` | klaar (live sinds 18 oktober 2026) |
 | Link in Play Console én in de app zelf | Instellingen → "Privacy (voor ouders)"; Play Console doet Jenn | klaar op test / open |
 | Rechten onder de AVG, kinderen en ouders, datum van wijziging | Eigen onderdelen | klaar op test |
 
@@ -186,7 +203,7 @@ Bronnen: [previewmateriaal][assets], [metadatabeleid][metadata].
 | Telefoon: 2 tot 8 screenshots, JPEG of 24-bits PNG zonder alfa, 320–3840 px, lange zijde hoogstens 2× de korte; minstens 4 van 1080×1920 voor promotie (games: 3) | 6 stuks van 1080×1920 | klaar |
 | Tablet (7 en 10 inch): 1080–7680 px, 16:9 of 9:16; Google raadt minstens 4 aan | 4 stuks (2 staand 1440×2560, 2 liggend 2560×1440) | klaar |
 | Screenshots tonen de echte app, geen vingers of toestellen | Rechtstreeks uit de app gemaakt door `tests/store.py` | klaar |
-| Ontwikkelaarsnaam | Studio Sedillo | open (Jenn, Play Console) |
+| Ontwikkelaarsnaam | Studio Sedillo | klaar (nagekeken 21 oktober 2026) |
 | Contact: e-mail verplicht, website aanbevolen | studio.sedillo@gmail.com, https://studiosedillo.com | open (Jenn) |
 | Categorie en tags | Game → Puzzel; tag "Sudoku" | open (Jenn) |
 
