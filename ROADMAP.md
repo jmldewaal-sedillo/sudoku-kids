@@ -5,9 +5,9 @@
 | | |
 |---|---|
 | **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-10-18 (v12 op de testlink) |
-| **Volgende stap** | Jenn: v12 op de testlink nalopen (Instellingen → Voor ouders); de test-APK uit de workflow `app-build.yml` op een Android-toestel testen (`docs/android.md`); na de beoordeling van het organisatieaccount (niet vóór 21-10) de app aanmaken in Play Console; upload key maken |
-| **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · persoonlijk Play Console-account |
+| **Laatste update** | 2026-10-21 (Play-account omgezet naar organisatie; indienen vanaf 24-10) |
+| **Volgende stap** | Jenn: v12 op de testlink nalopen (Instellingen → Voor ouders); de test-APK uit de workflow `app-build.yml` op een Android-toestel testen (`docs/android.md`); vanaf 24-10 (72 uur na het koppelen van het betalingsprofiel op 21-10) de app aanmaken in Play Console; upload key maken |
+| **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v11 (`publish-prep`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
 | **Bouwdoelen** | app = Android én iOS uit dezelfde bestanden (`tools/build-android.sh`, `tools/build-ios.sh`, workflow `app-build.yml`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
@@ -45,7 +45,7 @@ Opdracht van Jenn: alle scripts en docs nalopen op de nieuwe infrastructuur (dom
 - **Bouwen in de cloud** (`.github/workflows/app-build.yml`, bij elke push naar `test`): debug-APK om te downloaden en op een telefoon te zetten (geen Android Studio nodig), en de iOS-app gebouwd en gestart in de simulator op een Mac van GitHub, met een schermafbeelding.
 - **Links naar buiten achter het ouderslot:** privacy en "gegevens verwijderen" staan nu in het venster **Voor ouders** (Instellingen → Voor ouders → ouderslot). Eis van de Kids-categorie van Apple (guideline 1.3) en in de geest van het Families-beleid. Op de portals blijft alles verborgen.
 - **Infra nagelopen:** `tools/eigen-domein.sh` weg (DNS en de hoofdsite horen nu bij `studio-sedillo-infra`; het script kon bovendien zonder vraag naar de live hoofdsite pushen). `docs/studio-sedillo.md` herschreven: verwijst naar het register (`sudokukids` gereserveerd) en `controleer-dns.py`. Namecheap-stappen en de oude github.io-adressen uit README, `docs/lanceren.md` en `docs/publiceren.md` gehaald. `tests/no-private-data.py --online` controleert nu studiosedillo.com zelf.
-- **Account:** `docs/publiceren.md` en `docs/bedrijf.md` 1e: organisatieaccount (omgezet 18-10, in beoordeling, niet vóór 21-10 indienen); de gesloten test alleen als Play Console erom vraagt.
+- **Account:** `docs/publiceren.md` en `docs/bedrijf.md` 1e: organisatieaccount (aangevraagd 18-10, betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen); de gesloten test alleen als Play Console erom vraagt.
 - **Nieuwe docs:** `docs/ios.md` (bouwen zonder Mac, TestFlight, App Privacy "Data Not Collected", Kids-categorie) en `docs/later-verdienen.md` (wat er mag met skins en reclame voor eigen spellen in een kinder-app; niets gebouwd).
 - `CACHE_VERSION` → `sudoku-kids-v12`.
 
@@ -490,7 +490,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] Advertenties op een portal: alleen na uitdrukkelijk besluit van Jenn
 
 **Play Console (J, antwoorden in `docs/publiceren.md`)**
-- [x] Account omgezet naar organisatie (18-10, in beoordeling). Niet vóór 21-10 een app indienen; daarna op het Dashboard nakijken of de gesloten test nog geldt
+- [x] Account omgezet naar organisatie: aangevraagd 18-10, betalingsprofiel geverifieerd 19-10 en gekoppeld 21-10. Niet vóór 24-10 een app indienen; daarna op het Dashboard nakijken of de gesloten test nog geldt
 - [ ] App-content: privacybeleid-URL, advertenties (nee), app-toegang (uitleg ouderslot)
 - [ ] Doelgroep: 6–8 en 9–12; aanmelden voor Teacher Approved
 - [ ] Data safety-formulier (geen gegevens verzameld of gedeeld; Families-badge aanvinken; verwijder-URL)

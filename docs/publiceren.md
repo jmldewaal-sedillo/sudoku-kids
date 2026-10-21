@@ -8,7 +8,8 @@ Uitgangspunten (besloten op 11 oktober 2026):
 
 - **Geen advertenties.** Later eventueel een verwijzing naar eigen spellen van Studio Sedillo
   (zie eis 1d).
-- **Organisatie-account** (omgezet op 18 oktober 2026, D-U-N-S via Altares; in beoordeling).
+- **Organisatie-account** (aangevraagd op 18 oktober 2026, D-U-N-S via Altares). Het nieuwe betalingsprofiel is op
+  19 oktober geverifieerd en op **21 oktober 2026 gekoppeld**; niet vóór 24 oktober een app indienen.
   Gevolgen in `docs/bedrijf.md`, 1e. De rest van dit document is geschreven voor een persoonlijk
   account; waar dat verschil maakt, staat het erbij.
   zonder betaalde apps of aankopen toont Google alleen de wettelijke naam, het land en het
@@ -35,7 +36,7 @@ staat op de testlink, nog niet live), **open** (moet nog), **n.v.t.**
 |---|---|---|---|
 | 1 | De testversie nalopen (verwijderen, voortgang overzetten, spelregels, credits, privacy- en verwijderpagina) en akkoord geven | testlink | Niets gaat naar `main` zonder akkoord |
 | 2–4 | ~~DNS van de hoofdsite, domeinverificatie, HTTPS~~ **klaar** (18 oktober 2026; DNS bij Cloudflare, `docs/studio-sedillo.md`) | | |
-| 5 | Het account is omgezet naar **organisatie** (18 oktober 2026; nu in beoordeling). Na de beoordeling nakijken: ontwikkelaarsnaam **Studio Sedillo**, e-mail studio.sedillo@gmail.com, en op het Dashboard of de gesloten test (stap 12) nog geldt. Niet vóór 21 oktober 2026 een app indienen (72 uur na het omzetten) | Play Console → Instellingen → Ontwikkelaarsaccount | Een organisatieaccount toont naam, adres, e-mail en telefoon publiek (`docs/bedrijf.md`, 1e) |
+| 5 | Het account is omgezet naar **organisatie** (betalingsprofiel gekoppeld op 21 oktober 2026). Ontwikkelaarsnaam **Studio Sedillo** en e-mail studio.sedillo@gmail.com (geverifieerd) nagekeken op 21 oktober. Nog nakijken: op het Dashboard of de gesloten test (stap 12) nog geldt. Niet vóór 24 oktober 2026 een app indienen (72 uur na het koppelen) | Play Console → Instellingen → Ontwikkelaarsaccount | Een organisatieaccount toont naam, adres, e-mail en telefoon publiek (`docs/bedrijf.md`, 1e) |
 | 5b | De stappen uit `docs/bedrijf.md` ("Wat Jenn zelf moet doen"): blocklist invullen, bezoekadres afschermen bij de KVK, btw-id doorgeven | zie daar | Het KvK-nummer staat online; het adres hoort dat niet te zijn |
 | 6 | App aanmaken in Play Console: naam "Sudoku Kids & Crazy Grids", type Game, gratis | Play Console → App maken | Nodig voor de signing key |
 | 7 | De debug-APK uit de workflow `app-build.yml` op je toestel testen (lijst in `docs/android.md`); Android Studio installeren en de **upload key** maken en veilig opbergen | eigen pc en telefoon | De key heb je bij elke update nodig; de app is nog niet op een echt toestel getest |

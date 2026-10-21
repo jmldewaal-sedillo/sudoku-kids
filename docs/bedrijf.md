@@ -156,7 +156,8 @@ adres en een telefoonnummer.
 
 > **Besluit (18 oktober 2026):** het account is **omgezet naar organisatie** (website
 > geverifieerd via Google Search Console, D-U-N-S via Altares; zie `Apps/CLAUDE.md`, sectie 1, en
-> `the-flush-factor/docs/publiceren.md`). Op 18 oktober in beoordeling. Wat hieronder staat, is het
+> `the-flush-factor/docs/publiceren.md`). Op 19 oktober is het nieuwe betalingsprofiel geverifieerd en op 21 oktober
+> gekoppeld; vanaf dan is het account een organisatieaccount (niet vóór 24 oktober een app indienen). Wat hieronder staat, is het
 > onderzoek dat daaraan voorafging.
 
 *Jenn overweegt op 17 oktober 2026 het account zakelijk te maken (organisatie-account) of een
