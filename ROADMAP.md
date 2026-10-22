@@ -43,8 +43,8 @@ Jenn testte de debug-APK op haar telefoon: alles werkt, maar op het startscherm 
 
 - **Instelling "Beweging"** (Instellingen → Spel): Zoals de telefoon (standaard) / Aan / Uit, per speler bewaard (`settings.motion`, bestaande sleutel `sudokuKids_settings`), in 10 talen (door Claude vertaald). De CSS volgt nu de klasse `reduce-motion` op `<html>` (`applyMotion()` in `script.js`) in plaats van alleen de media query.
 - **Spelen-knop:** zakt zichtbaar in en wordt iets donkerder; de app wacht 150 ms voor de wereldkaart, en alleen als je dan nog op het startscherm staat.
-- **Kat linksonder:** gloeiende gele rand tot deze speler hem één keer heeft geaaid (pulseert met beweging aan, staat stil met beweging uit).
-- Tests: wachten na de Spelen-knop tot de wereldkaart open is; de ouderslot-test meet de knop pas als het venster klaar is met openen (mat eerst tijdens de animatie en drukte ernaast). Nieuw blok 31a met 10 controles.
+- **Kat linksonder:** gloeiende gele rand, **altijd zichtbaar**, ook na het aaien (keuze van Jenn, zodat iedereen ziet dat je de kat kunt aaien; een wolkje "Aai mij!" is geprobeerd en weer weggehaald). Pulseert met beweging aan, staat stil met beweging uit.
+- Tests: wachten na de Spelen-knop tot de wereldkaart open is; de ouderslot-test meet de knop pas als het venster klaar is met openen (mat eerst tijdens de animatie en drukte ernaast). Nieuw blok 31a met 10 controles (de rand blijft staan na het aaien).
 
 **Bewijs:** `python3 tests/e2e.py` → `✅ 361/361`; `python3 tests/builds.py` → `✅ 59/59`; `python3 tests/screenshots.py` → niets buiten beeld, 0 console-errors; `python3 tests/no-private-data.py` → in orde; `node tests/validate-levels.js` → drie keer ✅.
 

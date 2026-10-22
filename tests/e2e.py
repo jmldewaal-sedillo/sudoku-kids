@@ -1541,9 +1541,10 @@ def run():
         check('de Spelen-knop toont het indrukken en wacht daarna kort', cls('#btn-start', 'is-pressed') and g.screen() == 'splash')
         g.page.wait_for_function("currentScreen === 'worlds'")
         check('daarna de wereldkaart, en de knop is weer los', not cls('#btn-start', 'is-pressed'))
-        check('de kat heeft een gloeiende rand zolang hij nog niet geaaid is', cls('#btn-cat', 'cat-hint'))
+        ring = lambda: g.js('getComputedStyle(document.getElementById("btn-cat")).boxShadow')
+        check('de kat heeft een gloeiende gele rand', cls('#btn-cat', 'cat-hint') and 'rgb(255, 217, 61)' in ring(), ring())
         g.page.click('#btn-cat')
-        check('na één keer aaien is de rand weg (en telt het aaien mee)', not cls('#btn-cat', 'cat-hint') and g.js('stats.cat') == 1)
+        check('na het aaien blijft de rand staan (en telt het aaien mee)', cls('#btn-cat', 'cat-hint') and 'rgb(255, 217, 61)' in ring() and g.js('stats.cat') == 1)
         g.js('goToSettings()')
         g.page.select_option('#setting-motion', 'on')
         check('stand "Aan": beweging aan, ook al wil de telefoon minder',

@@ -386,8 +386,6 @@ function updateBottomBar() {
   const pic = K.svg(me ? me.avatar : 'cat');
   $('score-avatar').innerHTML = pic;       // top right: picture + stars = the profile button
   $('switch-avatar').innerHTML = pic;      // bottom right: who is playing, on the "other player" button
-  // A glowing ring shows the cat can be petted, until this player has petted it once.
-  $('btn-cat').classList.toggle('cat-hint', !(stats.cat > 0));
 }
 
 // Restart a short CSS animation on an element.
@@ -1860,7 +1858,7 @@ function initEventListeners() {
 
   // Bottom bar: the avatar opens the player's own page, the small button the list of players.
   on('btn-switch', 'click', goToProfiles);
-  on('btn-cat', 'click', () => { showMascotMessage(pick('mCat')); count('cat'); $('btn-cat').classList.remove('cat-hint'); });
+  on('btn-cat', 'click', () => { showMascotMessage(pick('mCat')); count('cat'); });
   on('btn-bell', 'click', openInbox);
   on('btn-inbox-back', 'click', goToWorlds);
   document.querySelectorAll('.profile-tab').forEach(b => b.addEventListener('click', () => setProfileTab(b.dataset.tab)));
