@@ -204,8 +204,8 @@ Bronnen: [previewmateriaal][assets], [metadatabeleid][metadata].
 | Tablet (7 en 10 inch): 1080–7680 px, 16:9 of 9:16; Google raadt minstens 4 aan | 4 stuks (2 staand 1440×2560, 2 liggend 2560×1440) | klaar |
 | Screenshots tonen de echte app, geen vingers of toestellen | Rechtstreeks uit de app gemaakt door `tests/store.py` | klaar |
 | Ontwikkelaarsnaam | Studio Sedillo | klaar (nagekeken 21 oktober 2026) |
-| Contact: e-mail verplicht, website aanbevolen | studio.sedillo@gmail.com, https://studiosedillo.com | open (Jenn) |
-| Categorie en tags | Game → Puzzel; tag "Sudoku" | open (Jenn) |
+| Contact: e-mail verplicht, website aanbevolen | studio.sedillo@gmail.com, https://studiosedillo.com (telefoon leeg) | klaar (22 oktober 2026) |
+| Categorie en tags | Game → Puzzel; tags Logicapuzzel, Puzzel, Breinbreker, Educatief (een tag "Sudoku" bestaat niet) | klaar (22 oktober 2026) |
 
 **Organisatieaccount (sinds 21 oktober 2026):** Google toont op de store-pagina de naam
 Studio Sedillo, het adres en telefoonnummer uit het betaalprofiel en het ontwikkelaars-e-mailadres.
