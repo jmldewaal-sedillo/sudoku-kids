@@ -98,6 +98,7 @@ class Game:
     def play_one(self):
         """Start, wereld 0, level 0, oplossen tot het winscherm."""
         self.page.click('#btn-start')
+        self.page.wait_for_function("currentScreen === 'worlds'")
         self.page.click('#world-card-0')
         self.page.click('.level-btn[data-level="0"]')
         if self.js('!document.getElementById("modal-rules").classList.contains("hidden")'):
@@ -175,6 +176,7 @@ def run():
             page.route(re.compile(r'^https://(sdk\.crazygames\.com|game-cdn\.poki\.com)/'), lambda route: route.abort())
             page.goto(url)
             page.click('#btn-start')
+            page.wait_for_function("currentScreen === 'worlds'")
             page.click('#world-card-0')
             check('de SDK is niet te laden: het spel start toch, zonder fouten', page.evaluate('currentScreen') == 'levels' and not broken, broken)
             ctx.close()
@@ -218,6 +220,7 @@ def run():
         check('opslag van de WebView gewist: de app zet de tweede kopie terug, de sterren zijn er nog', stars >= 1 and g.js('getTotalStars()') == stars, g.js('getTotalStars()'))
 
         g.page.click('#btn-start')
+        g.page.wait_for_function("currentScreen === 'worlds'")
         g.js('goToSettings()')
         g.js('settings.sound = true; settings.music = true; saveSettings(); syncMusic(); playPlace()')
         g.page.wait_for_timeout(400)

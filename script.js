@@ -43,7 +43,7 @@ const HOLD_WINDOW_MS = 5000;
 // ============================================================
 // STATE
 // ============================================================
-const DEFAULT_SETTINGS = { sound: true, music: true, click: true, language: 'nl', highlightErrors: true, displayMode: 'numbers', size: 'large' };
+const DEFAULT_SETTINGS = { sound: true, music: true, click: true, language: 'nl', highlightErrors: true, displayMode: 'numbers', size: 'large', motion: 'auto' };
 const SIZES = {               // "Grootte" in the settings: how much of the free space the grid uses
   small: { factor: 0.68, cap: 420 },
   large: { factor: 1,    cap: 900 },
@@ -63,7 +63,14 @@ let currentWorld = 0;
 let gameState = null;
 
 const LEVELS = E.LEVEL_PLAN;  // all level definitions (world, size, type, …)
-const reducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const systemReducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+// Movement follows the phone ("auto"), unless the player chose "on" or "off" in the settings.
+// Some phones switch animations off in battery saver, so a child can turn them back on here.
+function motionReduced() {
+  return settings.motion === 'off' || (settings.motion !== 'on' && systemReducedMotion.matches);
+}
+function applyMotion() { document.documentElement.classList.toggle('reduce-motion', motionReduced()); }
+if (systemReducedMotion.addEventListener) systemReducedMotion.addEventListener('change', applyMotion);
 const $ = id => document.getElementById(id);
 
 // ============================================================
@@ -169,6 +176,8 @@ function loadProfile(id, inherit) {
   // There used to be three sizes: "normal" and "large" are both "large" now.
   if (settings.size !== 'small') settings.size = 'large';
   ['sound', 'music', 'click', 'highlightErrors'].forEach(k => { settings[k] = settings[k] !== false; });
+  if (!['auto', 'on', 'off'].includes(settings.motion)) settings.motion = 'auto';
+  applyMotion();
 
   const savedStats = Store.read(id, 'stats');
   const firstTime = !isPlainObject(savedStats);
@@ -377,6 +386,8 @@ function updateBottomBar() {
   const pic = K.svg(me ? me.avatar : 'cat');
   $('score-avatar').innerHTML = pic;       // top right: picture + stars = the profile button
   $('switch-avatar').innerHTML = pic;      // bottom right: who is playing, on the "other player" button
+  // A glowing ring shows the cat can be petted, until this player has petted it once.
+  $('btn-cat').classList.toggle('cat-hint', !(stats.cat > 0));
 }
 
 // Restart a short CSS animation on an element.
@@ -1250,7 +1261,7 @@ function hideModals() {
 function launchConfetti() {
   const container = $('confetti-container');
   container.innerHTML = '';
-  if (reducedMotion.matches) return;
+  if (motionReduced()) return;
   const colors = ['#FF6B9D', '#FFD93D', '#6BCFB5', '#6BB8FF', '#C77DFF', '#FF9F43'];
   for (let i = 0; i < 40; i++) {
     const p = document.createElement('div');
@@ -1298,6 +1309,7 @@ function syncSettingsUI() {
   $('setting-click').checked = settings.click;
   $('setting-language').value = settings.language;
   $('setting-highlight-errors').checked = settings.highlightErrors;
+  $('setting-motion').value = settings.motion;
   document.querySelectorAll('.size-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.size === settings.size);
     b.setAttribute('aria-pressed', String(b.dataset.size === settings.size));
@@ -1635,7 +1647,7 @@ function saveProfileEdit() {
     const p = Store.createProfile(name, pickedAvatar);
     if (!p) { goToProfiles(); return; }
     checkBadges();                       // "made a second player" for whoever was playing
-    const inherit = { language: settings.language, sound: settings.sound, music: settings.music, click: settings.click, size: settings.size };
+    const inherit = { language: settings.language, sound: settings.sound, music: settings.music, click: settings.click, size: settings.size, motion: settings.motion };
     gameState = null;
     loadProfile(p.id, inherit);
     saveSettings();
@@ -1813,7 +1825,12 @@ function initEventListeners() {
   document.addEventListener('pointerdown', firstTap, { once: true, capture: true });
   document.addEventListener('keydown', firstTap, { once: true, capture: true });
 
-  on('btn-start', 'click', goToWorlds);
+  // A short pause, so the press on the big button can be seen before the next screen.
+  on('btn-start', 'click', e => {
+    const btn = e.currentTarget;
+    btn.classList.add('is-pressed');
+    setTimeout(() => { btn.classList.remove('is-pressed'); if (currentScreen === 'splash') goToWorlds(); }, 150);
+  });
   on('btn-worlds-settings', 'click', goToSettings);
   on('btn-score', 'click', () => openProfile(profileId, 'worlds'));
   on('btn-levels-back', 'click', goToWorlds);
@@ -1832,6 +1849,7 @@ function initEventListeners() {
 
   on('setting-sound', 'change', e => { settings.sound = e.target.checked; saveSettings(); playPlace(); });
   on('setting-music', 'change', e => { settings.music = e.target.checked; saveSettings(); syncMusic(); });
+  on('setting-motion', 'change', e => { settings.motion = e.target.value; saveSettings(); applyMotion(); });
   on('setting-click', 'change', e => { settings.click = e.target.checked; saveSettings(); playClick(); });
   on('setting-language', 'change', e => { settings.language = e.target.value; saveSettings(); applyTranslations(); });
   on('setting-highlight-errors', 'change', e => { settings.highlightErrors = e.target.checked; saveSettings(); });
@@ -1842,7 +1860,7 @@ function initEventListeners() {
 
   // Bottom bar: the avatar opens the player's own page, the small button the list of players.
   on('btn-switch', 'click', goToProfiles);
-  on('btn-cat', 'click', () => { showMascotMessage(pick('mCat')); count('cat'); });
+  on('btn-cat', 'click', () => { showMascotMessage(pick('mCat')); count('cat'); $('btn-cat').classList.remove('cat-hint'); });
   on('btn-bell', 'click', openInbox);
   on('btn-inbox-back', 'click', goToWorlds);
   document.querySelectorAll('.profile-tab').forEach(b => b.addEventListener('click', () => setProfileTab(b.dataset.tab)));

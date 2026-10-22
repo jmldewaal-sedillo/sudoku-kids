@@ -145,6 +145,7 @@ def run():
             try:
                 shot('01-splash')
                 page.click('#btn-start')
+                page.wait_for_function("currentScreen === 'worlds'")
                 shot('02-werelden')
                 page.click('#world-card-0')
                 shot('03-levels')

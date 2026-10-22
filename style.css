@@ -158,9 +158,10 @@ button:disabled { cursor: not-allowed; }
   letter-spacing: 1px;
   display: flex; align-items: center; gap: 10px;
 }
-.btn-play-big:active {
+.btn-play-big:active, .btn-play-big.is-pressed {
   transform: translateY(4px);
   box-shadow: 0 4px 0 rgba(150,60,80,0.3);
+  filter: brightness(0.92);
 }
 .splash-tagline {
   color: var(--text-dark);
@@ -331,6 +332,12 @@ button.header-score { cursor: pointer; min-height: var(--tap); padding: 4px 14px
 .switch-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--white); border: 2px solid var(--text-dark); padding: 3px; }
 .switch-avatar svg, .score-avatar svg { width: 100%; height: 100%; display: block; }
 .btn-cat { background: none; border: none; cursor: pointer; padding: 0; min-width: var(--tap); min-height: var(--tap); border-radius: 50%; flex-shrink: 0; }
+/* Glowing ring: "you can pet me". Pulses; with movement off it stays as a still ring. */
+.btn-cat.cat-hint { animation: catGlow 1.6s ease-in-out infinite; box-shadow: 0 0 0 5px var(--yellow), 0 0 16px 6px rgba(255,217,61,0.85); }
+@keyframes catGlow {
+  0%, 100% { box-shadow: 0 0 0 3px var(--yellow), 0 0 8px 2px rgba(255,217,61,0.6); }
+  50%      { box-shadow: 0 0 0 6px var(--yellow), 0 0 20px 8px rgba(255,217,61,0.9); }
+}
 .mascot-bubble {
   background: var(--white);
   border: 3px solid var(--pink);
@@ -1165,17 +1172,17 @@ label.settings-row { cursor: pointer; }
 }
 
 /* ---------- REDUCED MOTION ---------- */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0s !important;
-  }
-  .screen { transform: none; }
-  /* The "tap here" pointer stays visible, it just does not move */
-  .sudoku-cell.nudge { background: var(--yellow); }
+/* The class is set by applyMotion() in script.js: the phone's "reduce motion" setting,
+   unless the player chose movement on or off in the settings. */
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
 }
+.reduce-motion .screen { transform: none; }
+/* The "tap here" pointer stays visible, it just does not move */
+.reduce-motion .sudoku-cell.nudge { background: var(--yellow); }
 
 /* ---------- RULES, CREDITS, MOVING PROGRESS ---------- */
 .settings-btn { width: 100%; background: none; border: none; border-bottom: 1px solid var(--purple-light); font: inherit; font-size: 15px; font-weight: 600; color: var(--text-dark); cursor: pointer; text-align: left; }

@@ -106,6 +106,7 @@ def make():
                 page.add_init_script('window.__noAutoRules = true; localStorage.setItem("sudokuKids_progress", %s)' % json.dumps(json.dumps(PROGRESS)))
                 page.goto(url)
                 page.click('#btn-start')
+                page.wait_for_function("currentScreen === 'worlds'")
                 for n, (name, prepare) in enumerate(scenes(page)):
                     prepare()
                     if pick is None or n in pick:

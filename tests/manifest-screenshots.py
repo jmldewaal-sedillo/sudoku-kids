@@ -23,6 +23,7 @@ with serve() as url, sync_playwright() as pw:
     page.add_init_script('localStorage.setItem("sudokuKids_progress", %s)' % json.dumps(json.dumps(PROGRESS)))
     page.goto(url)
     page.click('#btn-start')
+    page.wait_for_function("currentScreen === 'worlds'")
     page.wait_for_timeout(1200)
     page.screenshot(path=str(ROOT / 'screenshots' / 'worlds.png'))
     page.evaluate('startLevel(SudokuEngine.LEVEL_PLAN.findIndex(l => l.size === 6), true)')

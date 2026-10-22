@@ -83,6 +83,7 @@ class Game:
 
     def start(self):
         self.page.click('#btn-start')
+        self.page.wait_for_function("currentScreen === 'worlds'")   # the button waits 150 ms so the press is visible
         self.page.wait_for_timeout(450)
 
     def parent_hold(self, ms=1700):
@@ -946,8 +947,10 @@ def run():
         g.page.click('#btn-reset-progress')
         ring = lambda: g.js('parseFloat(document.getElementById("hold-progress").style.strokeDashoffset) / RING_LENGTH')
         check('ring begint leeg', abs(ring() - 1) < 0.01)
+        # measure the button only when the window has finished growing (modalIn), or the mouse lands next to it
+        g.page.wait_for_function('document.querySelector("#modal-parent .modal-content").getAnimations().every(a => a.playState !== "running")')
         box = g.page.locator('#btn-parent-hold').bounding_box()
-        g.page.mouse.move(box['x'] + 60, box['y'] + 60)
+        g.page.mouse.move(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
         g.page.mouse.down()
         g.page.wait_for_timeout(800)
         half = ring()
@@ -1526,6 +1529,34 @@ def run():
         g.page.goto(url.replace('127.0.0.1', 'sudokukids.localhost') + 'spelen/')
         check('verhuizen naar een submap op hetzelfde subdomein (/ → /spelen/): voortgang blijft, want de opslag hangt aan het domein',
               g.js('getTotalStars()') == 15 and g.js('location.pathname') == '/spelen/')
+        g.close()
+
+        # ------------------------------------------------------------
+        section('31a. Beweging: schakelaar, Spelen-knop en de kat (test op de telefoon, 22-10)')
+        cls = lambda sel, c: g.js('([s, c]) => document.querySelector(s).classList.contains(c)', [sel, c])
+        g = Game(browser, url, reduced_motion='reduce')
+        check('telefoon wil minder beweging: de app volgt dat (stand "Zoals de telefoon")',
+              g.js('settings.motion') == 'auto' and cls('html', 'reduce-motion'))
+        g.page.click('#btn-start')
+        check('de Spelen-knop toont het indrukken en wacht daarna kort', cls('#btn-start', 'is-pressed') and g.screen() == 'splash')
+        g.page.wait_for_function("currentScreen === 'worlds'")
+        check('daarna de wereldkaart, en de knop is weer los', not cls('#btn-start', 'is-pressed'))
+        check('de kat heeft een gloeiende rand zolang hij nog niet geaaid is', cls('#btn-cat', 'cat-hint'))
+        g.page.click('#btn-cat')
+        check('na één keer aaien is de rand weg (en telt het aaien mee)', not cls('#btn-cat', 'cat-hint') and g.js('stats.cat') == 1)
+        g.js('goToSettings()')
+        g.page.select_option('#setting-motion', 'on')
+        check('stand "Aan": beweging aan, ook al wil de telefoon minder',
+              not cls('html', 'reduce-motion') and g.js('JSON.parse(localStorage.getItem("sudokuKids_settings")).motion') == 'on')
+        g.page.select_option('#setting-motion', 'off')
+        check('stand "Uit": alles staat stil',
+              cls('html', 'reduce-motion') and g.js('getComputedStyle(document.querySelector(".bounce-anim")).animationIterationCount') == '1')
+        g.page.reload()
+        check('de keuze blijft bewaard na opnieuw openen', g.js('settings.motion') == 'off' and cls('html', 'reduce-motion'))
+        check('geen console-errors', not g.errors, g.errors)
+        g.close()
+        g = Game(browser, url)
+        check('telefoon zonder voorkeur: beweging aan', not cls('html', 'reduce-motion'))
         g.close()
 
         # ------------------------------------------------------------

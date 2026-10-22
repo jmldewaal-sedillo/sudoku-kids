@@ -38,6 +38,18 @@
 
 ## Logboek (nieuwste bovenaan)
 
+### 2026-10-22 · v12 op de testlink bijgewerkt: schakelaar Beweging, Spelen-knop en de kat (Claude Code, branch `publish-prep`)
+Jenn testte de debug-APK op haar telefoon: alles werkt, maar op het startscherm bewoog niets, het indrukken van Spelen was niet te zien en het was niet duidelijk dat je de kat linksonder kunt aaien. Oorzaak: de telefoon vraagt "minder beweging" (toegankelijkheid of energiebesparing) en de app volgde dat, dus alle animaties stonden stil. Keuze van Jenn: een schakelaar in de app en een gloeiende rand om de kat.
+
+- **Instelling "Beweging"** (Instellingen → Spel): Zoals de telefoon (standaard) / Aan / Uit, per speler bewaard (`settings.motion`, bestaande sleutel `sudokuKids_settings`), in 10 talen (door Claude vertaald). De CSS volgt nu de klasse `reduce-motion` op `<html>` (`applyMotion()` in `script.js`) in plaats van alleen de media query.
+- **Spelen-knop:** zakt zichtbaar in en wordt iets donkerder; de app wacht 150 ms voor de wereldkaart, en alleen als je dan nog op het startscherm staat.
+- **Kat linksonder:** gloeiende gele rand tot deze speler hem één keer heeft geaaid (pulseert met beweging aan, staat stil met beweging uit).
+- Tests: wachten na de Spelen-knop tot de wereldkaart open is; de ouderslot-test meet de knop pas als het venster klaar is met openen (mat eerst tijdens de animatie en drukte ernaast). Nieuw blok 31a met 10 controles.
+
+**Bewijs:** `python3 tests/e2e.py` → `✅ 361/361`; `python3 tests/builds.py` → `✅ 59/59`; `python3 tests/screenshots.py` → niets buiten beeld, 0 console-errors; `python3 tests/no-private-data.py` → in orde; `node tests/validate-levels.js` → drie keer ✅.
+
+**Bestanden geraakt:** script.js, style.css, index.html, i18n.js, tests/e2e.py, tests/builds.py, tests/screenshots.py, tests/store.py, tests/manifest-screenshots.py.
+
 ### 2026-10-18 · v12 op de testlink: Android en iOS in één app, links achter het ouderslot, scripts nagelopen (Claude Code, branch `publish-prep`)
 Opdracht van Jenn: alle scripts en docs nalopen op de nieuwe infrastructuur (domein en subdomeinen, `studio-sedillo-infra`), en de app net als Flush Factor voor Android én iOS in één keer maken. Kinder-app: geen AdMob; later misschien goedkope skins en reclame voor eigen spellen. Het Play-account is omgezet naar organisatie en in beoordeling; een Apple Developer-account komt eraan.
 
