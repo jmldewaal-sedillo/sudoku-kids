@@ -1,0 +1,120 @@
+name: App release (.aab voor Google Play)
+
+# Bouwt de .aab die naar Google Play gaat, op de computers van GitHub (Android Studio is dan niet
+# nodig). Draait bij elke tag v* en met de hand (Actions → App release → Run workflow, branch main).
+#
+# Met de upload key als geheim (tools/upload-key-naar-github.sh, docs/android.md):
+#   ondertekende .aab, alleen uit `main` of een tag v*  →  artifact "sudoku-kids-aab"
+# Zonder die geheimen:
+#   dezelfde build zonder handtekening, als controle  →  artifact "sudoku-kids-aab-NIET-ONDERTEKEND"
+#
+# Geheimen: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS,
+# ANDROID_KEY_PASSWORD. De keystore staat alleen tijdens de build op de runner.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Levels controleren
+        run: node tests/validate-levels.js
+
+      - name: Controle op privégegevens
+        env:
+          PRIVATE_BLOCKLIST: ${{ secrets.PRIVATE_BLOCKLIST }}
+        run: python3 tests/no-private-data.py --ci
+
+      - name: Ondertekenen of niet?
+        id: mode
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            # Ondertekend alleen uit main of een tag: wat naar Google Play gaat, staat ook live.
+            case "$GITHUB_REF" in
+              refs/heads/main|refs/tags/v*) ;;
+              *) echo "::error::Een ondertekende .aab komt alleen uit main of een tag v* (nu: $GITHUB_REF)."; exit 1 ;;
+            esac
+            echo "mode=release" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Upload key staat nog niet als geheim in deze repo: de .aab wordt NIET ondertekend en kan niet naar Google Play."
+            echo "mode=release-unsigned" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload key klaarzetten
+        if: steps.mode.outputs.mode == 'release'
+        run: |
+          KS="$RUNNER_TEMP/upload.keystore"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KS"
+          {
+            printf 'storeFile=%s\n' "$KS"
+            printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+          } > app/android/keystore.properties
+
+      - name: .aab bouwen
+        run: tools/build-android.sh ${{ steps.mode.outputs.mode }}
+
+      - name: Handtekening controleren
+        if: steps.mode.outputs.mode == 'release'
+        run: |
+          AAB=app/android/app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify -strict "$AAB" > "$RUNNER_TEMP/verify.txt" 2>&1 || { cat "$RUNNER_TEMP/verify.txt"; exit 1; }
+          grep -q "jar verified" "$RUNNER_TEMP/verify.txt"
+          # Geen debug-sleutel (die weigert Google Play)
+          if jarsigner -verify -verbose -certs "$AAB" | grep -q "CN=Android Debug"; then
+            echo "::error::De .aab is met de debug-sleutel ondertekend."; exit 1
+          fi
+
+      - name: Keystore weghalen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.keystore" app/android/keystore.properties
+
+      - name: Samenvatting
+        run: |
+          AAB=app/android/app/build/outputs/bundle/release/app-release.aab
+          CODE="$(grep -oP 'versionCode \K[0-9]+' app/android/app/build.gradle)"
+          NAME="$(grep -oP 'versionName "\K[^"]+' app/android/app/build.gradle)"
+          {
+            echo "### Sudoku Kids .aab"
+            echo "- Bron: \`$GITHUB_REF_NAME\` (\`${GITHUB_SHA::7}\`)"
+            echo "- versionCode **$CODE**, versionName **$NAME**"
+            echo "- Grootte: $(du -h "$AAB" | cut -f1)"
+            if [ "${{ steps.mode.outputs.mode }}" = release ]; then
+              echo "- Ondertekend met de upload key: klaar om te uploaden in Play Console"
+            else
+              echo "- **NIET ondertekend** (geen upload key als geheim): alleen een controle dat de build lukt"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.mode.outputs.mode == 'release' && 'sudoku-kids-aab' || 'sudoku-kids-aab-NIET-ONDERTEKEND' }}
+          path: app/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30

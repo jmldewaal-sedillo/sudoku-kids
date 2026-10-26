@@ -62,6 +62,23 @@ signing key. Laat dat zo. Een `assetlinks.json` is bij Capacitor niet nodig.
 
 Geef de sleutel of de wachtwoorden niet aan Claude Code en zet ze nooit in Git.
 
+**Makkelijkste weg (geen Android Studio nodig):** draai in een eigen terminal
+
+```bash
+tools/upload-key-naar-github.sh --dry-run   # eerst kijken
+tools/upload-key-naar-github.sh
+```
+
+Het script vraagt één wachtwoord (minstens 12 tekens, nergens anders gebruikt), maakt
+`~/.studio-sedillo/sudokukids-upload.keystore` (alias `upload`, alleen "Studio Sedillo" en
+"NL" in het certificaat) en zet de key en het wachtwoord als geheim in de repo
+`jmldewaal-sedillo/sudoku-kids`. De workflow **App release** (`.github/workflows/app-release.yml`)
+bouwt daarmee de ondertekende `.aab`: Actions → "App release" → Run workflow, branch `main`
+(of vanzelf bij een tag `v*`). De `.aab` staat onder Artifacts als `sudoku-kids-aab`.
+Zonder de geheimen bouwt dezelfde workflow een niet-ondertekende `.aab`, alleen als controle.
+
+**Zelf bouwen met Android Studio** kan ook. Maak de key dan met de hand:
+
 ```bash
 mkdir -p ~/.studio-sedillo
 keytool -genkeypair -v -keystore ~/.studio-sedillo/sudokukids-upload.keystore \
@@ -87,6 +104,7 @@ een usb-stick. Zet tweestapsverificatie aan op het Google-account van Play Conso
 ```bash
 tools/build-android.sh            # debug-APK, om te proberen
 tools/build-android.sh release    # ondertekende .aab voor Google Play
+tools/build-android.sh release-unsigned   # zelfde .aab zonder handtekening (alleen controle)
 ```
 
 Wat het script doet: `node tools/build.mjs app` (spelbestanden naar `dist/app/`, met
@@ -110,7 +128,8 @@ project in Android Studio (`cd app && npx cap open android`) en start een emulat
 1. Wijzig het spel, tests groen, akkoord op de testlink.
 2. Verhoog in `app/android/app/build.gradle` de `versionCode` met 1 (en zo nodig
    `versionName`).
-3. `tools/build-android.sh release` en de `.aab` uploaden in Play Console.
+3. Mergen naar `main`, taggen (`vX.Y`) en pushen: de workflow **App release** bouwt de
+   ondertekende `.aab` (of `tools/build-android.sh release`). Uploaden in Play Console.
 
 Elk jaar vóór 31 augustus: nakijken welke target-API Google eist, Capacitor bijwerken naar
 de versie die daarbij hoort en opnieuw uploaden.

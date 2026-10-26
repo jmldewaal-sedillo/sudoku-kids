@@ -3,6 +3,8 @@
 #
 #   tools/build-android.sh           # debug-APK om op je eigen toestel of een emulator te proberen
 #   tools/build-android.sh release   # ondertekende .aab voor Google Play (vraagt de upload key)
+#   tools/build-android.sh release-unsigned   # zelfde .aab zonder handtekening, alleen als
+#                                             # controle dat de release-build lukt
 #
 # Nodig: Node 22+, en Android Studio (dat levert de Android-SDK en de JDK mee).
 # Uitleg, ook over de upload key en Play App Signing: docs/android.md.
@@ -33,6 +35,12 @@ if [ "$MODE" = release ]; then
   ./gradlew --no-daemon bundleRelease
   OUT="app/build/outputs/bundle/release/app-release.aab"
   echo "Klaar: $APP/android/$OUT  (uploaden in Play Console)"
+elif [ "$MODE" = release-unsigned ]; then
+  # Zonder keystore.properties zet build.gradle geen handtekening; Play Console weigert dit bestand.
+  [ ! -f keystore.properties ] || { echo "keystore.properties bestaat: gebruik 'release'."; exit 1; }
+  ./gradlew --no-daemon bundleRelease
+  OUT="app/build/outputs/bundle/release/app-release.aab"
+  echo "Klaar: $APP/android/$OUT  (NIET ondertekend, niet uploaden)"
 else
   ./gradlew --no-daemon assembleDebug
   OUT="app/build/outputs/apk/debug/app-debug.apk"
