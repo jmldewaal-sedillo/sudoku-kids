@@ -5,8 +5,8 @@
 | | |
 |---|---|
 | **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-10-21 (Play-account omgezet naar organisatie; indienen vanaf 24-10) |
-| **Volgende stap** | Jenn: v12 op de testlink nalopen (Instellingen → Voor ouders); de test-APK uit de workflow `app-build.yml` op een Android-toestel testen (`docs/android.md`); app is aangemaakt in Play Console (21-10); App-content en store-vermelding invullen (`docs/publiceren.md`, stap 10–11); vanaf 24-10 (72 uur na het koppelen van het betalingsprofiel op 21-10) de eerste `.aab` naar de interne test; upload key maken |
+| **Laatste update** | 2026-10-26 (v12 goedgekeurd door Jenn; workflow App release voor de `.aab` klaar) |
+| **Volgende stap** | Jenn: `publish-prep` naar `main` + tag `v12` pushen (v12 is goedgekeurd op 26-10); upload key maken met `tools/upload-key-naar-github.sh`; workflow **App release** op `main` draaien; de `.aab` naar de interne test (`docs/publiceren.md`, stap 7–9); daarna productietoegang (stap 13) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v11 (`publish-prep`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
@@ -37,6 +37,19 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-10-26 · v12 goedgekeurd; .aab bouwen in de cloud (Claude Code, branch `publish-prep`)
+Jenn: "v12 is goed"; de upload key maakt ze op 27-10. Op deze pc staan geen Android Studio en geen Android-SDK, dus de `.aab` wordt op GitHub gebouwd.
+
+- **Workflow `app-release.yml`** ("App release"): bij een tag `v*` en met de hand. Met de upload key als geheim een ondertekende `.aab` (alleen uit `main` of een tag; controle met `jarsigner`, geen debug-sleutel), zonder geheim een niet-ondertekende `.aab` als controle. Ook levels en de blocklist worden gecontroleerd; `permissions: contents: read`; keystore na afloop weg.
+- **`tools/upload-key-naar-github.sh`**: maakt de keystore (`~/.studio-sedillo/sudokukids-upload.keystore`, alias `upload`, PKCS12, alleen "Studio Sedillo" en "NL" in het certificaat) en zet de vier geheimen met `gh secret set`. Wachtwoord alleen via `read -s`; `--dry-run`; vraagt om bevestiging; zonder terminal doet het niets.
+- `tools/build-android.sh release-unsigned`: zelfde release-build zonder handtekening.
+- `docs/android.md` en `docs/publiceren.md` (stap 7–8) bijgewerkt.
+- **Niet gedaan:** `main` + tag `v12` pushen. De auto-modus van Claude Code blokkeert pushen naar productie; Jenn doet dat zelf. Handmatig starten van "App release" kan pas als de workflow op `main` staat.
+
+**Bewijs:** `python3 tests/e2e.py` → `✅ 361/361`; `python3 tests/builds.py` → `✅ 59/59`; `python3 tests/screenshots.py` → niets buiten beeld, 0 console-errors; `python3 tests/no-private-data.py` → in orde; `node tests/validate-levels.js` → 3× ✅. Op `test`: "App bouwen" en "Testversie" groen (run 40405350071, 40405350061). De keytool-opdrachten van het script geprobeerd met een wegwerp-keystore in de scratchmap (aanmaken, `-list`, fout wachtwoord geeft exit 1); `--dry-run` getest.
+
+**Bestanden geraakt:** .github/workflows/app-release.yml (nieuw), tools/upload-key-naar-github.sh (nieuw), tools/build-android.sh, docs/android.md, docs/publiceren.md, ROADMAP.md.
 
 ### 2026-10-22 · v12 op de testlink bijgewerkt: schakelaar Beweging, Spelen-knop en de kat (Claude Code, branch `publish-prep`)
 Jenn testte de debug-APK op haar telefoon: alles werkt, maar op het startscherm bewoog niets, het indrukken van Spelen was niet te zien en het was niet duidelijk dat je de kat linksonder kunt aaien. Oorzaak: de telefoon vraagt "minder beweging" (toegankelijkheid of energiebesparing) en de app volgde dat, dus alle animaties stonden stil. Keuze van Jenn: een schakelaar in de app en een gloeiende rand om de kat.
