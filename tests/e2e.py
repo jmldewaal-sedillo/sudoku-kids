@@ -36,7 +36,7 @@ class Game:
 
     def __init__(self, browser, url, w=360, h=640, locale='nl-NL', progress=None, rules=False, **ctx_args):
         self.url = url
-        self.ctx = browser.new_context(viewport={'width': w, 'height': h}, has_touch=True, locale=locale, **ctx_args)
+        self.ctx = browser.new_context(bypass_csp=True, viewport={'width': w, 'height': h}, has_touch=True, locale=locale, **ctx_args)
         self.page = self.ctx.new_page()
         self.errors, self.requests, self.methods = [], [], set()
         self.page.on('console', lambda m: self.errors.append(m.text) if m.type == 'error' else None)
@@ -1407,6 +1407,8 @@ def run():
         check('oude adres: melding "We zijn verhuisd!" met het nieuwe adres', g.modal() == 'modal-move' and 'localhost' in g.js('document.getElementById("move-url").textContent'))
         g.page.click('#btn-move-go')
         g.page.wait_for_url(new_url + '**')
+        g.page.wait_for_selector('#modal-import:not(.hidden)')
+        g.page.click('#btn-import-yes')
         g.page.wait_for_selector('#modal-info:not(.hidden)')
         check('nieuwe adres: de voortgang is vanzelf geïmporteerd (9 levels, 27 sterren) en de code staat niet meer in de adresbalk',
               g.js('getTotalStars()') == 27 and g.js('location.hash') == '' and g.js('document.getElementById("info-text").textContent') == 'Gelukt! Profielen toegevoegd: 1' and
@@ -1590,6 +1592,78 @@ def run():
         check('store-teksten: geen prijs- of ranglijstwoorden in titel en korte beschrijving, geen emoji',
               not banned.search(listing['title']) and not any(banned.search(v['short']) for k, v in listing['listings'].items() if k in ('en-US', 'nl-NL')) and
               not re.search('[\U0001F000-\U0001FAFF\u2600-\u27BF]', json.dumps(listing, ensure_ascii=False)))
+
+        section('33. Content-Security-Policy, toetsenbord, teksten en import (v13)')
+        # Zonder bypass_csp: dit is wat een speler echt krijgt.
+        ctx = browser.new_context(viewport={'width': 360, 'height': 640}, locale='nl-NL')
+        page = ctx.new_page()
+        page.add_init_script('window.__noAutoRules = true;')
+        csp_errors = []
+        page.on('console', lambda m: csp_errors.append(m.text) if m.type == 'error' else None)
+        page.on('pageerror', lambda e: csp_errors.append(str(e)))
+        page.goto(url)
+        page.click('#btn-start')
+        page.wait_for_timeout(400)
+        page.evaluate('goToLevels(0)')
+        page.click('#levels-grid button')
+        page.wait_for_selector('#sudoku-grid > :first-child')
+
+        page.keyboard.press('ArrowRight')
+        focused = lambda: page.evaluate('document.activeElement.dataset.idx')
+        check('toetsenbord: pijltje kiest een vakje en zet de focus erop', focused() is not None)
+        page.keyboard.press('ArrowRight')
+        check('toetsenbord: pijltje verplaatst de focus', page.evaluate('+document.activeElement.dataset.idx === gameState.selected'))
+        check('toetsenbord: het bord is één Tab-stop', page.evaluate("document.querySelectorAll('#sudoku-grid [tabindex=\"0\"]').length") == 1)
+        page.evaluate("document.querySelector('#sudoku-grid > :nth-child(3)').focus()")
+        page.keyboard.press('Enter')
+        check('toetsenbord: Enter kiest het vakje met de focus', page.evaluate('gameState.selected') == 2)
+
+        page.focus('#btn-rules')
+        page.evaluate("showModal('rules')")
+        check('dialoog: focus staat in het venster', page.evaluate("!!document.activeElement.closest('#modal-rules')"))
+        check('dialoog: de rest van het scherm is niet bereikbaar', page.evaluate("document.querySelector('.screen').inert"))
+        page.keyboard.press('Escape')
+        check('dialoog: focus gaat terug naar de knop', page.evaluate('document.activeElement.id') == 'btn-rules')
+        page.evaluate('showScreen("settings")')
+        page.wait_for_timeout(100)
+        check('CSP: geen geblokkeerde onderdelen of fouten met de echte policy', not csp_errors, csp_errors[:3])
+        check('CSP: één policy zonder unsafe-inline of unsafe-eval',
+              "object-src 'none'" in (ROOT / 'index.html').read_text() and 'unsafe-' not in (ROOT / 'index.html').read_text())
+        check('geen style-attributen in de bron (de CSP verbiedt ze)',
+              not re.search(r'\sstyle="', (ROOT / 'index.html').read_text() + (ROOT / 'script.js').read_text()))
+        ctx.close()
+
+        texts = (ROOT / 'i18n.js').read_text() + (ROOT / 'index.html').read_text() + (ROOT / 'manifest.json').read_text()
+        check('geen overtreffende trap over het spel in de app',
+              not re.search(r'leukste|most fun|lustigste|plus amusante|más divertida|mais divertida|più divertente|Najfajniejsza|En eğlenceli|paling seru', texts))
+
+        g = Game(browser, url)
+        code = g.js('Store.exportCode()')
+        g.ctx.close()
+        g = Game(browser, url + '#import=' + code)
+        g.page.wait_for_selector('#modal-import:not(.hidden)')
+        check('link met voortgang: eerst vragen, niets toegevoegd', g.js('Store.profiles().length') == 1)
+        g.page.click('#btn-import-no')
+        check('link met voortgang: Annuleren voegt niets toe', g.js('Store.profiles().length') == 1)
+        g.ctx.close()
+        g = Game(browser, url + '#import=' + code)
+        g.page.wait_for_selector('#modal-import:not(.hidden)')
+        g.page.click('#btn-import-yes')
+        check('link met voortgang: na Toevoegen volgt de melding', g.page.is_visible('#modal-info'))
+        g.ctx.close()
+
+        g = Game(browser, url)
+        bad = g.js("""() => {
+          const data = { app: 'sudoku-kids', v: 1, profiles: [{ name: 'x', avatar: 'cat', parts: {
+            settings: { language: 'constructor', size: 'huge', motion: 'off', displayMode: 'x' },
+            stats: { erase: 2, fast: 'x', earned: { a: 1, b: {} }, open: 'x', evil: { a: 1 } } } }] };
+          const code = 'SK1.' + btoa(JSON.stringify(data)).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+          return Store.readCode(code).profiles[0].parts;
+        }""")
+        check('import: alleen bekende instellingen, motion gaat mee', bad['settings'] == {'motion': 'off'}, bad['settings'])
+        check('import: stats alleen in de vorm die de app schrijft', bad['stats'] == {'erase': 2, 'earned': {'a': 1}}, bad['stats'])
+        g.ctx.close()
+
         browser.close()
 
     failed = results.count(False)

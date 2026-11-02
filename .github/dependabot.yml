@@ -1,0 +1,16 @@
+# Meldingen en pull requests bij lekken of updates in pakketten en GitHub Actions.
+# Pull requests eerst laten testen en pas mergen na controle; nooit automatisch naar main.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /app
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      capacitor:
+        patterns: ['@capacitor/*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

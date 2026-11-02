@@ -1,0 +1,39 @@
+name: Privégegevens
+
+# Vangnet (Apps/CLAUDE.md sectie 11, punt 6): er mogen geen privégegevens (huisadres) in de repo komen.
+# Draait bij ELKE push, ook als alleen documentatie is gewijzigd (ci.yml slaat die pushes over), en
+# controleert de bestanden én de hele geschiedenis van de gepushte branch.
+# De lijst komt uit het geheim PRIVATE_BLOCKLIST en wordt nooit getoond; bij een treffer staat er alleen
+# het bestand en het regelnummer. Zetten of vernieuwen: Apps/tools/sync-blocklist.sh.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  blocklist:
+    name: Controle op privégegevens
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PRIVATE_BLOCKLIST: ${{ secrets.PRIVATE_BLOCKLIST }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Zonder lijst controleert deze workflow niets: in onze eigen repo's is dat een fout.
+      - name: Het geheim is er
+        if: github.event_name != 'pull_request'
+        run: |
+          [ -n "$PRIVATE_BLOCKLIST" ] || { echo "::error::Het geheim PRIVATE_BLOCKLIST ontbreekt in deze repo. Zet het met Apps/tools/sync-blocklist.sh."; exit 1; }
+
+      - name: Zelftest en alle bestanden
+        run: python3 tests/no-private-data.py --ci
+
+      - name: Hele geschiedenis van deze branch
+        run: python3 tools/no-private-data.py --history --ci

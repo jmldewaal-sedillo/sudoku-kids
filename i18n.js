@@ -15,7 +15,7 @@ const LANGUAGES = [
 
 const STRINGS = {
   nl: {
-    play: 'Spelen!', tagline: 'Het leukste puzzelavontuur!',
+    play: 'Spelen!', tagline: "Een puzzelavontuur in 5 werelden!", catPet: "Aai de kat", importAsk: "Wil je de voortgang uit deze link toevoegen? Je eigen sterren blijven staan.", importYes: "Toevoegen",
     chooseWorld: 'Kies je wereld!',
     world0: 'Het Dierenbos', world1: 'De Snoepjesfabriek', world2: 'De Ruimte-raket', world3: 'De Boerderij', world4: 'De Jungle',
     level: 'Level', typeStandard: 'Standaard', typeX: 'X-Sudoku', typeShapes: 'Fruit',
@@ -53,7 +53,7 @@ const STRINGS = {
     parentTitle: 'Voor ouders', parentText: 'Houd de knop twee keer achter elkaar ingedrukt.', parentHold: 'Houd ingedrukt', parentAgain: 'Nog een keer!', ok: 'Oké',
   },
   en: {
-    play: 'Play!', tagline: 'The most fun puzzle adventure!',
+    play: 'Play!', tagline: "A puzzle adventure in 5 worlds!", catPet: "Pet the cat", importAsk: "Add the progress from this link? Your own stars stay as they are.", importYes: "Add",
     chooseWorld: 'Choose your world!',
     world0: 'Animal Forest', world1: 'Candy Factory', world2: 'Space Rocket', world3: 'The Farm', world4: 'The Jungle',
     level: 'Level', typeStandard: 'Classic', typeX: 'X-Sudoku', typeShapes: 'Fruit',
@@ -91,7 +91,7 @@ const STRINGS = {
     parentTitle: 'For parents', parentText: 'Press and hold the button twice in a row.', parentHold: 'Press and hold', parentAgain: 'Once more!', ok: 'OK',
   },
   de: {
-    play: 'Spielen!', tagline: 'Das lustigste Rätselabenteuer!',
+    play: 'Spielen!', tagline: "Ein Rätselabenteuer in 5 Welten!", catPet: "Streichle die Katze", importAsk: "Möchtest du den Fortschritt aus diesem Link hinzufügen? Deine eigenen Sterne bleiben erhalten.", importYes: "Hinzufügen",
     chooseWorld: 'Wähle deine Welt!',
     world0: 'Der Tierwald', world1: 'Die Süßigkeitenfabrik', world2: 'Die Weltraumrakete', world3: 'Der Bauernhof', world4: 'Der Dschungel',
     level: 'Level', typeStandard: 'Klassisch', typeX: 'X-Sudoku', typeShapes: 'Obst',
@@ -129,7 +129,7 @@ const STRINGS = {
     parentTitle: 'Für Eltern', parentText: 'Halte den Knopf zweimal hintereinander gedrückt.', parentHold: 'Gedrückt halten', parentAgain: 'Noch einmal!', ok: 'OK',
   },
   fr: {
-    play: 'Jouer !', tagline: "L'aventure de puzzles la plus amusante !",
+    play: 'Jouer !', tagline: "Une aventure de puzzles en 5 mondes !", catPet: "Caresse le chat", importAsk: "Ajouter la progression de ce lien ? Tes propres étoiles sont conservées.", importYes: "Ajouter",
     chooseWorld: 'Choisis ton monde !',
     world0: 'La Forêt des Animaux', world1: 'La Fabrique de Bonbons', world2: 'La Fusée Spatiale', world3: 'La Ferme', world4: 'La Jungle',
     level: 'Niveau', typeStandard: 'Classique', typeX: 'X-Sudoku', typeShapes: 'Fruits',
@@ -167,7 +167,7 @@ const STRINGS = {
     parentTitle: 'Pour les parents', parentText: 'Maintiens le bouton appuyé deux fois de suite.', parentHold: 'Maintenir appuyé', parentAgain: 'Encore une fois !', ok: 'OK',
   },
   es: {
-    play: '¡Jugar!', tagline: '¡La aventura de puzles más divertida!',
+    play: '¡Jugar!', tagline: "¡Una aventura de puzles en 5 mundos!", catPet: "Acaricia al gato", importAsk: "¿Añadir el progreso de este enlace? Tus estrellas no se borran.", importYes: "Añadir",
     chooseWorld: '¡Elige tu mundo!',
     world0: 'El Bosque de los Animales', world1: 'La Fábrica de Caramelos', world2: 'El Cohete Espacial', world3: 'La Granja', world4: 'La Selva',
     level: 'Nivel', typeStandard: 'Clásico', typeX: 'X-Sudoku', typeShapes: 'Fruta',
@@ -205,7 +205,7 @@ const STRINGS = {
     parentTitle: 'Para padres', parentText: 'Mantén pulsado el botón dos veces seguidas.', parentHold: 'Mantén pulsado', parentAgain: '¡Otra vez!', ok: 'Vale',
   },
   pt: {
-    play: 'Jogar!', tagline: 'A aventura de quebra-cabeças mais divertida!',
+    play: 'Jogar!', tagline: "Uma aventura de quebra-cabeças em 5 mundos!", catPet: "Faça carinho no gato", importAsk: "Adicionar o progresso deste link? Suas estrelas continuam salvas.", importYes: "Adicionar",
     chooseWorld: 'Escolha seu mundo!',
     world0: 'A Floresta dos Animais', world1: 'A Fábrica de Doces', world2: 'O Foguete Espacial', world3: 'A Fazenda', world4: 'A Selva',
     level: 'Nível', typeStandard: 'Clássico', typeX: 'X-Sudoku', typeShapes: 'Frutas',
@@ -243,7 +243,7 @@ const STRINGS = {
     parentTitle: 'Para os pais', parentText: 'Segure o botão duas vezes seguidas.', parentHold: 'Segure', parentAgain: 'Mais uma vez!', ok: 'OK',
   },
   it: {
-    play: 'Gioca!', tagline: "L'avventura di puzzle più divertente!",
+    play: 'Gioca!', tagline: "Un'avventura di puzzle in 5 mondi!", catPet: "Accarezza il gatto", importAsk: "Aggiungere i progressi di questo link? Le tue stelle restano.", importYes: "Aggiungi",
     chooseWorld: 'Scegli il tuo mondo!',
     world0: 'Il Bosco degli Animali', world1: 'La Fabbrica di Caramelle', world2: 'Il Razzo Spaziale', world3: 'La Fattoria', world4: 'La Giungla',
     level: 'Livello', typeStandard: 'Classico', typeX: 'X-Sudoku', typeShapes: 'Frutta',
@@ -281,7 +281,7 @@ const STRINGS = {
     parentTitle: 'Per i genitori', parentText: 'Tieni premuto il pulsante due volte di seguito.', parentHold: 'Tieni premuto', parentAgain: 'Ancora una volta!', ok: 'OK',
   },
   pl: {
-    play: 'Graj!', tagline: 'Najfajniejsza przygoda z łamigłówkami!',
+    play: 'Graj!', tagline: "Przygoda z łamigłówkami w 5 światach!", catPet: "Pogłaszcz kota", importAsk: "Dodać postępy z tego linku? Twoje gwiazdki zostaną.", importYes: "Dodaj",
     chooseWorld: 'Wybierz swój świat!',
     world0: 'Las Zwierząt', world1: 'Fabryka Cukierków', world2: 'Rakieta Kosmiczna', world3: 'Farma', world4: 'Dżungla',
     level: 'Poziom', typeStandard: 'Klasyczne', typeX: 'X-Sudoku', typeShapes: 'Owoce',
@@ -319,7 +319,7 @@ const STRINGS = {
     parentTitle: 'Dla rodziców', parentText: 'Przytrzymaj przycisk dwa razy z rzędu.', parentHold: 'Przytrzymaj', parentAgain: 'Jeszcze raz!', ok: 'OK',
   },
   tr: {
-    play: 'Oyna!', tagline: 'En eğlenceli bulmaca macerası!',
+    play: 'Oyna!', tagline: "5 dünyada bulmaca macerası!", catPet: "Kediyi sev", importAsk: "Bu bağlantıdaki ilerleme eklensin mi? Kendi yıldızların silinmez.", importYes: "Ekle",
     chooseWorld: 'Dünyanı seç!',
     world0: 'Hayvan Ormanı', world1: 'Şeker Fabrikası', world2: 'Uzay Roketi', world3: 'Çiftlik', world4: 'Balta Girmemiş Orman',
     level: 'Seviye', typeStandard: 'Klasik', typeX: 'X-Sudoku', typeShapes: 'Meyve',
@@ -357,7 +357,7 @@ const STRINGS = {
     parentTitle: 'Ebeveynler için', parentText: 'Düğmeyi art arda iki kez basılı tut.', parentHold: 'Basılı tut', parentAgain: 'Bir kez daha!', ok: 'Tamam',
   },
   id: {
-    play: 'Main!', tagline: 'Petualangan teka-teki paling seru!',
+    play: 'Main!', tagline: "Petualangan teka-teki di 5 dunia!", catPet: "Elus kucingnya", importAsk: "Tambahkan progres dari tautan ini? Bintangmu tetap ada.", importYes: "Tambahkan",
     chooseWorld: 'Pilih duniamu!',
     world0: 'Hutan Hewan', world1: 'Pabrik Permen', world2: 'Roket Luar Angkasa', world3: 'Peternakan', world4: 'Rimba',
     level: 'Level', typeStandard: 'Klasik', typeX: 'X-Sudoku', typeShapes: 'Buah',

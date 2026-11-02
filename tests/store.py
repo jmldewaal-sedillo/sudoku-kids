@@ -100,7 +100,7 @@ def make():
             # telefoon 1080x1920; tablet staand 1440x2560 en liggend 2560x1440 (9:16 en 16:9)
             for device, w, h, scale, pick in (('telefoon', 360, 640, 3, None), ('tablet-staand', 720, 1280, 2, (0, 1)),
                                               ('tablet-liggend', 1280, 720, 2, (3, 5))):
-                ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=scale, has_touch=True,
+                ctx = browser.new_context(bypass_csp=True, viewport={'width': w, 'height': h}, device_scale_factor=scale, has_touch=True,
                                           locale=locale, service_workers='block')
                 page = ctx.new_page()
                 page.add_init_script('window.__noAutoRules = true; localStorage.setItem("sudokuKids_progress", %s)' % json.dumps(json.dumps(PROGRESS)))

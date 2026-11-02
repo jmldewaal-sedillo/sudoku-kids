@@ -49,7 +49,9 @@ jobs:
       - name: Controle op privégegevens
         env:
           PRIVATE_BLOCKLIST: ${{ secrets.PRIVATE_BLOCKLIST }}
-        run: python3 tests/no-private-data.py --ci
+        run: |
+          [ -n "$PRIVATE_BLOCKLIST" ] || { echo "::error::Het geheim PRIVATE_BLOCKLIST ontbreekt."; exit 1; }
+          python3 tests/no-private-data.py --ci
 
       - name: Ondertekenen of niet?
         id: mode

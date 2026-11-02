@@ -225,7 +225,10 @@
     if (isPlainObject(parts.settings)) {
       out.settings = {};
       ['sound', 'music', 'click', 'highlightErrors'].forEach(k => { if (typeof parts.settings[k] === 'boolean') out.settings[k] = parts.settings[k]; });
-      ['language', 'displayMode', 'size'].forEach(k => { if (typeof parts.settings[k] === 'string' && /^[a-z]{2,10}$/.test(parts.settings[k])) out.settings[k] = parts.settings[k]; });
+      if (typeof parts.settings.language === 'string' && /^[a-z]{2,10}$/.test(parts.settings.language)) out.settings.language = parts.settings.language;
+      if (['numbers', 'animals'].includes(parts.settings.displayMode)) out.settings.displayMode = parts.settings.displayMode;
+      if (['small', 'large'].includes(parts.settings.size)) out.settings.size = parts.settings.size;
+      if (['auto', 'on', 'off'].includes(parts.settings.motion)) out.settings.motion = parts.settings.motion;
     }
     if (isPlainObject(parts.played)) {
       out.played = {};
@@ -233,7 +236,18 @@
         if (Array.isArray(parts.played[k])) out.played[k.slice(0, 40)] = parts.played[k].filter(x => typeof x === 'string' && x.length < 40).slice(0, 2000);
       });
     }
-    if (isPlainObject(parts.stats) && JSON.stringify(parts.stats).length < 50000) out.stats = parts.stats;
+    if (isPlainObject(parts.stats) && JSON.stringify(parts.stats).length < 50000) {
+      const plain = v => v === null || typeof v === 'boolean' || Number.isFinite(v) || (typeof v === 'string' && v.length < 40);
+      out.stats = {};
+      Object.keys(parts.stats).filter(k => k !== '__proto__').slice(0, 100).forEach(k => {
+        const v = parts.stats[k];
+        if (['fast', 'earned', 'seen'].includes(k)) {
+          if (isPlainObject(v)) out.stats[k] = Object.fromEntries(Object.entries(v).filter(([, x]) => plain(x)).slice(0, 2000));
+        } else if (k === 'open') {
+          if (Array.isArray(v)) out.stats[k] = v.filter(plain).slice(0, 2000);
+        } else if (plain(v)) out.stats[k] = v;
+      });
+    }
     if (Array.isArray(parts.history)) {
       out.history = parts.history.filter(e => Array.isArray(e) && e.length === 6 && e.every(v => Number.isInteger(v))).slice(-500);
     }

@@ -63,7 +63,7 @@ html, body { overflow: clip; }
 button { font-family: inherit; touch-action: manipulation; }
 button:disabled { cursor: not-allowed; }
 :focus-visible { outline: 3px solid var(--text-dark); outline-offset: 2px; }
-.game-header :focus-visible, #screen-splash :focus-visible { outline-color: var(--white); }
+.game-header :focus-visible { outline-color: var(--white); }
 
 /* ---------- PICTURES (icons.js) ---------- */
 /* .ki is one icon, sized by the font-size of its place (like an emoji was). */
@@ -132,8 +132,8 @@ button:disabled { cursor: not-allowed; }
 .logo-title {
   font-size: clamp(28px, 8vw, 52px);
   font-weight: 900;
-  color: var(--white);
-  text-shadow: 0 4px 0 rgba(100,40,0,0.2), 0 8px 16px rgba(0,0,0,0.15);
+  color: var(--text-dark);
+  text-shadow: 0 2px 0 rgba(255,255,255,0.35);
   letter-spacing: 1px;
 }
 .logo-subtitle {
@@ -641,8 +641,8 @@ button.header-score { cursor: pointer; min-height: var(--tap); padding: 4px 14px
 .num-btn.completed-num {
   background: var(--mint-light);
   color: var(--text-mid);
-  opacity: 0.6;
 }
+.num-btn.completed-num > svg { opacity: 0.6; }
 .num-btn.erase-btn { background: #FFE0E8; }
 .num-btn > svg { height: 78%; width: auto; aspect-ratio: 1; max-width: 90%; display: block; }
 .numpad.notes-mode .num-btn[data-num] > svg { height: 58%; }

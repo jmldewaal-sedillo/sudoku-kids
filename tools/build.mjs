@@ -49,6 +49,9 @@ function build(target) {
   html = replaceOnce(html, '  <link rel="manifest" href="manifest.json" />\n', '', 'de manifest-link');   // geen PWA in de app of op een portal
   if (spec.sdk) {
     // De SDK van de portal moet vóór het spel geladen zijn.
+    // ... en alleen de portal zelf komt er in de Content-Security-Policy bij.
+    const origin = new URL(spec.sdk).origin;
+    html = html.replace(/(script-src|img-src|connect-src) ([^;]*);/g, `$1 $2 ${origin};`).replace(" object-src 'none';", ` frame-src ${origin}; object-src 'none';`);
     html = replaceOnce(html, '  <script src="platform.js"></script>\n', `  <script src="${spec.sdk}"></script>\n  <script src="platform.js"></script>\n`, 'platform.js');
   }
   fs.writeFileSync(path.join(out, 'index.html'), html);

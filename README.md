@@ -97,6 +97,7 @@ alleen in `sudoku-kids-test` mag schrijven).
 | `tests/difficulty.js` | Meet de moeilijkheid per level en per band van de voorraad |
 | `tests/count-4x4.js` | Telt hoeveel echt verschillende 4×4-puzzels er bestaan |
 | `tests/e2e.py` | Speelt het spel automatisch en controleert de belangrijkste flows |
+| `tests/toegankelijkheid.py` | WCAG 2.1 AA met axe-core (`tests/axe.min.js`): elk hoofdscherm en de dialogen, in alle 10 talen |
 | `tests/screenshots.py` | Screenshots van elk scherm op 7 schermformaten + lay-outcontrole |
 | `tests/manifest-screenshots.py` | Maakt de twee screenshots voor `manifest.json` opnieuw |
 

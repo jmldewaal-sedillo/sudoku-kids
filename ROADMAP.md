@@ -5,10 +5,10 @@
 | | |
 |---|---|
 | **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-10-26 (v12 goedgekeurd door Jenn; workflow App release voor de `.aab` klaar) |
-| **Volgende stap** | Jenn: `publish-prep` naar `main` + tag `v12` pushen (v12 is goedgekeurd op 26-10); upload key maken met `tools/upload-key-naar-github.sh`; workflow **App release** op `main` draaien; de `.aab` naar de interne test (`docs/publiceren.md`, stap 7–9); daarna productietoegang (stap 13) |
+| **Laatste update** | 2026-11-02 (v13 op de testlink: punten uit de controle van 26-10) |
+| **Volgende stap** | Jenn: v12 uit `publish-prep` naar `main` + tag `v12` (daar staat v13 niet in); upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. Daarnaast v13 op de testlink en de test-APK nalopen (branch `v13`); na akkoord v13 naar `main` en dán productietoegang (stap 13). Open: hoofdsite (privacytekst, `/verwijderen`, 10 talen), privacytekst in de app, ouderslot voor iOS |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v11 (`publish-prep`). Testkopie: `noindex`, geen eigen domein |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
 | **Bouwdoelen** | app = Android én iOS uit dezelfde bestanden (`tools/build-android.sh`, `tools/build-ios.sh`, workflow `app-build.yml`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
 | **Privacy / verwijderen** | https://studiosedillo.com/sudoku-kids/privacy en https://studiosedillo.com/sudoku-kids/delete (repo `studio-sedillo`), HTTPS, werken sinds 2026-10-18 |
@@ -25,18 +25,33 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v11`, test: `sudoku-kids-v12`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v11`, test: `sudoku-kids-v13`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, externe CDN's, tracking, advertenties of accounts in het spel.** De webversie heeft geen build-stap; `tools/build.mjs` kopieert alleen bestanden voor de andere bouwdoelen. `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Enige uitzondering: de portal-versies laden de SDK van de portal zelf (verplicht), zonder één advertentie-aanroep (`tests/builds.py`). Komt er ooit iets bij dat het toestel verlaat of een advertentie toont, dan eerst akkoord van Jenn, en `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
 7. **testen = push naar branch `test`, live = merge naar `main`.** Niets gaat naar `main` voordat het op de testlink is nagelopen. De testversie gebruikt `test_`-sleutels en een eigen cache; dat onderscheid (`IS_TEST` in `storage.js` en `sw.js`: hostnaam `test-…` of een map die op `-test` eindigt) nooit weghalen.
-8. **Voor elke release alles groen:** `node tests/validate-levels.js`, `python3 tests/e2e.py`, `python3 tests/builds.py`, `python3 tests/screenshots.py` en `python3 tests/no-private-data.py` (zie README).
+8. **Voor elke release alles groen:** `node tests/validate-levels.js`, `python3 tests/e2e.py`, `python3 tests/toegankelijkheid.py`, `python3 tests/builds.py`, `python3 tests/screenshots.py` en `python3 tests/no-private-data.py` (zie README).
 9. **Eén codebase, drie bouwdoelen: android, webportals en (optioneel, later) web.** Geen app-websites en geen eigen domein op deze repo's (nooit een `CNAME`-bestand in de root). Wat per bouwdoel verschilt staat alleen in `platform.js` / `platforms/`; nieuwe functies komen in de gewone code. Zie `docs/lanceren.md`.
 10. **Geen signing keys of wachtwoorden in Git** (`.gitignore` sluit `*.keystore`, `*.jks`, `keystore.properties` en `.aab` uit). Jenn maakt en bewaart de sleutels zelf (`docs/android.md`).
 
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-11-02 · v13 op de testlink: punten uit de controle van 26-10 (Claude Code, branch `v13`)
+Opdracht van Jenn: "begin maar aan v13 op test". Eigen branch `v13`, zodat `publish-prep` op v12 blijft staan voor de push naar `main`.
+
+- **Claims:** "Het leukste puzzelavontuur" weg in 10 talen, meta description en `manifest.json`; nu "Een puzzelavontuur in 5 werelden!". Store-screenshots tonen die tekst niet.
+- **Contrast:** logo-titel donker, focusring op het startscherm donker, `.completed-num` zonder doorzichtige tekst. Knoppen met zichtbaar getal (bel, profiel, hint) noemen dat getal ook in hun label.
+- **Toetsenbord:** het bord is één Tab-stop, pijltjes verplaatsen de focus, Enter/spatie kiest; focus gaat terug na een dialoog; de kat heet "Aai de kat" (10 talen, vertaald door Claude).
+- **Beveiliging:** strenge CSP + referrer-meta in `index.html`, ook in app en portals (portal: alleen de eigen SDK-host; `tools/build.mjs`); geen `style`-attributen meer; `test-preview.js` via CSSOM; taal via `Object.hasOwn`; `#import=` vraagt eerst toestemming (`modal-import`); import houdt alleen geldige waarden over (nu ook `motion`; `stats` per soort gecontroleerd).
+- **Workflows:** `permissions: contents: read`, blocklist fail-closed, nieuw `privacy.yml` (hele geschiedenis; lokaal schoon, 60 commits) en `dependabot.yml`.
+- **Docs:** `docs/credits.md` (nieuw), `docs/privacy-audit.md` (`motion`, fouten markeren), `versionCode` 2, `versionName` 1.1, `CACHE_VERSION` v13.
+- **Tests:** nieuw `tests/toegankelijkheid.py` (axe-core); e2e-blok 33 draait zonder `bypass_csp`, zodat de echte CSP getest wordt. De overige tests draaien met `bypass_csp`, omdat `wait_for_function` anders door de CSP wordt tegengehouden.
+
+**Niet gedaan:** hoofdsite (live, akkoord nodig): privacytekst bijwerken (iOS, Beweging, fouten markeren, datum), `/verwijderen`, 5 extra talen. Privacytekst in de app zelf (Apps/CLAUDE.md sectie 5): besluit van Jenn. Ouderslot met een taak voor volwassenen: vóór de iOS-inzending. Dependabot-meldingen aanzetten is een repo-instelling.
+
+**Risico:** de CSP is niet getest in een echte Android-WebView; Capacitor injecteert zijn brug op moderne WebViews vóór de pagina, maar dat moet op de telefoon blijken (test-APK).
 
 ### 2026-10-26 · v12 goedgekeurd; .aab bouwen in de cloud (Claude Code, branch `publish-prep`)
 Jenn: "v12 is goed"; de upload key maakt ze op 27-10. Op deze pc staan geen Android Studio en geen Android-SDK, dus de `.aab` wordt op GitHub gebouwd.

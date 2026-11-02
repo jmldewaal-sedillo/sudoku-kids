@@ -14,6 +14,9 @@ on:
   push:
     branches: [test]
 
+permissions:
+  contents: read
+
 concurrency:
   group: testversie
   cancel-in-progress: true
@@ -32,11 +35,13 @@ jobs:
         run: node tests/validate-levels.js
 
       # Vangnet: geen privégegevens (huisadres) online. De lijst komt uit het geheim
-      # PRIVATE_BLOCKLIST; zonder geheim volgt een waarschuwing en gaat de deploy door.
+      # PRIVATE_BLOCKLIST; zonder geheim stopt de deploy.
       - name: Controle op privégegevens
         env:
           PRIVATE_BLOCKLIST: ${{ secrets.PRIVATE_BLOCKLIST }}
-        run: python3 tests/no-private-data.py --ci
+        run: |
+          [ -n "$PRIVATE_BLOCKLIST" ] || { echo "::error::Het geheim PRIVATE_BLOCKLIST ontbreekt."; exit 1; }
+          python3 tests/no-private-data.py --ci
 
       - name: Testkopie klaarzetten
         run: |

@@ -78,7 +78,7 @@ def serve(folder):
 
 class Game:
     def __init__(self, browser, url, fake_sdk=None, init=None):
-        self.ctx = browser.new_context(viewport={'width': 390, 'height': 844}, has_touch=True)
+        self.ctx = browser.new_context(bypass_csp=True, viewport={'width': 390, 'height': 844}, has_touch=True)
         self.page = self.ctx.new_page()
         self.errors, self.outside = [], []
         self.page.on('pageerror', lambda e: self.errors.append(str(e)))
@@ -169,7 +169,7 @@ def run():
             check('geen console-errors', not g.errors, g.errors)
             g.close()
             # Zonder SDK (geblokkeerd of offline) moet het spel gewoon werken.
-            ctx = browser.new_context(viewport={'width': 390, 'height': 844})
+            ctx = browser.new_context(bypass_csp=True, viewport={'width': 390, 'height': 844})
             page = ctx.new_page()
             broken = []
             page.on('pageerror', lambda e: broken.append(str(e)))

@@ -98,7 +98,7 @@ function gridPic(size) {
 // I18N
 // ============================================================
 function t(key) {
-  const lang = STRINGS[settings.language] || STRINGS.nl;
+  const lang = Object.hasOwn(STRINGS, settings.language) ? STRINGS[settings.language] : STRINGS.nl;
   return key in lang ? lang[key] : STRINGS.nl[key];
 }
 function pick(key) {
@@ -109,6 +109,8 @@ function applyTranslations() {
   document.documentElement.lang = settings.language;
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  updateBell();
+  labelScore();
   syncPlatformUI();
 }
 // The privacy and delete pages live on studiosedillo.com and open in the language of the
@@ -169,9 +171,9 @@ function loadProfile(id, inherit) {
   // First start: follow the language of the device.
   if (!inherit && (!isPlainObject(savedSettings) || !savedSettings.language)) {
     const device = String(navigator.language || 'nl').slice(0, 2).toLowerCase();
-    settings.language = STRINGS[device] ? device : 'en';
+    settings.language = Object.hasOwn(STRINGS, device) ? device : 'en';
   }
-  if (!STRINGS[settings.language]) settings.language = 'nl';
+  if (!Object.hasOwn(STRINGS, settings.language)) settings.language = 'nl';
   if (settings.displayMode !== 'animals') settings.displayMode = 'numbers';
   // There used to be three sizes: "normal" and "large" are both "large" now.
   if (settings.size !== 'small') settings.size = 'large';
@@ -498,8 +500,12 @@ function buildWorlds() {
     box.appendChild(card);
   });
 }
+function labelScore() {
+  $('btn-score').setAttribute('aria-label', `${t('profile')}: ${$('total-stars-display').textContent}`);
+}
 function updateWorldsUI() {
   $('total-stars-display').textContent = getTotalStars();
+  labelScore();
   WORLDS.forEach(({ id }) => {
     const total = worldLevels(id).length;
     const done = getWorldCompleted(id);
@@ -668,6 +674,7 @@ function updateStats() {
     lives.setAttribute('aria-label', `${t('mistakes')}: ${gs.mistakes}/${gs.maxMistakes}`);
   }
   $('hint-count').textContent = MAX_HINTS - gs.hintsUsed;
+  $('btn-hint').setAttribute('aria-label', `${t('hint')}: ${MAX_HINTS - gs.hintsUsed}`);
   $('btn-hint').disabled = gs.hintsUsed >= MAX_HINTS;
 }
 
@@ -753,7 +760,9 @@ function buildGrid() {
     const cell = document.createElement('div');
     cell.dataset.idx = idx;
     cell.setAttribute('role', 'button');
+    cell.tabIndex = idx === 0 ? 0 : -1;       // one Tab stop for the grid; the arrow keys move inside it
     cell.addEventListener('click', () => onCellClick(idx));
+    cell.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCellClick(idx); } });
     gridEl.appendChild(cell);
   }
   gameState.cellBase = baseClasses(size, type);
@@ -1240,8 +1249,10 @@ function showGameOver() {
   playError();
 }
 
+let modalOpener = null;                       // what had the focus before the dialog opened
 function showModal(name) {
-  hideModals();
+  if (!document.querySelector('.modal:not(.hidden)')) modalOpener = document.activeElement;
+  hideModals(true);
   const modal = $('modal-' + name);
   modal.classList.remove('hidden');
   document.querySelectorAll('.screen').forEach(s => { s.inert = true; });
@@ -1250,10 +1261,14 @@ function showModal(name) {
   if (first) first.focus({ preventScroll: true });
   armBackButton();
 }
-function hideModals() {
+function hideModals(keepOpener) {
+  const wasOpen = !!document.querySelector('.modal:not(.hidden)');
   document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
   document.querySelectorAll('.screen').forEach(s => { s.inert = false; });
   $('mascot').inert = false;
+  if (keepOpener || !wasOpen) return;
+  if (modalOpener && modalOpener.isConnected) modalOpener.focus({ preventScroll: true });
+  modalOpener = null;
 }
 
 function launchConfetti() {
@@ -1333,8 +1348,11 @@ function renderSizePreview() {
     item.className = 'size-sample';
     item.dataset.grid = size;
     item.dataset.px = px;
-    item.innerHTML = `<div class="sample-cell" style="width:${px}px;height:${px}px;font-size:${cellFont(px, size)}px">${Math.min(size, 5)}</div>` +
+    item.innerHTML = `<div class="sample-cell">${Math.min(size, 5)}</div>` +
                      `<div class="sample-label">${gridPic(size)}<span>${size}×${size}</span></div>`;
+    const sample = item.querySelector('.sample-cell');
+    sample.style.width = sample.style.height = px + 'px';
+    sample.style.fontSize = cellFont(px, size) + 'px';
     box.appendChild(item);
   });
   screen.className = keepClass;
@@ -1543,7 +1561,7 @@ function renderProfileWorlds() {
     card.innerHTML =
       `<span class="wp-head"><span class="wp-icon">${K.svg(pic)}</span><span class="wp-name"></span>` +
         `<span class="wp-stars">${icon('star')}<b>${stars}</b>/${levels.length * 3}</span></span>` +
-      `<span class="progress-bar"><span class="progress-fill" style="width:${Math.round(done / levels.length * 100)}%"></span></span>` +
+      `<span class="progress-bar"><span class="progress-fill" data-width="${Math.round(done / levels.length * 100)}"></span></span>` +
       '<span class="wp-sizes">' + sizes.map(size => {
         const of = levels.filter(lv => lv.size === size);
         return `<span class="size-chip" data-size="${size}">${gridPic(size)}<b>${of.filter(lv => starsOf(lv) > 0).length}/${of.length}</b></span>`;
@@ -1551,6 +1569,8 @@ function renderProfileWorlds() {
       // one dot per level, in the order of the level screen: which ones are done, and with how many stars
       '<span class="wp-dots" aria-hidden="true">' + levels.map(lv => `<i class="s${starsOf(lv)}"></i>`).join('') + '</span>';
     card.querySelector('.wp-name').textContent = t('world' + w);
+    const fill = card.querySelector('.progress-fill');
+    fill.style.width = fill.dataset.width + '%';
     card.addEventListener('click', () => {
       if (id === profileId && isWorldUnlocked(w)) goToLevels(w);
       else flash(card, 'shake');
@@ -1778,8 +1798,7 @@ function importFromLink() {
   let code = m[1];
   try { code = decodeURIComponent(code); } catch (e) { /* use as is */ }
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ }
-  const added = Store.importCode(code);
-  return added > 0 ? 'importOk:' + added : added < 0 ? 'importFull' : 'importBad';
+  return code;
 }
 function newHome() {
   if (typeof window.__newHome === 'string') return window.__newHome;          // tests
@@ -1971,12 +1990,18 @@ function onKeyDown(e) {
   const moves = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
   if (!moves[e.key] || gameState.isComplete) return;
   e.preventDefault();
-  if (gameState.selected < 0) { gameState.selected = 0; renderGrid(); return; }
+  if (gameState.selected < 0) { gameState.selected = 0; renderGrid(); focusCell(0); return; }
   const r = Math.floor(gameState.selected / size), c = gameState.selected % size;
   const nr = Math.min(size - 1, Math.max(0, r + moves[e.key][0]));
   const nc = Math.min(size - 1, Math.max(0, c + moves[e.key][1]));
   gameState.selected = nr * size + nc;
   renderGrid();
+  focusCell(gameState.selected);
+}
+function focusCell(idx) {
+  const cells = $('sudoku-grid').children;
+  for (let i = 0; i < cells.length; i++) cells[i].tabIndex = i === idx ? 0 : -1;
+  cells[idx].focus({ preventScroll: true });
 }
 
 // ============================================================
@@ -2035,7 +2060,7 @@ function init() {
     return;
   }
   if (IS_TEST) showTestLabel();
-  const imported = importFromLink();       // arriving from the old address with the progress in the link
+  const linkCode = importFromLink();       // arriving from the old address with the progress in the link
   applyIcons();
   $('setting-language').innerHTML = LANGUAGES.map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
   buildWorlds();
@@ -2045,11 +2070,14 @@ function init() {
   registerSW();
   showScreen('splash');
   Platform.loaded();
-  if (imported) {
-    const [key, n] = imported.split(':');
-    $('info-title').textContent = t('transferTitle');
-    $('info-text').textContent = t(key).replace('{n}', n || '');
-    showModal('info');
+  if (linkCode) {                          // a link can come from anyone: only with a yes
+    on('btn-import-no', 'click', () => hideModals());
+    on('btn-import-yes', 'click', () => {
+      $('info-title').textContent = t('transferTitle');
+      $('info-text').textContent = importCode(linkCode);
+      showModal('info');
+    });
+    showModal('import');
   } else if (newHome()) {
     $('move-url').textContent = newHome().replace(/^https?:\/\//, '').replace(/\/$/, '');
     showModal('move');

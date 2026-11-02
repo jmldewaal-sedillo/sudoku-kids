@@ -30,8 +30,9 @@
   var size = SIZES[store.get()] ? store.get() : 'phone';
 
   function build() {
-    var style = document.createElement('style');
-    style.textContent =
+    // Through the CSSOM: the Content-Security-Policy does not allow a <style> element.
+    var style = new CSSStyleSheet();
+    style.replaceSync(
       'body.pv-active{overflow:hidden!important;background:#14141f!important}' +
       'body.pv-active>:not(#pv-root){display:none!important}' +
       '#pv-root{position:fixed;inset:0;display:flex;flex-direction:column;background:#14141f;font-family:system-ui,sans-serif;color:#eee;z-index:9999;user-select:none}' +
@@ -47,8 +48,8 @@
       '#pv-stage.pv-full{padding:0}' +
       '#pv-frame{position:relative;flex-shrink:0;overflow:hidden;background:#000;box-shadow:0 0 0 10px #222,0 0 0 13px #3a3a3a,0 24px 64px rgba(0,0,0,.8)}' +
       '#pv-stage.pv-full #pv-frame{box-shadow:none;border-radius:0!important;width:100%!important;height:100%!important;transform:none!important}' +
-      '#pv-iframe{display:block;border:none;width:100%;height:100%}';
-    document.head.appendChild(style);
+      '#pv-iframe{display:block;border:none;width:100%;height:100%}');
+    document.adoptedStyleSheets = document.adoptedStyleSheets.concat(style);
 
     var groups = '', lastGroup = null;
     Object.keys(SIZES).forEach(function (k) {

@@ -113,7 +113,7 @@ def run():
         for name, (w, h) in VIEWPORTS.items():
             out = OUT / name
             out.mkdir(parents=True, exist_ok=True)
-            ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=2,
+            ctx = browser.new_context(bypass_csp=True, viewport={'width': w, 'height': h}, device_scale_factor=2,
                                       has_touch=True, service_workers='block', locale='nl-NL')
             page = ctx.new_page()
             errors = []

@@ -76,7 +76,7 @@ staat er `test_` voor.
 | Sleutel | Inhoud | Persoonsgegeven? | In de overzet-code? |
 |---|---|---|---|
 | `sudokuKids_progress` | per level: aantal sterren en de tijd | nee | ja |
-| `sudokuKids_settings` | geluid, muziek, klikgeluid, taal, cijfers of dieren, grootte, fouten markeren | nee | ja |
+| `sudokuKids_settings` | geluid, muziek, klikgeluid, taal, cijfers of dieren, grootte, fouten markeren, beweging | nee | ja |
 | `sudokuKids_current` | het onafgemaakte spel (rooster, notities, tijd, fouten) | nee | nee |
 | `sudokuKids_played` | per moeilijkheidsband: welke puzzelnummers al gespeeld zijn | nee | ja |
 | `sudokuKids_stats` | tellers voor badges (aantallen, dagen waarop gespeeld is, behaalde badges met datum) en welke meldingen al gegeven zijn | nee | ja |

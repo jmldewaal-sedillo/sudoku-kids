@@ -17,7 +17,7 @@ PROGRESS.update({f'w1_l{i}': {'stars': 3, 'time': 90} for i in range(6)})
 
 with serve() as url, sync_playwright() as pw:
     browser = pw.chromium.launch()
-    ctx = browser.new_context(viewport={'width': 360, 'height': 640}, device_scale_factor=3,
+    ctx = browser.new_context(bypass_csp=True, viewport={'width': 360, 'height': 640}, device_scale_factor=3,
                               locale='nl-NL', service_workers='block')
     page = ctx.new_page()
     page.add_init_script('localStorage.setItem("sudokuKids_progress", %s)' % json.dumps(json.dumps(PROGRESS)))
