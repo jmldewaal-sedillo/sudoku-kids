@@ -48,6 +48,7 @@ Daarna, in deze volgorde:
 | 6 | **App Privacy**: "Data Not Collected" (er gaat niets van het toestel af) | Jenn, antwoorden hieronder |
 | 7 | **Leeftijd**: Kids-categorie, leeftijdsband 6–8 (of 9–11); leeftijdsvragenlijst: alles "nee" | Jenn |
 | 8 | DSA-traderstatus kiezen (`Apps/docs/apple-developer.md`) | Jenn |
+| 8a | Privacy- en verwijderpagina op studiosedillo.com: App Store, iPhone en iPad weer noemen (besluit van 4 november 2026: pas bij de iOS-app; teksten in commit `f07e5ae` van `studio-sedillo`), en het ouderslot met een taak voor volwassenen (Kids 1.3) | Claude Code, na akkoord live |
 | 9 | Indienen ter beoordeling | Jenn |
 
 ## Kids-categorie: wat Apple eist en hoe het hier zit

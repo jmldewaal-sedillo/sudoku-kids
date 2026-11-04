@@ -15,6 +15,14 @@
 
 ---
 
+## Open taken
+
+- [ ] **Hoofdsite live zetten:** de pagina's van Sudoku Kids in 10 talen, bijgewerkt voor v12/v13, staan klaar op branch `sudoku-kids-v13` van de repo `studio-sedillo` (niet gepusht). Alleen na akkoord van Jenn; vóór de productie-aanvraag in Google Play.
+- [ ] **Bij de iOS-app** (vóór de inzending in de App Store; besluit van Jenn, 4 november 2026): App Store, iPhone en iPad weer noemen op de privacy- en verwijderpagina (repo `studio-sedillo`, `sudoku-kids/privacy-text.js` en `delete-text.js`, alle 10 talen; de teksten staan in commit `f07e5ae` daar, weggehaald in `d6b60b5`), daarna `python3 tools/sudoku-kids-paginas.py` en de tests. Ook het ouderslot met een taak voor volwassenen (Apple Kids 1.3). Zie `docs/ios.md`.
+- [ ] Vertalingen van de app en de privacy- en verwijderpagina laten nakijken door moedertaalsprekers (de, fr, it, pl, tr zijn door Claude vertaald).
+
+---
+
 ## Vaste regels (nooit breken)
 
 1. **Bestaande puzzels veranderen nooit.**
@@ -37,6 +45,13 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-11-04 · Hoofdsite-pagina's klaar (niet live); App Store pas bij iOS; privacytekst blijft buiten de app (Claude Code)
+- Repo `studio-sedillo`, lokale branch `sudoku-kids-v13` (`f07e5ae`, `d6b60b5`; niet gepusht): privacy- en verwijderpagina van Sudoku Kids in 10 talen (de, fr, it, pl, tr erbij, vertaald door Claude), tekst bijgewerkt (fouten rood kleuren, beweging, links achter het ouderslot, datum 4 november 2026), `/sudoku-kids/verwijderen` stuurt door, strenge CSP zonder inline code, Engelse tekst in de HTML (leesbaar zonder JavaScript, `tools/sudoku-kids-paginas.py`).
+- Besluit van Jenn: App Store en iPhone/iPad nog niet noemen; dat gebeurt bij de iOS-app (taak onder Open taken en in `docs/ios.md`, stap 8a).
+- Besluit van Jenn: de privacytekst komt niet in de app zelf; afwijking vastgelegd in `CLAUDE.md`.
+
+**Bewijs:** `python3 tests/pages.py` → `✅ 35/35`; `python3 tests/vaste_controles.py` → `✅ 51/51` (axe in alle 10 talen, CSP, zonder JavaScript); `python3 tests/no-private-data.py` → in orde.
 
 ### 2026-11-02 · v13 op de testlink: punten uit de controle van 26-10 (Claude Code, branch `v13`)
 Opdracht van Jenn: "begin maar aan v13 op test". Eigen branch `v13`, zodat `publish-prep` op v12 blijft staan voor de push naar `main`.

@@ -31,6 +31,11 @@ inloggen, en het Families-beleid geldt (sectie 11, punt 5). Slug `sudokukids`, p
   achter het ouderslot (`askParent`). Dat eisen het Families-beleid van Google en de
   Kids-categorie van Apple (guideline 1.3); `tests/e2e.py` bewaakt het. Plannen voor later geld
   verdienen: eerst `docs/later-verdienen.md`.
+- **Privacytekst niet in de app zelf** (afwijking van `Apps/CLAUDE.md`, sectie 5; besluit van Jenn,
+  4 november 2026). De app bewaart niets buiten het toestel, verzamelt niets en verstuurt niets; de
+  volledige verklaring staat op `studiosedillo.com/sudoku-kids/privacy` in de 10 talen van de app, met
+  een link in de app achter het ouderslot (Instellingen → Voor ouders). Verandert er iets aan wat de app
+  bewaart of verstuurt, dan dit besluit opnieuw voorleggen.
 - De opslag gebruikt de sleutels `sudokuKids_…` (niet de prefix `sudokukids.` uit
   `Apps/CLAUDE.md`, sectie 2). Dat is bewust: de sleutels bestonden al en veranderen nooit
   (ROADMAP.md, Vaste regels).
