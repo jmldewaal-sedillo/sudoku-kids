@@ -69,6 +69,8 @@ Opdracht van Jenn: "begin maar aan v13 op test". Eigen branch `v13`, zodat `publ
 
 **Niet gedaan:** hoofdsite (live, akkoord nodig): privacytekst bijwerken (iOS, Beweging, fouten markeren, datum), `/verwijderen`, 5 extra talen. Privacytekst in de app zelf (Apps/CLAUDE.md sectie 5): besluit van Jenn. Ouderslot met een taak voor volwassenen: vóór de iOS-inzending. Dependabot-meldingen aanzetten is een repo-instelling.
 
+**Jenn, 4 november 2026:** de donkere titel op het startscherm is goed zo.
+
 **Risico:** de CSP is niet getest in een echte Android-WebView; Capacitor injecteert zijn brug op moderne WebViews vóór de pagina, maar dat moet op de telefoon blijken (test-APK).
 
 ### 2026-10-26 · v12 goedgekeurd; .aab bouwen in de cloud (Claude Code, branch `publish-prep`)
