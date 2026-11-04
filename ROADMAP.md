@@ -6,7 +6,7 @@
 |---|---|
 | **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
 | **Laatste update** | 2026-11-02 (v13 op de testlink: punten uit de controle van 26-10) |
-| **Volgende stap** | Jenn: v12 uit `publish-prep` naar `main` + tag `v12` (daar staat v13 niet in); upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. Daarnaast v13 op de testlink en de test-APK nalopen (branch `v13`); na akkoord v13 naar `main` en dán productietoegang (stap 13). Open: hoofdsite (privacytekst, `/verwijderen`, 10 talen), privacytekst in de app, ouderslot voor iOS |
+| **Volgende stap** | Jenn: v12 uit `publish-prep` naar `main` + tag `v12` (daar staat v13 niet in); upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. Daarnaast v13 op de testlink en de test-APK nalopen (branch `v13`); na akkoord v13 naar `main` en dán productietoegang (stap 13). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
@@ -17,9 +17,8 @@
 
 ## Open taken
 
-- [ ] **Hoofdsite live zetten:** de pagina's van Sudoku Kids in 10 talen, bijgewerkt voor v12/v13, staan klaar op branch `sudoku-kids-v13` van de repo `studio-sedillo` (niet gepusht). Alleen na akkoord van Jenn; vóór de productie-aanvraag in Google Play.
+- [x] **Hoofdsite live gezet** (4 november 2026): de pagina's van Sudoku Kids in 10 talen, bijgewerkt voor v12/v13.
 - [ ] **Bij de iOS-app** (vóór de inzending in de App Store; besluit van Jenn, 4 november 2026): App Store, iPhone en iPad weer noemen op de privacy- en verwijderpagina (repo `studio-sedillo`, `sudoku-kids/privacy-text.js` en `delete-text.js`, alle 10 talen; de teksten staan in commit `f07e5ae` daar, weggehaald in `d6b60b5`), daarna `python3 tools/sudoku-kids-paginas.py` en de tests. Ook het ouderslot met een taak voor volwassenen (Apple Kids 1.3). Zie `docs/ios.md`.
-- [ ] Vertalingen van de app en de privacy- en verwijderpagina laten nakijken door moedertaalsprekers (de, fr, it, pl, tr zijn door Claude vertaald).
 
 ---
 
@@ -45,6 +44,10 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-11-04 · Hoofdsite live: privacy- en verwijderpagina in 10 talen (Claude Code)
+- Akkoord van Jenn ("ja mag gewoon doorgaan ermee"); ook besloten: de vertalingen worden niet extra nagekeken (taak vervallen).
+- `studio-sedillo` `main` fast-forward naar `d6b60b5` en gepusht. Pages-build "built"; live: `/sudoku-kids/privacy`, `/delete`, `/verwijderen` (stuurt door naar `delete?lang=nl`) en de scripts geven 200; in de browser de, tr en nl met 12 onderdelen en geen console-fouten; `tests/no-private-data.py --online` → in orde.
 
 ### 2026-11-04 · Hoofdsite-pagina's klaar (niet live); App Store pas bij iOS; privacytekst blijft buiten de app (Claude Code)
 - Repo `studio-sedillo`, lokale branch `sudoku-kids-v13` (`f07e5ae`, `d6b60b5`; niet gepusht): privacy- en verwijderpagina van Sudoku Kids in 10 talen (de, fr, it, pl, tr erbij, vertaald door Claude), tekst bijgewerkt (fouten rood kleuren, beweging, links achter het ouderslot, datum 4 november 2026), `/sudoku-kids/verwijderen` stuurt door, strenge CSP zonder inline code, Engelse tekst in de HTML (leesbaar zonder JavaScript, `tools/sudoku-kids-paginas.py`).
