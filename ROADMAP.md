@@ -5,8 +5,8 @@
 | | |
 |---|---|
 | **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-11-02 (v13 op de testlink: punten uit de controle van 26-10) |
-| **Volgende stap** | Jenn: v12 uit `publish-prep` naar `main` + tag `v12` (daar staat v13 niet in); upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. Daarnaast v13 op de testlink en de test-APK nalopen (branch `v13`); na akkoord v13 naar `main` en dán productietoegang (stap 13). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
+| **Laatste update** | 2026-11-06 (v13-APK op Android getest door Jenn: werkt) |
+| **Volgende stap** | Jenn: v12 uit `publish-prep` naar `main` + tag `v12` (daar staat v13 niet in); upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. v13 is op de telefoon getest (6-11); na akkoord ("zet live") v13 naar `main` en dán productietoegang (stap 13). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
@@ -45,6 +45,9 @@
 
 ## Logboek (nieuwste bovenaan)
 
+### 2026-11-06 · v13-APK getest op Android (Jenn)
+- Test-APK van `f40a357` (de code van v13; latere commits raken alleen de roadmap). Instellingen, "Voortgang overzetten" (code maken, kopiëren, importeren) en de terugknop van Android werken met de strenge CSP. Het risico uit het v13-logboek is daarmee weg.
+
 ### 2026-11-04 · Hoofdsite live: privacy- en verwijderpagina in 10 talen (Claude Code)
 - Akkoord van Jenn ("ja mag gewoon doorgaan ermee"); ook besloten: de vertalingen worden niet extra nagekeken (taak vervallen).
 - `studio-sedillo` `main` fast-forward naar `d6b60b5` en gepusht. Pages-build "built"; live: `/sudoku-kids/privacy`, `/delete`, `/verwijderen` (stuurt door naar `delete?lang=nl`) en de scripts geven 200; in de browser de, tr en nl met 12 onderdelen en geen console-fouten; `tests/no-private-data.py --online` → in orde.
@@ -71,7 +74,7 @@ Opdracht van Jenn: "begin maar aan v13 op test". Eigen branch `v13`, zodat `publ
 
 **Jenn, 4 november 2026:** de donkere titel op het startscherm is goed zo.
 
-**Risico:** de CSP is niet getest in een echte Android-WebView; Capacitor injecteert zijn brug op moderne WebViews vóór de pagina, maar dat moet op de telefoon blijken (test-APK).
+**Risico (opgelost 6 november 2026):** de CSP was niet getest in een echte Android-WebView. Jenn heeft de test-APK (`f40a357`) op haar Android-telefoon nagelopen: Instellingen, "Voortgang overzetten" (code maken, kopiëren, importeren) en de terugknop werken.
 
 ### 2026-10-26 · v12 goedgekeurd; .aab bouwen in de cloud (Claude Code, branch `publish-prep`)
 Jenn: "v12 is goed"; de upload key maakt ze op 27-10. Op deze pc staan geen Android Studio en geen Android-SDK, dus de `.aab` wordt op GitHub gebouwd.
