@@ -5,11 +5,11 @@
 | | |
 |---|---|
 | **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-11-06 (v13-APK op Android getest door Jenn: werkt) |
-| **Volgende stap** | Jenn: v12 uit `publish-prep` naar `main` + tag `v12` (daar staat v13 niet in); upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. v13 is op de telefoon getest (6-11); na akkoord ("zet live") v13 naar `main` en dán productietoegang (stap 13). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
+| **Laatste update** | 2026-11-06 (v12 op `main` + tag `v12`; v13-APK op Android getest) |
+| **Volgende stap** | Jenn: upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. v13 is op de telefoon getest (6-11); na akkoord ("zet live") v13 naar `main` en dán productietoegang (stap 13). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
-| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v11`, tag `v11` (sinds 2026-10-18; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
+| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v12`, tag `v12` (sinds 2026-11-06; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
 | **Bouwdoelen** | app = Android én iOS uit dezelfde bestanden (`tools/build-android.sh`, `tools/build-ios.sh`, workflow `app-build.yml`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
 | **Privacy / verwijderen** | https://studiosedillo.com/sudoku-kids/privacy en https://studiosedillo.com/sudoku-kids/delete (repo `studio-sedillo`), HTTPS, werken sinds 2026-10-18 |
 
@@ -32,7 +32,7 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v11`, test: `sudoku-kids-v13`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v12`, test: `sudoku-kids-v13`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, externe CDN's, tracking, advertenties of accounts in het spel.** De webversie heeft geen build-stap; `tools/build.mjs` kopieert alleen bestanden voor de andere bouwdoelen. `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Enige uitzondering: de portal-versies laden de SDK van de portal zelf (verplicht), zonder één advertentie-aanroep (`tests/builds.py`). Komt er ooit iets bij dat het toestel verlaat of een advertentie toont, dan eerst akkoord van Jenn, en `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
@@ -44,6 +44,9 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-11-06 · v12 live op `main` (Jenn)
+- Jenn gaf het commando: `main` fast-forward `3a2226b` → `25e9a3c`, tag `v12`. Pages-deploy geslaagd, live `sw.js` geeft `sudoku-kids-v12`. De tag startte "App release": geslaagd, maar **niet ondertekend** (upload key staat nog niet als geheim).
 
 ### 2026-11-06 · v13-APK getest op Android (Jenn)
 - Test-APK van `f40a357` (de code van v13; latere commits raken alleen de roadmap). Instellingen, "Voortgang overzetten" (code maken, kopiëren, importeren) en de terugknop van Android werken met de strenge CSP. Het risico uit het v13-logboek is daarmee weg.
