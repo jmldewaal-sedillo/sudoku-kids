@@ -5,8 +5,8 @@
 | | |
 |---|---|
 | **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-11-06 (v12 op `main` + tag `v12`; v13-APK op Android getest) |
-| **Volgende stap** | Jenn: upload key maken met `tools/upload-key-naar-github.sh`; `.aab` naar de interne test. v13 is op de telefoon getest (6-11); na akkoord ("zet live") v13 naar `main` en dán productietoegang (stap 13). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
+| **Laatste update** | 2026-11-07 (upload key staat als geheim; handtekeningcontrole in "App release" hersteld op `v13`/`test`, nog niet op `main`) |
+| **Volgende stap** | Jenn: "zet live" voor v13 → `main` fast-forward naar `88e4c0b` + tag `v13`. De tag start "App release" met de herstelde controle en levert de ondertekende `.aab` (versionCode 2, artifact `sudoku-kids-aab`) → uploaden naar **Interne test** (`docs/publiceren.md`, stap 8–9), daarna productietoegang (stap 13). Zonder v13 live kan de workflow geen ondertekende `.aab` maken: de controle op `main` is nog de oude (`-strict`) en faalt. Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v12`, tag `v12` (sinds 2026-11-06; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
@@ -44,6 +44,15 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-11-07 · Upload key als geheim; handtekeningcontrole in "App release" hersteld (Jenn + Claude Code, branch `v13`)
+- Jenn draaide `tools/upload-key-naar-github.sh`: de vier geheimen (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) staan sinds 09:13 in de repo. De keystore en het wachtwoord bewaart ze zelf (nooit in Git).
+- Daarna "App release" met de hand gestart op `main` (run 42358850266): build en ondertekening lukten, maar de stap **Handtekening controleren** faalde. Oorzaak: `jarsigner -verify -strict` keurt elke `.aab` af ("signed in JarFile but is not signed in JarInputStream": de `MANIFEST.MF` staat in een `.aab` niet vooraan) en een upload key is altijd zelf ondertekend.
+- Fix (`88e4c0b`, alleen `app-release.yml`): `jarsigner -verify -verbose -certs` zonder `-strict`; eist nog steeds "jar verified", geen "unsigned entries", geen `CN=Android Debug`, en wél `CN=Studio Sedillo, O=Studio Sedillo, C=NL` (het certificaat uit het script).
+- De fix staat op `v13` en `test`, **niet op `main`**: een ondertekende `.aab` komt alleen uit `main` of een tag, dus de volgende "App release" lukt pas als v13 live staat (of als Jenn alleen de workflow-fix naar `main` wil; dan geeft de `.aab` versionCode 1 = v12).
+- Checklist "Voor publiceren" bijgewerkt met wat al klaar was (Play Console-stappen van 21–22 oktober, upload key, `/verwijderen`).
+
+**Bewijs:** de niet-ondertekende `.aab` van v12 (artifact van run 42288698444) in de scratchmap ondertekend met een wegwerpsleutel met hetzelfde certificaat (`java -m jdk.jartool/sun.security.tools.jarsigner.Main`): `-verify -strict` → exit 4 (zelfde fout als de run); de nieuwe controle → "jar verified", geen unsigned entries, geen debug-sleutel, CN gevonden; de niet-ondertekende `.aab` door dezelfde controle → "jar is unsigned", geen "jar verified" (zou terecht falen). Op `test` (`88e4c0b`): "Testversie", "App bouwen" en "Privégegevens" groen (runs 42359059711, 42359059680, 42359059690). `python3 tests/no-private-data.py` → in orde.
 
 ### 2026-11-06 · v12 live op `main` (Jenn)
 - Jenn gaf het commando: `main` fast-forward `3a2226b` → `25e9a3c`, tag `v12`. Pages-deploy geslaagd, live `sw.js` geeft `sudoku-kids-v12`. De tag startte "App release": geslaagd, maar **niet ondertekend** (upload key staat nog niet als geheim).
@@ -507,7 +516,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] J: Testers verzamelen voor de gesloten test (12 personen, 14 dagen)
 - [ ] Btw-id toevoegen aan de footer (nog niet bekend; J geeft het door, C zet het op de hoofdsite en op de privacy- en verwijderpagina)
 - [ ] J: beslissen of er een telefoonnummer bij de bedrijfsgegevens moet (Ondernemersplein en ACM noemen het)
-- [ ] J: in Play Console nakijken dat het account persoonlijk is en dat er geen betaalde apps of aankopen aan staan; eigen ontwikkelaarspagina bekijken
+- [x] ~~J: in Play Console nakijken dat het account persoonlijk is~~ achterhaald: het account is sinds 21-10 een organisatieaccount (`docs/publiceren.md` stap 5)
 - [x] Het vangnet (`tools/no-private-data.py`, hooks, stap in de workflow) ook in de template `studio-sedillo-app-template` en in The Flush Factor (branch `sprint-9`); `Apps/tools/nieuwe-app.sh` zet het aan voor elke nieuwe app
 - [ ] Verandert de blocklist, dan het geheim `PRIVATE_BLOCKLIST` in alle vier de repo's opnieuw zetten (commando in `docs/bedrijf.md`)
 
@@ -518,7 +527,7 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [x] J: domein geverifieerd bij GitHub (gecontroleerd met `controleer-dns.py`, 2026-10-18)
 - [x] C: `https://studiosedillo.com/sudoku-kids/privacy` en `/delete` werken via HTTPS (2026-10-18)
 - [x] C: `publish-prep` gemerged naar `main`, tag `v11` (2026-10-18)
-- [ ] `studiosedillo.com/sudoku-kids/verwijderen` geeft 404; `Apps/CLAUDE.md` (sectie 5) vraagt een doorverwijzing naar `/delete`. Hoort in de repo `studio-sedillo` (live site, dus na akkoord). Niet nodig voor Google Play
+- [x] `studiosedillo.com/sudoku-kids/verwijderen` stuurt door naar `/delete?lang=nl` (live sinds 4 november 2026)
 - [x] J: de proefrepo's `proef-app` en `proef-app-test` en de map `Apps/proef-app` zijn weg (gecontroleerd op 2026-10-17)
 - [x] Privacy- en verwijderpagina van Sudoku Kids op de hoofdsite, 5 talen; de app linkt erheen; startpagina toont de spellen als "Binnenkort" zonder links
 - [x] Eigen domeinen van `proef-app` en `proef-app-test` afgehaald; `sudoku-kids` en `sudoku-kids-test` hadden er geen
@@ -537,14 +546,14 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [ ] J: App Privacy ("Data Not Collected"), Kids-categorie met leeftijdsband, DSA-traderstatus; screenshots iPhone 6,9" en iPad 13" (C maakt ze)
 
 **Android-app (Capacitor, uitleg in `docs/android.md`)**
-- [ ] J: de debug-APK uit de workflow `app-build.yml` (Actions → artifact `sudoku-kids-android-debug`) op een Android-toestel zetten en de lijst in `docs/android.md` nalopen
+- [x] J: de debug-APK uit de workflow `app-build.yml` op een Android-toestel gezet en nagelopen (v12 op 22-10, v13 `f40a357` op 6-11)
 - [x] Capacitor-project `android-app/` (package `com.studiosedillo.sudokukids`, target-API 36, bestanden in de app, geen service worker, alleen INTERNET-permissie, geen back-up naar Google), build-script, iconen en startscherm
 - [x] Terugknop, tweede kopie van de opslag, links en "voortgang overzetten" voor Android, getest met een nagebootste Capacitor-brug (`tests/builds.py`)
-- [ ] J: Android Studio installeren (levert de SDK en JDK; je gaat zelf akkoord met de licenties) en `tools/build-android.sh` draaien
-- [ ] J: de app op je toestel testen met de lijst van 10 punten in `docs/android.md` (**de app is nog nooit op Android gestart**)
-- [ ] J: upload key maken en op twee plekken bewaren; `keystore.properties` aanmaken (nooit in Git)
-- [ ] J: app aanmaken in Play Console; ontwikkelaarsnaam Studio Sedillo, e-mail studio.sedillo@gmail.com; accounttype en aanmaakdatum nakijken
-- [ ] J: `tools/build-android.sh release` en de `.aab` uploaden naar Interne test; daarna de lijst nog een keer nalopen
+- [x] ~~J: Android Studio installeren en `tools/build-android.sh` draaien~~ niet nodig: de workflows `app-build.yml` en `app-release.yml` bouwen op GitHub (26-10)
+- [x] J: de app op het toestel getest met de lijst uit `docs/android.md` (22-10 en 6-11)
+- [x] J: upload key gemaakt en als geheim in GitHub gezet met `tools/upload-key-naar-github.sh` (7-11); keystore en wachtwoord bewaart Jenn zelf, nooit in Git
+- [x] J: app aangemaakt in Play Console (21-10; `com.studiosedillo.sudokukids`, ontwikkelaarsnaam Studio Sedillo, organisatieaccount)
+- [ ] J: de ondertekende `.aab` uit "App release" (artifact `sudoku-kids-aab`; lukt pas als de fix `88e4c0b` op `main` staat, zie logboek 7-11) uploaden naar Interne test; daarna de lijst nog een keer nalopen
 - [ ] Beslissen over schermrotatie: Android 16+ negeert een vaste stand op tablets; het spel werkt staand en liggend.
 - [ ] Overwegen: "Bewaar als bestand" in de Android-app via de deelfunctie van Android (nu verborgen; code kopiëren werkt)
 
@@ -557,18 +566,18 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 
 **Play Console (J, antwoorden in `docs/publiceren.md`)**
 - [x] Account omgezet naar organisatie: aangevraagd 18-10, betalingsprofiel geverifieerd 19-10 en gekoppeld 21-10. Niet vóór 24-10 een app indienen; daarna op het Dashboard nakijken of de gesloten test nog geldt
-- [ ] App-content: privacybeleid-URL, advertenties (nee), app-toegang (uitleg ouderslot)
-- [ ] Doelgroep: 6–8 en 9–12; aanmelden voor Teacher Approved
-- [ ] Data safety-formulier (geen gegevens verzameld of gedeeld; Families-badge aanvinken; verwijder-URL)
-- [ ] Contentclassificatie (IARC)
-- [ ] Store-pagina vullen uit `store/` (categorie Puzzel)
-- [ ] Gesloten test: minstens 12 testers, 14 dagen aaneengesloten; feedback bijhouden
+- [x] App-content: privacybeleid-URL, advertenties (nee), app-toegang (21–22 oktober 2026, `docs/publiceren.md` stap 10)
+- [x] Doelgroep: 6–8 en 9–12, Goedgekeurd door docenten aangevraagd (21–22 oktober 2026)
+- [x] Data safety-formulier: geen gegevens, Families-verklaring (21–22 oktober 2026)
+- [x] Contentclassificatie (IARC) (21–22 oktober 2026)
+- [x] Store-pagina en-US gevuld uit `store/` (22 oktober 2026); de andere 9 talen kunnen er later bij
+- [ ] Gesloten test (12 testers, 14 dagen): alleen als Play Console het vraagt; op 21-10 toonde het Dashboard die eis niet. Bij stap 13 opnieuw kijken
 - [ ] Productietoegang aanvragen en de productierelease doen
 
-**Nakijken door een mens**
-- [ ] Privacyverklaring en verwijderpagina per taal (juridisch en taalkundig) laten nakijken voor publicatie:
+**Nakijken door een mens** (vervallen op 4 november 2026: besluit van Jenn, de vertalingen worden niet extra nagekeken)
+- [x] ~~Privacyverklaring en verwijderpagina per taal laten nakijken~~ vervallen (4-11):
   - [ ] Engels  - [ ] Nederlands  - [ ] Spaans  - [ ] Portugees  - [ ] Indonesisch
-- [ ] Vertalingen laten nakijken door een moedertaalspreker (door de AI gemaakt; ook de 100 badges, de meldingen, sinds v7 de spelregels, credits en overzet-teksten, en de store-teksten in `store/listing.json`):
+- [x] ~~Vertalingen laten nakijken door een moedertaalspreker~~ vervallen (4-11) (door de AI gemaakt; ook de 100 badges, de meldingen, sinds v7 de spelregels, credits en overzet-teksten, en de store-teksten in `store/listing.json`):
   - [ ] Engels  - [ ] Duits  - [ ] Frans
   - [ ] Spaans (es)
   - [ ] Portugees – Braziliaans (pt)
