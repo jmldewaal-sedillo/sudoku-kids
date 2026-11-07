@@ -5,8 +5,8 @@
 | | |
 |---|---|
 | **Huidige fase** | **v13 staat op `main`** (tag `v13`, 2026-11-07) en op de testlink; de ondertekende `.aab` (versionCode 2) is gebouwd door "App release". studiosedillo.com werkt (DNS bij Cloudflare). Volgende fase: de `.aab` naar de interne test in Google Play, daarna productie; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-11-07 (v13 live op `main` + tag `v13`; ondertekende `.aab` versionCode 2 klaar als artifact `sudoku-kids-aab`) |
-| **Volgende stap** | Jenn: de `.aab` downloaden (Actions → run 42367416807 → artifact `sudoku-kids-aab`, 30 dagen bewaard; anders de workflow opnieuw starten op `main`) en uploaden naar **Interne test** in Play Console (`docs/publiceren.md`, stap 8–9); daarna productietoegang (stap 13). Ook: de Dependabot-PR's #1–#5 bekijken (zie logboek). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
+| **Laatste update** | 2026-11-07 (v13 live op `main` + tag `v13`; release 2 (1.1) gepubliceerd in de **interne test** van Play Console) |
+| **Volgende stap** | Jenn: de app uit de interne test op de telefoon installeren (link voor testers) en de lijst uit `docs/android.md` nalopen (stap 9); daarna productietoegang aanvragen (stap 13). Ook: handelaarsstatus (DSA) aangeven in Play Console (balk bovenaan). Ook: de Dependabot-PR's #1–#5 bekijken (zie logboek). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
 | **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, gelijk aan v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
 | **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v13`, tag `v13` (sinds 2026-11-07; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
@@ -17,7 +17,9 @@
 
 ## Open taken
 
-- [ ] **Jenn: de `.aab` naar de interne test** (artifact `sudoku-kids-aab` van run 42367416807; `docs/publiceren.md` stap 8–9).
+- [x] **Jenn: de `.aab` naar de interne test** (7 november 2026: release 2 (1.1) gepubliceerd, track Actief, mailinglijst "testers" met 6 personen).
+- [ ] **Jenn: de app uit de interne test op de telefoon** (link voor testers op het tabblad Testers) en de lijst uit `docs/android.md` nalopen (stap 9).
+- [ ] **Jenn: handelaarsstatus aangeven** in Play Console (blauwe balk "Je handelaarsstatus aangeven", DSA). Studio Sedillo is een eenmanszaak met KvK, dus **handelaar**; Google toont dan naam en contactgegevens in de EU. Adres blijft zoals besloten (`docs/bedrijf.md`).
 - [ ] **Dependabot-PR's #1–#5 nakijken** (7 november 2026): Actions-updates (#1–#4) en Capacitor-groep (#5). Per PR: workflows en "App bouwen" groen? Dan mergen na akkoord van Jenn; anders sluiten met reden.
 - [x] **Hoofdsite live gezet** (4 november 2026): de pagina's van Sudoku Kids in 10 talen, bijgewerkt voor v12/v13.
 - [ ] **Bij de iOS-app** (vóór de inzending in de App Store; besluit van Jenn, 4 november 2026): App Store, iPhone en iPad weer noemen op de privacy- en verwijderpagina (repo `studio-sedillo`, `sudoku-kids/privacy-text.js` en `delete-text.js`, alle 10 talen; de teksten staan in commit `f07e5ae` daar, weggehaald in `d6b60b5`), daarna `python3 tools/sudoku-kids-paginas.py` en de tests. Ook het ouderslot met een taak voor volwassenen (Apple Kids 1.3). Zie `docs/ios.md`.
@@ -46,6 +48,10 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-11-07 · Release 2 (1.1) in de interne test van Play Console (Jenn)
+- Jenn uploadde `app-release.aab` uit artifact `sudoku-kids-aab`: versiecode 2 herkend, 3,3 MB, één waarschuwing (geen deobfuscatiebestand; terecht, `minifyEnabled false` in `build.gradle`, dus niets te uploaden). "Opslaan en publiceren" gedaan: track Interne tests **Actief**, nieuwste release 2 (1.1); mailinglijst "testers" (6 gebruikers) gekozen. Play Console toont nog "Tijdelijk app-naam … (unreviewed)" tot de store-vermelding is beoordeeld.
+- Play Console vraagt bovenaan om de **handelaarsstatus** (DSA): nieuwe taak onder Open taken.
 
 ### 2026-11-07 · v13 live op `main`; eerste ondertekende `.aab` gebouwd (Claude Code, na "zet live" van Jenn)
 - `main` fast-forward `25e9a3c` → `b2e5d65`, tag `v13` (gepusht als `refs/tags/v13`, omdat de branch ook `v13` heet). Pages-deploy geslaagd; live `sw.js` geeft `sudoku-kids-v13`.
@@ -562,7 +568,8 @@ Volgorde en uitleg: `docs/publiceren.md` ("Wat Jenn zelf moet doen"). J = Jenn, 
 - [x] J: de app op het toestel getest met de lijst uit `docs/android.md` (22-10 en 6-11)
 - [x] J: upload key gemaakt en als geheim in GitHub gezet met `tools/upload-key-naar-github.sh` (7-11); keystore en wachtwoord bewaart Jenn zelf, nooit in Git
 - [x] J: app aangemaakt in Play Console (21-10; `com.studiosedillo.sudokukids`, ontwikkelaarsnaam Studio Sedillo, organisatieaccount)
-- [ ] J: de ondertekende `.aab` uit "App release" (artifact `sudoku-kids-aab`; lukt pas als de fix `88e4c0b` op `main` staat, zie logboek 7-11) uploaden naar Interne test; daarna de lijst nog een keer nalopen
+- [x] J: de ondertekende `.aab` uit "App release" geüpload naar Interne test: release 2 (1.1), 7 november 2026
+- [ ] J: de app uit de interne test installeren en de lijst in `docs/android.md` nog een keer nalopen
 - [ ] Beslissen over schermrotatie: Android 16+ negeert een vaste stand op tablets; het spel werkt staand en liggend.
 - [ ] Overwegen: "Bewaar als bestand" in de Android-app via de deelfunctie van Android (nu verborgen; code kopiëren werkt)
 
