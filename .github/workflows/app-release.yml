@@ -85,12 +85,20 @@ jobs:
         if: steps.mode.outputs.mode == 'release'
         run: |
           AAB=app/android/app/build/outputs/bundle/release/app-release.aab
-          jarsigner -verify -strict "$AAB" > "$RUNNER_TEMP/verify.txt" 2>&1 || { cat "$RUNNER_TEMP/verify.txt"; exit 1; }
-          grep -q "jar verified" "$RUNNER_TEMP/verify.txt"
-          # Geen debug-sleutel (die weigert Google Play)
-          if jarsigner -verify -verbose -certs "$AAB" | grep -q "CN=Android Debug"; then
+          # Geen -strict: een upload key is altijd zelf ondertekend en een .aab heeft zijn MANIFEST.MF
+          # niet vooraan; -strict keurt daarom elke geldige .aab af. Wel: alles ondertekend, met onze sleutel.
+          jarsigner -verify -verbose -certs "$AAB" > "$RUNNER_TEMP/verify.txt" 2>&1 || { tail -20 "$RUNNER_TEMP/verify.txt"; exit 1; }
+          grep -q "^jar verified" "$RUNNER_TEMP/verify.txt" || { echo "::error::Handtekening klopt niet."; tail -20 "$RUNNER_TEMP/verify.txt"; exit 1; }
+          if grep -q "unsigned entries" "$RUNNER_TEMP/verify.txt"; then
+            echo "::error::Niet alle bestanden in de .aab zijn ondertekend."; exit 1
+          fi
+          # Geen debug-sleutel (die weigert Google Play), wel de upload key van Studio Sedillo
+          if grep -q "CN=Android Debug" "$RUNNER_TEMP/verify.txt"; then
             echo "::error::De .aab is met de debug-sleutel ondertekend."; exit 1
           fi
+          grep -q "CN=Studio Sedillo, O=Studio Sedillo, C=NL" "$RUNNER_TEMP/verify.txt" \
+            || { echo "::error::De .aab is niet met de upload key van Studio Sedillo ondertekend."; exit 1; }
+          echo "Ondertekend met de upload key (CN=Studio Sedillo)."
 
       - name: Keystore weghalen
         if: always()
