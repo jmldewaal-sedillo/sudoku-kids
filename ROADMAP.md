@@ -4,12 +4,12 @@
 
 | | |
 |---|---|
-| **Huidige fase** | **v11 staat op `main`** (tag `v11`, 2026-10-18) en op de testlink. studiosedillo.com werkt (DNS bij Cloudflare). **v12 staat op de testlink**: Android en iOS als één Capacitor-app, links naar buiten achter het ouderslot. Volgende fase: de app op een toestel testen en in Google Play zetten; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
-| **Laatste update** | 2026-11-07 (upload key staat als geheim; handtekeningcontrole in "App release" hersteld op `v13`/`test`, nog niet op `main`) |
-| **Volgende stap** | Jenn: "zet live" voor v13 → `main` fast-forward naar `88e4c0b` + tag `v13`. De tag start "App release" met de herstelde controle en levert de ondertekende `.aab` (versionCode 2, artifact `sudoku-kids-aab`) → uploaden naar **Interne test** (`docs/publiceren.md`, stap 8–9), daarna productietoegang (stap 13). Zonder v13 live kan de workflow geen ondertekende `.aab` maken: de controle op `main` is nog de oude (`-strict`) en faalt. Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
+| **Huidige fase** | **v13 staat op `main`** (tag `v13`, 2026-11-07) en op de testlink; de ondertekende `.aab` (versionCode 2) is gebouwd door "App release". studiosedillo.com werkt (DNS bij Cloudflare). Volgende fase: de `.aab` naar de interne test in Google Play, daarna productie; daarna iOS. Nieuw besluit (2026-10-11): **geen app-websites**; eerst de Android-app (Capacitor) in Google Play, daarna webportals (`docs/lanceren.md`) |
+| **Laatste update** | 2026-11-07 (v13 live op `main` + tag `v13`; ondertekende `.aab` versionCode 2 klaar als artifact `sudoku-kids-aab`) |
+| **Volgende stap** | Jenn: de `.aab` downloaden (Actions → run 42367416807 → artifact `sudoku-kids-aab`, 30 dagen bewaard; anders de workflow opnieuw starten op `main`) en uploaden naar **Interne test** in Play Console (`docs/publiceren.md`, stap 8–9); daarna productietoegang (stap 13). Ook: de Dependabot-PR's #1–#5 bekijken (zie logboek). Open: ouderslot en App Store-vermelding bij de iOS-app (zie Open taken) |
 | **Uitgever** | Studio Sedillo (eenmanszaak, KvK 42122276, Nederland; adres nergens vermelden) · studio.sedillo@gmail.com · `com.studiosedillo.sudokukids` · geen advertenties · Play Console-account: organisatie (betalingsprofiel gekoppeld 21-10; niet vóór 24-10 indienen) |
-| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
-| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v12`, tag `v12` (sinds 2026-11-06; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
+| **Testversie** | https://jmldewaal-sedillo.github.io/sudoku-kids-test/ – branch `test`, gelijk aan v13 (branch `v13`). Testkopie: `noindex`, geen eigen domein |
+| **Live versie** | https://jmldewaal-sedillo.github.io/sudoku-kids/ – branch `main`, cache `sudoku-kids-v13`, tag `v13` (sinds 2026-11-07; `noindex`, nergens gelinkt). De Android-build komt uit `main` |
 | **Bouwdoelen** | app = Android én iOS uit dezelfde bestanden (`tools/build-android.sh`, `tools/build-ios.sh`, workflow `app-build.yml`), webportals (`node tools/build.mjs crazygames\|poki`), web (alleen testkopie) – één codebase, zie `docs/lanceren.md` |
 | **Privacy / verwijderen** | https://studiosedillo.com/sudoku-kids/privacy en https://studiosedillo.com/sudoku-kids/delete (repo `studio-sedillo`), HTTPS, werken sinds 2026-10-18 |
 
@@ -17,6 +17,8 @@
 
 ## Open taken
 
+- [ ] **Jenn: de `.aab` naar de interne test** (artifact `sudoku-kids-aab` van run 42367416807; `docs/publiceren.md` stap 8–9).
+- [ ] **Dependabot-PR's #1–#5 nakijken** (7 november 2026): Actions-updates (#1–#4) en Capacitor-groep (#5). Per PR: workflows en "App bouwen" groen? Dan mergen na akkoord van Jenn; anders sluiten met reden.
 - [x] **Hoofdsite live gezet** (4 november 2026): de pagina's van Sudoku Kids in 10 talen, bijgewerkt voor v12/v13.
 - [ ] **Bij de iOS-app** (vóór de inzending in de App Store; besluit van Jenn, 4 november 2026): App Store, iPhone en iPad weer noemen op de privacy- en verwijderpagina (repo `studio-sedillo`, `sudoku-kids/privacy-text.js` en `delete-text.js`, alle 10 talen; de teksten staan in commit `f07e5ae` daar, weggehaald in `d6b60b5`), daarna `python3 tools/sudoku-kids-paginas.py` en de tests. Ook het ouderslot met een taak voor volwassenen (Apple Kids 1.3). Zie `docs/ios.md`.
 
@@ -32,7 +34,7 @@
    - *Voorraad:* puzzel *n* van een soort komt uit `bankSeed(soort, n)` – per (soort, nummer), niet per totale volgorde. Er mogen puzzels, banden, levels en werelden bij; een bestaand nummer mag nooit een andere puzzel worden. `puzzle-bank.js` alleen uitbreiden via `tools/generate-puzzles.js`.
    - De banden in `BANDS` (`puzzles.js`) niet verschuiven: opgeslagen "al gespeeld"-lijsten staan per band.
 2. **Na elke wijziging aan levels of de voorraad altijd draaien:** `node tests/validate-levels.js`. Verwacht: drie regels met ✅ (levels geldig; zonder gokken en gelijk aan de snapshot; voorraad geldig en gelijk aan de snapshot).
-3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live nu: `sudoku-kids-v12`, test: `sudoku-kids-v13`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
+3. **Bij elke release `CACHE_VERSION` in `sw.js` verhogen** (live en test nu: `sudoku-kids-v13`). Voor Android: `versionCode` verhogen in `android-app/android/app/build.gradle`, anders krijgen spelers de oude versie.
 4. **Niets "klaar" noemen zonder bewijs.** Elke controle moet een commando met echte uitvoer hebben.
 5. **localStorage-sleutels nooit hernoemen:** `sudokuKids_progress`, `sudokuKids_settings`, `sudokuKids_current`, `sudokuKids_played`, `sudokuKids_stats`, `sudokuKids_history`, `sudokuKids_inbox` (profiel 1), `sudokuKids_p<n>_…` (overige profielen) en `sudokuKids_profiles`. Alle opslag loopt via `storage.js`.
 6. **Geen frameworks, externe CDN's, tracking, advertenties of accounts in het spel.** De webversie heeft geen build-stap; `tools/build.mjs` kopieert alleen bestanden voor de andere bouwdoelen. `tests/e2e.py` (onderdeel 31) controleert dat er geen verzoek naar een ander domein gaat. Enige uitzondering: de portal-versies laden de SDK van de portal zelf (verplicht), zonder één advertentie-aanroep (`tests/builds.py`). Komt er ooit iets bij dat het toestel verlaat of een advertentie toont, dan eerst akkoord van Jenn, en `docs/privacy-audit.md`, de privacyverklaring en het Data safety-formulier bijwerken.
@@ -44,6 +46,13 @@
 ---
 
 ## Logboek (nieuwste bovenaan)
+
+### 2026-11-07 · v13 live op `main`; eerste ondertekende `.aab` gebouwd (Claude Code, na "zet live" van Jenn)
+- `main` fast-forward `25e9a3c` → `b2e5d65`, tag `v13` (gepusht als `refs/tags/v13`, omdat de branch ook `v13` heet). Pages-deploy geslaagd; live `sw.js` geeft `sudoku-kids-v13`.
+- De tag startte "App release" (run 42367416807): alle stappen groen, **Handtekening controleren** meldt "Ondertekend met de upload key (CN=Studio Sedillo)". Artifact `sudoku-kids-aab` (3,6 MB), versionCode 2, versionName 1.1. Dit is de eerste `.aab` die naar Google Play kan.
+- Doordat `dependabot.yml` nu op `main` staat, opende Dependabot vijf PR's: #1–#4 (GitHub Actions: checkout, setup-java, setup-node, upload-artifact naar nieuwere major-versies) en #5 (Capacitor-groep in `app/`). Niet gemerged; eerst nakijken, want de workflows en de app-build moeten erna nog groen zijn. Nieuw als taak onder Open taken.
+
+**Bewijs:** `git ls-remote --tags origin v13` → `refs/tags/v13`; `curl …/sudoku-kids/sw.js` → `sudoku-kids-v13`; `gh run view 42367416807` → alle stappen `success`, artifact `sudoku-kids-aab 3577575 bytes`.
 
 ### 2026-11-07 · Upload key als geheim; handtekeningcontrole in "App release" hersteld (Jenn + Claude Code, branch `v13`)
 - Jenn draaide `tools/upload-key-naar-github.sh`: de vier geheimen (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) staan sinds 09:13 in de repo. De keystore en het wachtwoord bewaart ze zelf (nooit in Git).
